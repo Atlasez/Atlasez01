@@ -7,7 +7,11 @@
 import { readFileSync, readdirSync, statSync, existsSync } from "node:fs";
 import { join } from "node:path";
 
-const dist = process.argv[2] ?? "dist";
+const requestedDist = process.argv[2] ?? "dist";
+const dist =
+  requestedDist === "dist" && existsSync(join(requestedDist, "client"))
+    ? join(requestedDist, "client")
+    : requestedDist;
 const basePath = (process.argv[3] ?? "/").replace(/\/$/, "");
 
 function walk(dir) {
