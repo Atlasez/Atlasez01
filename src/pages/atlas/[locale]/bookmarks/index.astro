@@ -1,206 +1,385 @@
 ---
-/** あとで読む（ブックマーク）一覧。localStorageからクライアント側で描画する */
 import AtlasLayout from "../../../../layouts/AtlasLayout.astro";
 import Breadcrumb from "../../../../components/Breadcrumb.astro";
 import { atlasPath } from "../../../../lib/site";
-import { t, LOCALES, type Locale } from "../../../../lib/i18n";
+import { LOCALES, type Locale } from "../../../../lib/i18n";
 
 export function getStaticPaths() {
   return LOCALES.map((locale) => ({ params: { locale } }));
 }
 
 const locale = Astro.params.locale as Locale;
+const title = locale === "ja" ? "学習リスト" : "Learning list";
 ---
 
 <AtlasLayout
   locale={locale}
-  title={t(locale, "bookmarks")}
-  description={t(locale, "bookmarksHint")}
+  title={title}
+  description={locale === "ja"
+    ? "あとで読む記事と、読んだ・理解した記事の履歴"
+    : "Saved, read and understood articles"}
   noindex={true}
   localeSwitchHrefs={Object.fromEntries(
-    LOCALES.map((l) => [l, atlasPath(l, "bookmarks")]),
+    LOCALES.map((language) => [language, atlasPath(language, "bookmarks")]),
   )}
 >
-  <div class="container">
+  <div class="container learning-list-page" data-learning-list-page>
     <Breadcrumb
       items={[
-        { label: t(locale, "breadcrumbHome"), href: atlasPath(locale) },
-        { label: t(locale, "bookmarks") },
+        { label: locale === "ja" ? "アトラス" : "Atlas", href: atlasPath(locale) },
+        { label: title },
       ]}
     />
-    <div class="bookmarks-head">
-      <h1>{t(locale, "bookmarks")}</h1>
+    <h1>{title}</h1>
+    <p class="storage-note">
+      {
+        locale === "ja"
+          ? "この一覧は、この端末のブラウザ内だけに保存されます。アカウント同期やサーバー送信は行いません。"
+          : "This list is stored only in this browser and is not synced to an account."
+      }
+    </p>
+
+    <div class="list-tabs" role="tablist" aria-label={title}>
       <button
         type="button"
-        class="button button-secondary"
-        data-bookmark-clear
-        hidden
+        role="tab"
+        aria-selected="true"
+        aria-controls="saved-panel"
+        id="saved-tab"
+        tabindex="0"
+        data-list-tab="saved"
       >
-        {t(locale, "clearBookmarks")}
+        {locale === "ja" ? "あとで読む" : "Saved"}
+        <span data-list-count="saved">0</span>
+      </button>
+      <button
+        type="button"
+        role="tab"
+        aria-selected="false"
+        aria-controls="read-panel"
+        id="read-tab"
+        tabindex="-1"
+        data-list-tab="read"
+      >
+        {locale === "ja" ? "読んだ" : "Read"}
+        <span data-list-count="read">0</span>
+      </button>
+      <button
+        type="button"
+        role="tab"
+        aria-selected="false"
+        aria-controls="understood-panel"
+        id="understood-tab"
+        tabindex="-1"
+        data-list-tab="understood"
+      >
+        {locale === "ja" ? "理解した" : "Understood"}
+        <span data-list-count="understood">0</span>
       </button>
     </div>
-    <p class="bookmarks-hint">{t(locale, "bookmarksHint")}</p>
 
-    <p
-      class="bookmarks-empty"
-      data-bookmark-empty
-      data-remove-label={t(locale, "removeBookmark")}
-    >
-      {t(locale, "noBookmarks")}
-    </p>
-    <ol class="bookmarks-list" data-bookmark-list></ol>
+    {
+      [
+        {
+          key: "saved",
+          heading: locale === "ja" ? "あとで読む" : "Saved",
+          empty:
+            locale === "ja"
+              ? "あとで読む記事はまだありません。"
+              : "No saved articles yet.",
+        },
+        {
+          key: "read",
+          heading: locale === "ja" ? "読んだ記事" : "Read articles",
+          empty:
+            locale === "ja"
+              ? "読んだ記事はまだ記録されていません。"
+              : "No read articles yet.",
+        },
+        {
+          key: "understood",
+          heading: locale === "ja" ? "理解した記事" : "Understood articles",
+          empty:
+            locale === "ja"
+              ? "理解した記事はまだ記録されていません。"
+              : "No understood articles yet.",
+        },
+      ].map((panel, index) => (
+        <section
+          id={`${panel.key}-panel`}
+          role="tabpanel"
+          aria-labelledby={`${panel.key}-tab`}
+          data-list-panel={panel.key}
+          hidden={index !== 0}
+        >
+          <div class="panel-heading">
+            <h2>{panel.heading}</h2>
+            <button
+              type="button"
+              class="button button-secondary"
+              data-list-clear={panel.key}
+              hidden
+            >
+              {locale === "ja" ? "この一覧を消去" : "Clear this list"}
+            </button>
+          </div>
+          <p data-list-empty={panel.key}>{panel.empty}</p>
+          <ol class="learning-items" data-list-items={panel.key} />
+        </section>
+      ))
+    }
   </div>
 </AtlasLayout>
 
 <style>
-  .bookmarks-head {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: var(--space-2);
-    flex-wrap: wrap;
-  }
-  .bookmarks-hint {
-    color: var(--text-secondary);
-    font-size: calc(0.9rem * var(--text-scale));
-  }
-  .bookmarks-list {
-    list-style: none;
-    margin: var(--space-4) 0 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3);
+  .learning-list-page {
     max-width: var(--content-width);
   }
-  .bookmarks-list li {
-    border: 1px solid var(--border);
-    border-radius: var(--radius, 4px);
-    padding: var(--space-3);
-  }
-  .bookmark-row {
-    display: flex;
-    justify-content: space-between;
-    gap: var(--space-2);
-    align-items: baseline;
-  }
-  .bookmark-title {
-    font-size: calc(1.05rem * var(--text-scale));
-    font-weight: 600;
-  }
-  .bookmark-meta {
-    color: var(--text-secondary);
-    font-size: calc(0.82rem * var(--text-scale));
-    margin: var(--space-1) 0 0;
-  }
-  .bookmark-summary {
+  .storage-note {
+    max-width: var(--reading-width);
     color: var(--text-secondary);
     font-size: calc(0.9rem * var(--text-scale));
-    margin: var(--space-2) 0 0;
   }
-  .bookmark-remove {
-    flex: 0 0 auto;
-    border: 1px solid var(--border);
-    border-radius: var(--radius, 4px);
+  .list-tabs {
+    display: flex;
+    gap: var(--space-1);
+    margin-top: var(--space-4);
+    border-bottom: 2px solid var(--accent-primary);
+  }
+  .list-tabs button {
+    min-height: var(--touch-target);
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid transparent;
+    border-bottom: 0;
     background: transparent;
     color: var(--text-secondary);
     font: inherit;
-    font-size: calc(0.82rem * var(--text-scale));
-    padding: var(--space-1) var(--space-2);
     cursor: pointer;
   }
-  .bookmark-remove:hover {
-    color: var(--accent-primary);
+  .list-tabs button[aria-selected="true"] {
     border-color: var(--accent-primary);
+    background: var(--accent-subtle);
+    color: var(--accent-primary);
+    font-weight: 650;
+  }
+  .list-tabs span {
+    display: inline-grid;
+    place-items: center;
+    min-width: 1.5rem;
+    margin-left: var(--space-1);
+    border-radius: 999px;
+    background: var(--background-secondary);
+    font-size: calc(0.75rem * var(--text-scale));
+  }
+  .panel-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--space-3);
+  }
+  .learning-items {
+    display: grid;
+    gap: var(--space-3);
+    margin: var(--space-3) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .learning-items li {
+    padding: var(--space-3);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius);
+  }
+  :global(.learning-item-row) {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--space-2);
+  }
+  :global(.learning-item-title) {
+    color: var(--text-primary);
+    font-size: calc(1.05rem * var(--text-scale));
+    font-weight: 650;
+  }
+  :global(.learning-item-meta),
+  :global(.learning-item-summary) {
+    color: var(--text-secondary);
+    font-size: calc(0.85rem * var(--text-scale));
+  }
+  :global(.learning-item-meta) {
+    margin: var(--space-1) 0 0;
+  }
+  :global(.learning-item-summary) {
+    margin: var(--space-2) 0 0;
+  }
+  :global(.learning-item-remove) {
+    flex: 0 0 auto;
+    min-height: var(--touch-target);
+    padding-inline: var(--space-2);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius);
+    background: transparent;
+    color: var(--text-secondary);
+    font: inherit;
+    cursor: pointer;
+  }
+  @media (max-width: 480px) {
+    .list-tabs button {
+      flex: 1;
+      padding-inline: var(--space-1);
+    }
   }
 </style>
 
 <script>
   import {
+    clearBookmarks,
     loadBookmarks,
     removeBookmark,
-    clearBookmarks,
-    type Bookmark,
   } from "../../../../lib/bookmarks";
+  import {
+    clearLearningState,
+    loadLearningHistory,
+    toggleLearningState,
+    type LearningHistoryEntry,
+    type LearningState,
+  } from "../../../../lib/learning-history";
 
-  const listEl = document.querySelector<HTMLOListElement>(
-    "[data-bookmark-list]",
-  );
-  const emptyEl = document.querySelector<HTMLElement>("[data-bookmark-empty]");
-  const clearBtn = document.querySelector<HTMLButtonElement>(
-    "[data-bookmark-clear]",
-  );
-  const removeLabel = emptyEl?.dataset.removeLabel ?? "Remove";
-
-  function fmtDate(ms: number): string {
-    try {
-      return new Date(ms).toLocaleDateString();
-    } catch {
-      return "";
-    }
+  type PanelKey = "saved" | "read" | "understood";
+  interface ListItem {
+    articleId: string;
+    title: string;
+    href: string;
+    subject: string;
+    category: string;
+    summary: string;
+    timestamp: number;
+    history?: LearningHistoryEntry;
   }
 
-  function render(): void {
-    if (!listEl || !emptyEl) return;
-    const items = loadBookmarks().sort((a, b) => b.savedAt - a.savedAt);
-    listEl.innerHTML = "";
+  const tabs = [
+    ...document.querySelectorAll<HTMLButtonElement>("[data-list-tab]"),
+  ];
+  const panels = [
+    ...document.querySelectorAll<HTMLElement>("[data-list-panel]"),
+  ];
+  const activate = (tab: HTMLButtonElement) => {
+    tabs.forEach((candidate) => {
+      const selected = candidate === tab;
+      candidate.setAttribute("aria-selected", String(selected));
+      candidate.tabIndex = selected ? 0 : -1;
+    });
+    panels.forEach((panel) => {
+      panel.hidden = panel.dataset.listPanel !== tab.dataset.listTab;
+    });
+  };
+  tabs.forEach((tab) => tab.addEventListener("click", () => activate(tab)));
 
-    if (items.length === 0) {
-      emptyEl.hidden = false;
-      if (clearBtn) clearBtn.hidden = true;
-      return;
-    }
-    emptyEl.hidden = true;
-    if (clearBtn) clearBtn.hidden = false;
+  const fmtDate = (timestamp: number) =>
+    new Date(timestamp).toLocaleDateString(document.documentElement.lang);
 
-    for (const b of items) {
-      listEl.append(renderItem(b));
+  function itemsFor(key: PanelKey): ListItem[] {
+    if (key === "saved") {
+      return loadBookmarks()
+        .map((item) => ({ ...item, timestamp: item.savedAt }))
+        .sort((a, b) => b.timestamp - a.timestamp);
     }
+    return loadLearningHistory()
+      .filter((item) =>
+        key === "understood" ? Boolean(item.understoodAt) : Boolean(item.readAt),
+      )
+      .map((item) => ({
+        ...item,
+        timestamp:
+          key === "understood"
+            ? (item.understoodAt ?? 0)
+            : (item.readAt ?? 0),
+        history: item,
+      }))
+      .sort((a, b) => b.timestamp - a.timestamp);
   }
 
-  function renderItem(b: Bookmark): HTMLLIElement {
+  function renderItem(item: ListItem, key: PanelKey): HTMLLIElement {
     const li = document.createElement("li");
-
     const row = document.createElement("div");
-    row.className = "bookmark-row";
-
+    row.className = "learning-item-row";
     const link = document.createElement("a");
-    link.className = "bookmark-title";
-    link.href = b.href;
-    link.textContent = b.title;
-
+    link.className = "learning-item-title";
+    link.href = item.href;
+    link.textContent = item.title;
     const remove = document.createElement("button");
     remove.type = "button";
-    remove.className = "bookmark-remove";
-    remove.textContent = removeLabel;
+    remove.className = "learning-item-remove";
+    remove.textContent =
+      document.documentElement.lang === "ja" ? "一覧から外す" : "Remove";
     remove.addEventListener("click", () => {
-      removeBookmark(b.articleId);
-      render();
+      if (key === "saved") {
+        removeBookmark(item.articleId);
+      } else if (item.history) {
+        toggleLearningState(
+          {
+            articleId: item.history.articleId,
+            locale: item.history.locale,
+            title: item.history.title,
+            href: item.history.href,
+            subject: item.history.subject,
+            category: item.history.category,
+            summary: item.history.summary,
+          },
+          key as LearningState,
+        );
+      }
+      renderAll();
     });
-
     row.append(link, remove);
-
     const meta = document.createElement("p");
-    meta.className = "bookmark-meta";
-    meta.textContent = [b.subject, b.category, fmtDate(b.savedAt)]
+    meta.className = "learning-item-meta";
+    meta.textContent = [item.subject, item.category, fmtDate(item.timestamp)]
       .filter(Boolean)
       .join(" ・ ");
-
     li.append(row, meta);
-
-    if (b.summary) {
+    if (item.summary) {
       const summary = document.createElement("p");
-      summary.className = "bookmark-summary";
-      summary.textContent = b.summary;
+      summary.className = "learning-item-summary";
+      summary.textContent = item.summary;
       li.append(summary);
     }
     return li;
   }
 
-  clearBtn?.addEventListener("click", () => {
-    clearBookmarks();
-    render();
-  });
+  function renderPanel(key: PanelKey): void {
+    const items = itemsFor(key);
+    const list = document.querySelector<HTMLOListElement>(
+      `[data-list-items="${key}"]`,
+    );
+    const empty = document.querySelector<HTMLElement>(
+      `[data-list-empty="${key}"]`,
+    );
+    const clear = document.querySelector<HTMLButtonElement>(
+      `[data-list-clear="${key}"]`,
+    );
+    const count = document.querySelector<HTMLElement>(
+      `[data-list-count="${key}"]`,
+    );
+    if (!list || !empty || !clear || !count) return;
+    list.replaceChildren(...items.map((item) => renderItem(item, key)));
+    empty.hidden = items.length > 0;
+    clear.hidden = items.length === 0;
+    count.textContent = String(items.length);
+  }
 
-  render();
+  function renderAll(): void {
+    (["saved", "read", "understood"] as PanelKey[]).forEach(renderPanel);
+  }
+
+  document
+    .querySelectorAll<HTMLButtonElement>("[data-list-clear]")
+    .forEach((button) => {
+      button.addEventListener("click", () => {
+        const key = button.dataset.listClear as PanelKey;
+        if (key === "saved") clearBookmarks();
+        else clearLearningState(key as LearningState);
+        renderAll();
+      });
+    });
+  renderAll();
 </script>

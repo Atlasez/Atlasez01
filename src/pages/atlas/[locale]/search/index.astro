@@ -51,6 +51,7 @@ const filterLabels: Record<string, string> = {
         <input
           id="search-input"
           type="search"
+          name="q"
           data-search-input
           placeholder={t(locale, "searchPlaceholder")}
           autocomplete="off"
@@ -186,6 +187,11 @@ const filterLabels: Record<string, string> = {
           wrap.append(label, select);
           filtersEl.append(wrap);
         }
+      }
+      const initialQuery = new URL(window.location.href).searchParams.get("q");
+      if (initialQuery && input) {
+        input.value = initialQuery;
+        await run();
       }
     } catch {
       /* 開発サーバーではインデックスがないため案内文を残す */

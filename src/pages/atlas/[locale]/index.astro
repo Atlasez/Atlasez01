@@ -1,11 +1,17 @@
 ---
 import AtlasLayout from "../../../layouts/AtlasLayout.astro";
+import HomeLearningMap from "../../../components/HomeLearningMap.astro";
 import { atlasPath, articlePath, formatDate } from "../../../lib/site";
 import { t, LOCALES, localizedName, type Locale } from "../../../lib/i18n";
 import {
   getPublishedArticles,
   getPublishedSubjects,
 } from "../../../lib/content";
+import {
+  getAllPlannedArticles,
+  plannedArticleTitle,
+} from "../../../lib/planned";
+import { SUBJECT_GROUPS } from "../../../lib/subject-groups";
 
 export function getStaticPaths() {
   return LOCALES.map((locale) => ({ params: { locale } }));
@@ -14,37 +20,46 @@ export function getStaticPaths() {
 const locale = Astro.params.locale as Locale;
 const subjects = await getPublishedSubjects();
 const articles = await getPublishedArticles(locale);
-
+const subjectBySlug = new Map(subjects.map((subject) => [subject.data.slug, subject]));
 const countBySubject = new Map<string, number>();
-for (const a of articles) {
+for (const article of articles) {
   countBySubject.set(
-    a.data.subject,
-    (countBySubject.get(a.data.subject) ?? 0) + 1,
+    article.data.subject,
+    (countBySubject.get(article.data.subject) ?? 0) + 1,
   );
 }
 
 const recent = [...articles]
   .sort((a, b) => b.data.updatedAt.getTime() - a.data.updatedAt.getTime())
-  .slice(0, 20);
+  .slice(0, 12);
+const upcoming = getAllPlannedArticles().slice(0, 6).map((item) => {
+  const subject = subjectBySlug.get(item.subject);
+  const category = subject?.data.categories.find(
+    (candidate) => candidate.slug === item.category,
+  );
+  return {
+    ...item,
+    title: plannedArticleTitle(item, locale),
+    subjectName: subject
+      ? localizedName(subject.data.name, locale)
+      : item.subject,
+    categoryName: category
+      ? localizedName(category.name, locale)
+      : item.category,
+  };
+});
 
-const alternates = LOCALES.map((l) => ({
-  hreflang: l,
-  href: new URL(atlasPath(l), Astro.site).href,
-}));
-
-const publishedSubjects = subjects.filter((s) => s.data.status === "published");
-const preparingSubjects = subjects.filter((s) => s.data.status === "preparing");
-
-/** 公開・準備中をひとつの一覧にまとめる（準備中は淡色・リンクなし） */
-const allSubjects = [
-  ...publishedSubjects.map((s) => ({ subject: s, published: true })),
-  ...preparingSubjects.map((s) => ({ subject: s, published: false })),
-];
-
+const publishedCount = subjects.filter(
+  (subject) => subject.data.status === "published",
+).length;
 const summary =
   locale === "ja"
-    ? `${publishedSubjects.length}分野・${articles.length}記事を公開中`
-    : `${publishedSubjects.length} subjects · ${articles.length} articles`;
+    ? `${publishedCount}分野・${articles.length}記事を公開中`
+    : `${publishedCount} subjects · ${articles.length} articles`;
+const alternates = LOCALES.map((language) => ({
+  hreflang: language,
+  href: new URL(atlasPath(language), Astro.site).href,
+}));
 ---
 
 <AtlasLayout
@@ -54,295 +69,496 @@ const summary =
   alternates={alternates}
 >
   <div class="container atlas-home">
+    <div class="home-heading">
+      <div class="view-tabs" role="tablist" aria-label={locale === "ja" ? "分野の表示方法" : "Subject view"}>
+        <button
+          type="button"
+          role="tab"
+          aria-selected="true"
+          aria-controls="subject-tiles-panel"
+          id="subject-tiles-tab"
+          tabindex="0"
+          data-home-tab="tiles"
+        >
+          {locale === "ja" ? "分野" : "Subjects"}
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected="false"
+          aria-controls="learning-map-panel"
+          id="learning-map-tab"
+          tabindex="-1"
+          data-home-tab="map"
+        >
+          {t(locale, "map")}
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected="false"
+          aria-controls="subject-list-panel"
+          id="subject-list-tab"
+          tabindex="-1"
+          data-home-tab="list"
+        >
+          {locale === "ja" ? "リスト表示" : "List"}
+        </button>
+      </div>
+      <p class="section-meta">{summary}</p>
+    </div>
+
     <div class="content-columns">
-      <section aria-labelledby="subjects-heading">
-        <div class="section-title">
-          <h1 id="subjects-heading">{t(locale, "subjects")}</h1>
-          <p class="section-meta">{summary}</p>
-          <a class="section-link" href={atlasPath(locale, "map")}>
-            {t(locale, "map")}
-          </a>
-        </div>
-
-        <ul class="subject-grid">
-          {
-            allSubjects.map(({ subject: s, published }) => {
-              const name = localizedName(s.data.name, locale);
-              const desc = localizedName(s.data.description, locale);
-              const descId = `subject-desc-${s.data.slug}`;
-              const infoLabel =
-                locale === "ja" ? `${name}とは` : `About ${name}`;
-              return (
-                <li
-                  class:list={[
-                    "subject-tile",
-                    { "is-preparing": !published },
-                  ]}
-                >
-                  <div class="subject-row">
-                    {published ? (
-                      <a
-                        class="subject-name"
-                        href={atlasPath(locale, s.data.slug)}
-                      >
-                        {name}
-                      </a>
-                    ) : (
-                      <span class="subject-name">{name}</span>
-                    )}
-                    <button
-                      type="button"
-                      class="subject-info"
-                      aria-expanded="false"
-                      aria-controls={descId}
-                      data-subject-info
-                      title={infoLabel}
-                    >
-                      <span aria-hidden="true">?</span>
-                      <span class="visually-hidden">{infoLabel}</span>
-                    </button>
-                  </div>
-                  <p class="subject-status">
-                    <span class="subject-count">
-                      {published
-                        ? `${countBySubject.get(s.data.slug) ?? 0}${locale === "ja" ? "記事" : " articles"}`
-                        : t(locale, "preparing")}
+      <div>
+        <section
+          id="subject-tiles-panel"
+          role="tabpanel"
+          aria-labelledby="subject-tiles-tab"
+          data-home-panel="tiles"
+        >
+          <h1 class="visually-hidden">{t(locale, "subjects")}</h1>
+          <section class="upcoming-band" aria-labelledby="upcoming-heading">
+            <div class="upcoming-heading">
+              <h2 id="upcoming-heading">
+                {locale === "ja" ? "今後公開予定の記事" : "Planned articles"}
+              </h2>
+              <span>{t(locale, "preparing")}</span>
+            </div>
+            <ul>
+              {
+                upcoming.map((item) => (
+                  <li>
+                    <span class="update-title">{item.title}</span>
+                    <span class="update-meta">
+                      {item.subjectName}・{item.categoryName}
                     </span>
-                  </p>
-                  <p class="subject-desc" id={descId} hidden>
-                    {desc}
-                  </p>
-                </li>
-              );
-            })
-          }
-        </ul>
-      </section>
-
-      <aside class="recent" aria-labelledby="recent-heading">
-        <div class="section-title">
-          <h2 id="recent-heading">{t(locale, "recentArticles")}</h2>
-        </div>
-        <div class="recent-scroll">
-          <ul class="recent-list">
+                  </li>
+                ))
+              }
+            </ul>
+          </section>
+          <div class="discipline-groups">
             {
-              recent.map((a) => (
+              SUBJECT_GROUPS.map((group) => (
+                <section class="discipline-group">
+                  <h2>{localizedName(group.name, locale)}</h2>
+                  <div class="medium-groups">
+                    {group.sections.map((section) => (
+                      <section class="medium-group">
+                        <h3>{localizedName(section.name, locale)}</h3>
+                        <ul class="subject-grid">
+                          {section.subjects.map((slug) => {
+                            const subject = subjectBySlug.get(slug);
+                            if (!subject) return null;
+                            const published = subject.data.status === "published";
+                            return (
+                              <li
+                                class:list={[
+                                  "subject-tile",
+                                  { "is-preparing": !published },
+                                ]}
+                              >
+                                {published ? (
+                                  <a
+                                    class="subject-name"
+                                    href={atlasPath(locale, subject.data.slug)}
+                                  >
+                                    {localizedName(subject.data.name, locale)}
+                                  </a>
+                                ) : (
+                                  <span class="subject-name">
+                                    {localizedName(subject.data.name, locale)}
+                                  </span>
+                                )}
+                                <span class="subject-count">
+                                  {published
+                                    ? `${countBySubject.get(slug) ?? 0}${locale === "ja" ? "記事" : " articles"}`
+                                    : t(locale, "preparing")}
+                                </span>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </section>
+                    ))}
+                  </div>
+                </section>
+              ))
+            }
+          </div>
+        </section>
+
+        <section
+          id="learning-map-panel"
+          role="tabpanel"
+          aria-labelledby="learning-map-tab"
+          data-home-panel="map"
+          hidden
+        >
+          <HomeLearningMap locale={locale} />
+        </section>
+
+        <section
+          id="subject-list-panel"
+          role="tabpanel"
+          aria-labelledby="subject-list-tab"
+          data-home-panel="list"
+          hidden
+        >
+          <h1 class="visually-hidden">
+            {locale === "ja" ? "分野のリスト表示" : "Subject list"}
+          </h1>
+          <div class="subject-list">
+            {
+              SUBJECT_GROUPS.map((group) => (
+                <section>
+                  <h2>{localizedName(group.name, locale)}</h2>
+                  {group.sections.map((section) => (
+                    <div class="subject-list-section">
+                      <h3>{localizedName(section.name, locale)}</h3>
+                      <ul>
+                        {section.subjects.map((slug) => {
+                          const subject = subjectBySlug.get(slug);
+                          if (!subject) return null;
+                          const published = subject.data.status === "published";
+                          return (
+                            <li>
+                              <span>
+                                {published ? (
+                                  <a href={atlasPath(locale, slug)}>
+                                    {localizedName(subject.data.name, locale)}
+                                  </a>
+                                ) : (
+                                  localizedName(subject.data.name, locale)
+                                )}
+                                {!published && (
+                                  <span class="badge">{t(locale, "preparing")}</span>
+                                )}
+                              </span>
+                              {published && (
+                                <ul class="category-links">
+                                  {subject.data.categories.map((category) => (
+                                    <li>
+                                      <a
+                                        href={atlasPath(
+                                          locale,
+                                          slug,
+                                          category.slug,
+                                        )}
+                                      >
+                                        {localizedName(category.name, locale)}
+                                      </a>
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  ))}
+                </section>
+              ))
+            }
+          </div>
+        </section>
+      </div>
+
+      <aside class="updates" aria-label={locale === "ja" ? "記事のお知らせ" : "Article updates"}>
+        <section class="update-section" aria-labelledby="recent-heading">
+          <div class="aside-heading">
+            <h2 id="recent-heading">{t(locale, "recentArticles")}</h2>
+          </div>
+          <ul
+            tabindex="0"
+            aria-label={locale === "ja" ? "最近更新された記事一覧" : "Recently updated articles"}
+          >
+            {
+              recent.map((article) => (
                 <li>
                   <a
+                    class="update-title"
                     href={articlePath(
                       locale,
-                      a.data.subject,
-                      a.data.category,
-                      a.data.slug,
+                      article.data.subject,
+                      article.data.category,
+                      article.data.slug,
                     )}
                   >
-                    {a.data.title}
+                    {article.data.title}
                   </a>
-                  <time datetime={a.data.updatedAt.toISOString().slice(0, 10)}>
-                    {formatDate(a.data.updatedAt, locale)}
+                  <time datetime={article.data.updatedAt.toISOString().slice(0, 10)}>
+                    {formatDate(article.data.updatedAt, locale)}
                   </time>
                 </li>
               ))
             }
           </ul>
-        </div>
+        </section>
       </aside>
     </div>
   </div>
 </AtlasLayout>
 
 <script>
-  // 分野タイルの「?」で分野説明を開閉する
-  document
-    .querySelectorAll<HTMLButtonElement>("[data-subject-info]")
-    .forEach((button) => {
-      button.addEventListener("click", () => {
-        const id = button.getAttribute("aria-controls");
-        if (!id) return;
-        const panel = document.getElementById(id);
-        if (!panel) return;
-        const open = button.getAttribute("aria-expanded") === "true";
-        button.setAttribute("aria-expanded", open ? "false" : "true");
-        panel.hidden = open;
-      });
+  const tabs = [
+    ...document.querySelectorAll<HTMLButtonElement>("[data-home-tab]"),
+  ];
+  const panels = [
+    ...document.querySelectorAll<HTMLElement>("[data-home-panel]"),
+  ];
+  const activate = (tab: HTMLButtonElement, focus = false) => {
+    const view = tab.dataset.homeTab;
+    tabs.forEach((candidate) => {
+      const selected = candidate === tab;
+      candidate.setAttribute("aria-selected", String(selected));
+      candidate.tabIndex = selected ? 0 : -1;
     });
+    panels.forEach((panel) => {
+      panel.hidden = panel.dataset.homePanel !== view;
+    });
+    if (focus) tab.focus();
+  };
+  tabs.forEach((tab, index) => {
+    tab.addEventListener("click", () => activate(tab));
+    tab.addEventListener("keydown", (event) => {
+      let target = index;
+      if (event.key === "ArrowRight") target = (index + 1) % tabs.length;
+      else if (event.key === "ArrowLeft")
+        target = (index - 1 + tabs.length) % tabs.length;
+      else if (event.key === "Home") target = 0;
+      else if (event.key === "End") target = tabs.length - 1;
+      else return;
+      event.preventDefault();
+      const next = tabs[target];
+      if (next) activate(next, true);
+    });
+  });
 </script>
 
 <style>
   .atlas-home {
-    max-width: var(--content-width);
+    max-width: 86rem;
+  }
+  .home-heading {
+    display: flex;
+    align-items: end;
+    gap: var(--space-3);
+    border-bottom: 2px solid var(--accent-primary);
+  }
+  .view-tabs {
+    display: flex;
+    gap: var(--space-1);
+    overflow-x: auto;
+  }
+  .view-tabs button {
+    min-height: var(--touch-target);
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid transparent;
+    border-bottom: 0;
+    background: transparent;
+    color: var(--text-secondary);
+    font: inherit;
+    font-weight: 650;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  .view-tabs button[aria-selected="true"] {
+    color: var(--accent-primary);
+    background: var(--accent-subtle);
+    border-color: var(--accent-primary);
+  }
+  .section-meta {
+    margin: 0 0 var(--space-2) auto;
+    color: var(--text-secondary);
+    font-size: calc(0.85rem * var(--text-scale));
+    white-space: nowrap;
   }
   .content-columns {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(14rem, 16rem);
+    grid-template-columns: minmax(0, 1fr) minmax(15rem, 18rem);
     gap: var(--space-5);
-    padding-block: var(--space-2) var(--space-5);
+    padding-block: var(--space-4) var(--space-5);
     align-items: start;
   }
-  .section-title {
+  .upcoming-band {
+    margin-top: var(--space-4);
+    padding: var(--space-3);
+    border: 1px solid var(--accent-primary);
+    background: var(--accent-subtle);
+  }
+  .upcoming-heading {
     display: flex;
     align-items: baseline;
-    gap: var(--space-3);
-    padding-bottom: var(--space-1);
-    border-bottom: 2px solid var(--accent-primary);
+    gap: var(--space-2);
+    margin-bottom: var(--space-2);
   }
-  .section-title h1,
-  .section-title h2 {
+  .upcoming-heading h2 {
     margin: 0;
-    font-size: calc(1.45rem * var(--text-scale));
+    font-size: calc(1rem * var(--text-scale));
   }
-  .section-meta {
-    margin: 0;
+  .upcoming-heading span {
     color: var(--text-secondary);
-    font-size: calc(0.85rem * var(--text-scale));
+    font-size: calc(0.75rem * var(--text-scale));
   }
-  .section-link {
-    margin-left: auto;
-    font-size: calc(0.88rem * var(--text-scale));
-  }
-
-  /* ---- 分野一覧 ---- */
-  .subject-grid {
+  .upcoming-band ul {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr));
-    gap: 0 var(--space-3);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0 var(--space-4);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .upcoming-band li {
+    display: grid;
+    gap: 0.15rem;
+    padding: var(--space-2) 0;
+    border-top: 1px solid var(--border-default);
+  }
+  .discipline-groups {
+    display: grid;
+    gap: var(--space-5);
+  }
+  .discipline-group > h2,
+  .subject-list > section > h2 {
+    margin: 0 0 var(--space-3);
+    padding-bottom: var(--space-1);
+    border-bottom: 1px solid var(--border-strong);
+    font-size: calc(1.3rem * var(--text-scale));
+  }
+  .medium-groups {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    gap: var(--space-4);
+  }
+  .medium-group h3,
+  .subject-list-section h3 {
+    margin: 0 0 var(--space-1);
+    color: var(--text-secondary);
+    font-size: calc(0.9rem * var(--text-scale));
+  }
+  .subject-grid {
     list-style: none;
     margin: 0;
     padding: 0;
   }
   .subject-tile {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-2);
     padding: var(--space-2) 0;
     border-bottom: 1px solid var(--border-default);
-    line-height: 1.4;
   }
-  .subject-row {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-  }
-  /* min-height はWCAG 2.5.8（ターゲットサイズ 24px）を満たすため */
   .subject-name {
-    display: inline-flex;
-    align-items: center;
-    min-height: 1.75rem;
-    font-size: calc(1.3rem * var(--text-scale));
+    color: var(--text-primary);
+    font-size: calc(1.08rem * var(--text-scale));
     font-weight: 650;
     text-decoration: none;
-    color: var(--text-primary);
   }
   a.subject-name:hover {
     color: var(--accent-primary);
     text-decoration: underline;
   }
-  /* 24px 未満だと WCAG 2.5.8（ターゲットサイズ）違反になる */
-  .subject-info {
-    flex: 0 0 auto;
-    width: 1.5rem;
-    height: 1.5rem;
-    min-width: 24px;
-    min-height: 24px;
-    padding: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid var(--border-strong);
-    border-radius: 50%;
-    background: transparent;
-    color: var(--text-secondary);
-    font: inherit;
-    font-size: calc(0.78rem * var(--text-scale));
-    line-height: 1;
-    min-height: 0;
-    cursor: pointer;
-  }
-  .subject-info:hover,
-  .subject-info[aria-expanded="true"] {
-    border-color: var(--accent-primary);
-    background: var(--accent-subtle);
-    color: var(--accent-primary);
-  }
-  .subject-status {
-    margin: 0;
-  }
   .subject-count {
     color: var(--text-secondary);
-    font-size: calc(0.78rem * var(--text-scale));
+    font-size: calc(0.75rem * var(--text-scale));
+    white-space: nowrap;
   }
-  .subject-desc {
-    margin: var(--space-1) 0 0;
-    padding-right: var(--space-2);
-    color: var(--text-secondary);
-    font-size: calc(0.85rem * var(--text-scale));
-    line-height: 1.55;
+  .is-preparing {
+    border-bottom-style: dashed;
   }
-  /* 準備中は opacity で淡くしない（コントラスト比が 4.5:1 を割るため）。
-     色は --text-secondary のまま、太さと下線の有無で区別する。 */
-  .subject-tile.is-preparing .subject-name {
+  .is-preparing .subject-name {
     color: var(--text-secondary);
     font-weight: 500;
   }
-  .subject-tile.is-preparing {
-    border-bottom-style: dashed;
+  .subject-list {
+    display: grid;
+    gap: var(--space-5);
   }
-
-  /* ---- 最近更新された記事（右カラム・スクロール） ---- */
-  .recent {
-    font-size: calc(0.9rem * var(--text-scale));
+  .subject-list-section {
+    display: grid;
+    grid-template-columns: 9rem minmax(0, 1fr);
+    gap: var(--space-3);
+    padding-block: var(--space-2);
+    border-bottom: 1px solid var(--border-default);
   }
-  .recent .section-title {
-    border-bottom-width: 1px;
-    border-bottom-color: var(--border-strong);
-  }
-  .recent .section-title h2 {
-    font-size: calc(1.02rem * var(--text-scale));
-  }
-  .recent-scroll {
-    max-height: 26rem;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-  }
-  .recent-list {
-    list-style: none;
+  .subject-list-section > ul {
+    display: grid;
+    gap: var(--space-2);
     margin: 0;
     padding: 0;
+    list-style: none;
   }
-  .recent-list li {
+  .category-links {
     display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: var(--space-2);
-    padding: var(--space-1) 0;
-    border-bottom: 1px solid var(--border-default);
-    line-height: 1.45;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-3);
+    margin: var(--space-1) 0 0;
+    padding: 0;
+    list-style: none;
+    font-size: calc(0.85rem * var(--text-scale));
   }
-  .recent-list a {
+  .updates {
+    display: grid;
+    gap: var(--space-4);
+    font-size: calc(0.88rem * var(--text-scale));
+  }
+  .aside-heading {
+    border-bottom: 1px solid var(--border-strong);
+  }
+  .aside-heading h2 {
+    margin: 0;
+    padding-bottom: var(--space-1);
+    font-size: calc(1rem * var(--text-scale));
+  }
+  .update-section ul {
+    max-height: 20rem;
+    overflow-y: auto;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .update-section li {
+    display: grid;
+    gap: 0.15rem;
+    padding: var(--space-2) 0;
+    border-bottom: 1px solid var(--border-default);
+  }
+  .update-title {
+    color: var(--text-primary);
     text-decoration: none;
   }
-  .recent-list a:hover {
+  a.update-title:hover {
+    color: var(--accent-primary);
     text-decoration: underline;
   }
-  .recent-list time {
-    flex: 0 0 auto;
+  .update-meta,
+  .update-section time {
     color: var(--text-secondary);
     font-size: calc(0.72rem * var(--text-scale));
-    font-variant-numeric: tabular-nums;
   }
-
   @media (max-width: 900px) {
     .content-columns {
       grid-template-columns: 1fr;
-      gap: var(--space-4);
     }
-    .recent-scroll {
-      max-height: 18rem;
+    .upcoming-band ul {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
-  @media (max-width: 480px) {
-    .subject-grid {
-      grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
+  @media (max-width: 600px) {
+    .home-heading {
+      display: block;
     }
-    .subject-name {
-      font-size: calc(1.15rem * var(--text-scale));
+    .section-meta {
+      margin: var(--space-2) 0;
+    }
+    .upcoming-band ul {
+      grid-template-columns: 1fr;
+    }
+    .subject-list-section {
+      grid-template-columns: 1fr;
     }
   }
 </style>

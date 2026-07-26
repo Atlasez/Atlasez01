@@ -35,13 +35,15 @@ const {
 
 const nav = [
   { label: t(locale, "subjects"), href: atlasPath(locale) },
-  { label: t(locale, "map"), href: atlasPath(locale, "map") },
-  { label: t(locale, "search"), href: atlasPath(locale, "search") },
-  { label: t(locale, "bookmarks"), href: atlasPath(locale, "bookmarks") },
+  {
+    label: locale === "ja" ? "学習リスト" : "Learning list",
+    href: atlasPath(locale, "bookmarks"),
+  },
   { label: t(locale, "forBeginners"), href: atlasPath(locale, "guide") },
   { label: t(locale, "team"), href: atlasPath(locale, "team") },
 ];
 const currentPath = Astro.url.pathname;
+const showLanguageSwitch = LOCALES.length > 1;
 ---
 
 <!doctype html>
@@ -87,7 +89,7 @@ const currentPath = Astro.url.pathname;
           <ul class="atlas-nav">
             {
               nav.map((item) => (
-                <li>
+                <li class:list={{ "guide-nav-item": item.href.endsWith("/guide/") }}>
                   <a
                     href={item.href}
                     aria-current={currentPath === item.href ? "page" : undefined}
@@ -99,33 +101,62 @@ const currentPath = Astro.url.pathname;
             }
           </ul>
         </nav>
-        {/* 公開ロケールが 1 つのときは言語切替を出さない */}
-        <nav
-          class="lang-switch"
-          aria-label={t(locale, "languages")}
-          hidden={LOCALES.length < 2}
+        <form
+          class="header-search"
+          role="search"
+          action={atlasPath(locale, "search")}
         >
-          <ul>
+          <label class="visually-hidden" for="atlas-header-search">
+            {t(locale, "search")}
+          </label>
+          <input
+            id="atlas-header-search"
+            type="search"
+            name="q"
+            placeholder={t(locale, "searchPlaceholder")}
+          />
+          <button type="submit" aria-label={t(locale, "search")}>
+            {t(locale, "search")}
+          </button>
+        </form>
+        <details class="header-tools">
+          <summary>
             {
-              LOCALES.map((l) => (
-                <li>
-                  {l === locale ? (
-                    <span aria-current="true">{localeNames[l]}</span>
-                  ) : (
-                    <a
-                      href={localeSwitchHrefs[l] ?? atlasPath(l)}
-                      hreflang={l}
-                      lang={l}
-                    >
-                      {localeNames[l]}
-                    </a>
-                  )}
-                </li>
-              ))
+              showLanguageSwitch
+                ? locale === "ja"
+                  ? "表示・言語"
+                  : "Display & language"
+                : locale === "ja"
+                  ? "表示設定"
+                  : "Display settings"
             }
-          </ul>
-        </nav>
-        <ThemeToggle locale={locale} />
+          </summary>
+          <div class="header-tools-panel">
+            {
+              showLanguageSwitch && (
+                <div class="language-control">
+                  <label for="atlas-language-select">
+                    {t(locale, "languages")}
+                  </label>
+                  <select id="atlas-language-select" data-language-select>
+                    {LOCALES.map((language) => (
+                      <option
+                        value={
+                          localeSwitchHrefs[language] ?? atlasPath(language)
+                        }
+                        selected={language === locale}
+                      >
+                        {localeNames[language]}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )
+            }
+            <ThemeToggle locale={locale} />
+            <A11ySettings locale={locale} />
+          </div>
+        </details>
         <a class="org-link" href={withBase("/")} title="Atlasez">Atlasez</a>
       </div>
     </header>
@@ -150,9 +181,6 @@ const currentPath = Astro.url.pathname;
             </a>
           </p>
         </div>
-        <div>
-          <A11ySettings locale={locale} />
-        </div>
       </div>
       <p class="container atlas-copyright">© 2024-2026 Atlasez</p>
     </footer>
@@ -170,7 +198,7 @@ const currentPath = Astro.url.pathname;
     align-items: center;
     gap: var(--space-3);
     flex-wrap: wrap;
-    padding-block: var(--space-1);
+    padding-block: var(--space-2);
   }
   .atlas-logo {
     display: inline-flex;
@@ -208,27 +236,83 @@ const currentPath = Astro.url.pathname;
     border-bottom-color: var(--accent-primary);
     color: var(--accent-primary);
   }
-  .lang-switch {
+  .guide-nav-item a {
+    border: 1px solid var(--accent-primary);
+    border-radius: var(--radius);
+    color: var(--accent-primary);
+    font-weight: 650;
+  }
+  .header-search {
+    display: flex;
+    min-width: min(19rem, 28vw);
     margin-left: auto;
   }
-  .lang-switch ul {
-    display: flex;
-    gap: var(--space-2);
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    font-size: calc(0.9rem * var(--text-scale));
+  .header-search input {
+    min-width: 0;
+    width: 100%;
+    min-height: var(--touch-target);
+    border-radius: var(--radius) 0 0 var(--radius);
   }
-  .lang-switch span[aria-current] {
-    font-weight: 700;
-    color: var(--accent-primary);
+  .header-search button {
+    min-width: 3.5rem;
+    min-height: var(--touch-target);
+    padding-inline: var(--space-2);
+    border: 1px solid var(--accent-primary);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    background: var(--accent-primary);
+    color: white;
+    font: inherit;
+    white-space: nowrap;
+    cursor: pointer;
   }
-  .lang-switch a,
-  .lang-switch span {
+  .header-tools {
+    position: relative;
+  }
+  .header-tools > summary {
     display: inline-flex;
     align-items: center;
     min-height: var(--touch-target);
-    padding: 0 var(--space-1);
+    padding-inline: var(--space-2);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius);
+    font-size: calc(0.85rem * var(--text-scale));
+    cursor: pointer;
+  }
+  .header-tools-panel {
+    position: absolute;
+    z-index: 20;
+    right: 0;
+    top: calc(100% + var(--space-1));
+    width: min(32rem, calc(100vw - var(--space-4)));
+    max-height: min(36rem, 75vh);
+    overflow-y: auto;
+    padding: var(--space-4);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    box-shadow: 0 0.5rem 1.5rem rgb(0 0 0 / 0.16);
+    background: var(--background-primary);
+  }
+  .language-control {
+    margin-bottom: var(--space-3);
+    padding-bottom: var(--space-3);
+    border-bottom: 1px solid var(--border-default);
+  }
+  .language-control label {
+    display: block;
+    margin-bottom: var(--space-1);
+    font-weight: 650;
+  }
+  .language-control select {
+    width: 100%;
+  }
+  .language-control p {
+    margin: var(--space-1) 0 0;
+    color: var(--text-secondary);
+    font-size: calc(0.78rem * var(--text-scale));
+  }
+  .header-tools :global(.theme-toggle) {
+    width: 100%;
+    margin-bottom: var(--space-2);
   }
   .org-link {
     font-size: calc(0.9rem * var(--text-scale));
@@ -268,12 +352,9 @@ const currentPath = Astro.url.pathname;
       display: inline-flex;
       margin-left: 0;
     }
-    .lang-switch {
-      margin-left: 0;
-    }
     .main-nav {
       display: none;
-      order: 3;
+      order: 4;
       width: 100%;
       border-top: 1px solid var(--border-default);
     }
@@ -293,6 +374,14 @@ const currentPath = Astro.url.pathname;
     .org-link {
       display: none;
     }
+    .header-search {
+      order: 3;
+      width: 100%;
+      margin-left: 0;
+    }
+    .header-tools {
+      margin-left: 0;
+    }
   }
 </style>
 
@@ -307,4 +396,11 @@ const currentPath = Astro.url.pathname;
     mainNav.toggleAttribute("data-open", open);
     navToggle.setAttribute("aria-expanded", String(open));
   });
+
+  document
+    .querySelector<HTMLSelectElement>("[data-language-select]")
+    ?.addEventListener("change", (event) => {
+      const select = event.currentTarget as HTMLSelectElement;
+      if (select.value) window.location.assign(select.value);
+    });
 </script>
