@@ -4,6 +4,7 @@ import sitemap from "@astrojs/sitemap";
 import { unified } from "@astrojs/markdown-remark";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
+import cloudflare from "@astrojs/cloudflare";
 import "katex/contrib/mhchem";
 
 // サイトURLとベースパスは環境変数だけで切り替えられる。
@@ -24,6 +25,7 @@ export default defineConfig({
   outDir: process.env.OUT_DIR ?? "./dist",
   trailingSlash: "always",
   integrations: [sitemap()],
+
   markdown: {
     processor: unified({
       remarkPlugins: [remarkMath],
@@ -48,7 +50,10 @@ export default defineConfig({
       themes: { light: "github-light", dark: "github-dark" },
     },
   },
+
   build: {
     format: "directory",
   },
+
+  adapter: cloudflare(),
 });

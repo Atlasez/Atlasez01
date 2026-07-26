@@ -10,7 +10,7 @@
     "build": "astro build && npm run search:index",
     "build:ci": "astro build",
     "search:index": "pagefind --site dist",
-    "preview": "astro preview",
+    "preview": "npm run build && wrangler dev",
     "check": "astro check",
     "lint": "eslint src scripts tests",
     "format": "prettier --write .",
@@ -19,9 +19,12 @@
     "test": "vitest run",
     "audit:math": "node scripts/audit-math.mjs",
     "test:e2e": "playwright test",
-    "astro": "astro"
+    "astro": "astro",
+    "generate-types": "wrangler types",
+    "deploy": "npm run build && wrangler deploy"
   },
   "dependencies": {
+    "@astrojs/cloudflare": "^14.1.4",
     "@astrojs/markdown-remark": "^7.2.1",
     "@astrojs/rss": "^4.0.19",
     "@astrojs/sitemap": "^3.7.3",
@@ -41,6 +44,7 @@
     "prettier": "^3.3.0",
     "typescript": "^5.6.0",
     "typescript-eslint": "^8.65.0",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.10",
+    "wrangler": "^4.114.0"
   }
 }
