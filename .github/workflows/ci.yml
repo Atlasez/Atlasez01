@@ -39,9 +39,9 @@ jobs:
       - name: ビルド（下書きは除外される）
         run: npx astro build
       - name: 検索インデックス生成
-        run: npx pagefind --site dist
+        run: npx pagefind --site dist/client
       - name: 内部リンク検証
-        run: node scripts/check-links.mjs dist "$BASE_PATH"
+        run: node scripts/check-links.mjs dist/client "$BASE_PATH"
       - name: Playwrightブラウザ導入
         run: npx playwright install --with-deps chromium
       - name: E2E・アクセシビリティ検査 (Playwright + axe)

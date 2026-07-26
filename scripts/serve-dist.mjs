@@ -2,6 +2,7 @@
 /** GitHub Pagesと同じBASE_PATH配下でdistを配信するE2E用静的サーバー。 */
 import { createServer } from "node:http";
 import { readFile, stat } from "node:fs/promises";
+import { existsSync } from "node:fs";
 import { extname, join, normalize } from "node:path";
 
 const port = Number(process.env.PORT ?? 4321);
@@ -10,7 +11,10 @@ const base =
     /^\/$/,
     "",
   );
-const root = join(process.cwd(), "dist");
+const distRoot = join(process.cwd(), "dist");
+const root = existsSync(join(distRoot, "client"))
+  ? join(distRoot, "client")
+  : distRoot;
 const mime = {
   ".css": "text/css; charset=utf-8",
   ".html": "text/html; charset=utf-8",
