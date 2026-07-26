@@ -40,15 +40,62 @@ test.describe("公式サイト", () => {
 });
 
 test.describe("学習サイト", () => {
-  test("総合ホームに分野と準備中の区別がある", async ({ page }) => {
+  test("総合ホームに大分類・中分類と準備中の区別がある", async ({ page }) => {
     await page.goto("atlas/ja/");
     await expect(page.getByRole("link", { name: "数学" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "人文科学" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "言語学習" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "自然科学" })).toBeVisible();
     await expect(page.getByText("準備中").first()).toBeVisible();
+  });
+
+  test("トップ内でタイル・学習地図・リストを切り替えられる", async ({
+    page,
+  }) => {
+    await page.goto("atlas/ja/");
+    const initialUrl = page.url();
+    await page.getByRole("tab", { name: "学習地図" }).click();
+    await expect(
+      page.getByRole("heading", { name: "学習ルートをつくる" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "今後公開予定の記事" }),
+    ).not.toBeVisible();
+    await expect(page).toHaveURL(initialUrl);
+    await page.getByRole("tab", { name: "リスト表示" }).click();
+    await expect(
+      page.locator("#subject-list-panel").getByRole("link", { name: "数学" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "今後公開予定の記事" }),
+    ).not.toBeVisible();
+    await expect(page).toHaveURL(initialUrl);
+  });
+
+  test("公開予定の記事を広い欄で最近更新より上に表示する", async ({ page }) => {
+    await page.goto("atlas/ja/");
+    await expect(
+      page.getByRole("heading", { name: "今後公開予定の記事" }),
+    ).toBeVisible();
+    await expect(page.locator(".upcoming-band li")).toHaveCount(6);
+    const isBeforeRecent = await page.evaluate(() => {
+      const upcoming = document.querySelector("#upcoming-heading");
+      const recent = document.querySelector("#recent-heading");
+      return Boolean(
+        upcoming &&
+        recent &&
+        upcoming.compareDocumentPosition(recent) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      );
+    });
+    expect(isBeforeRecent).toBe(true);
   });
 
   test("はじめての方へは専用ガイドに移動する", async ({ page }) => {
     await page.goto("atlas/ja/");
-    await page.getByRole("link", { name: "はじめての方へ" }).click();
+    const guide = page.getByRole("link", { name: "はじめての方へ" });
+    await expect(guide.locator("..")).toHaveClass(/guide-nav-item/);
+    await guide.click();
     await expect(page).toHaveURL(/\/atlas\/ja\/guide\/$/);
     await expect(page.locator("h1")).toHaveText("はじめての方へ");
   });
@@ -130,8 +177,9 @@ test.describe("学習サイト", () => {
 
   test("検索結果には編集済みの要約を表示する", async ({ page }) => {
     await page.goto("atlas/ja/search/");
-    await page.getByRole("searchbox").fill("群");
-    await page.getByRole("button", { name: "検索" }).click();
+    const searchForm = page.locator("[data-search-form]");
+    await searchForm.getByRole("searchbox").fill("群");
+    await searchForm.getByRole("button", { name: "検索" }).click();
     const results = page.locator("[data-search-results]");
     await expect(results).toContainText("数学記事です");
     await expect(results).not.toContainText("math.group-theory");
@@ -145,21 +193,47 @@ test.describe("学習サイト", () => {
     const mainNav = page.locator("#atlas-main-nav");
     await expect(menu).toBeVisible();
     await expect(
-      mainNav.getByRole("link", { name: "学習地図" }),
+      mainNav.getByRole("link", { name: "はじめての方へ" }),
     ).not.toBeVisible();
     await menu.click();
-    await expect(mainNav.getByRole("link", { name: "学習地図" })).toBeVisible();
+    await expect(
+      mainNav.getByRole("link", { name: "はじめての方へ" }),
+    ).toBeVisible();
   });
 
-  test("表示設定が保存される", async ({ page }) => {
+  test("上部に検索・ダーク表示・表示設定がまとまっている", async ({ page }) => {
     await page.goto("atlas/ja/");
-    await page.getByText("表示設定").click();
+    await expect(page.getByRole("searchbox", { name: "検索" })).toBeVisible();
+    await expect(page.locator(".atlas-nav").getByText("検索")).toHaveCount(0);
+    await page.locator(".header-tools > summary").click();
+    await expect(page.getByLabel("言語")).toHaveCount(0);
+    await expect(
+      page.getByRole("button", { name: /ダークモード/ }),
+    ).toBeVisible();
+    await page.locator(".a11y-settings > summary").click();
     await page.getByLabel("特大").check();
     await page.reload();
     await expect(page.locator("html")).toHaveAttribute(
       "data-pref-font-size",
       "xlarge",
     );
+  });
+
+  test("読んだ・理解した記事を学習リストで確認できる", async ({ page }) => {
+    await page.goto("atlas/ja/mathematics/group-theory/group-definition/");
+    await page.getByRole("button", { name: "読んだ" }).click();
+    await page.getByRole("button", { name: "理解した" }).click();
+    await page.goto("atlas/ja/bookmarks/");
+
+    await page.getByRole("tab", { name: /読んだ/ }).click();
+    await expect(
+      page.locator("#read-panel").getByRole("link", { name: "群の定義" }),
+    ).toBeVisible();
+
+    await page.getByRole("tab", { name: /理解した/ }).click();
+    await expect(
+      page.locator("#understood-panel").getByRole("link", { name: "群の定義" }),
+    ).toBeVisible();
   });
 
   test("運営紹介に担当者が表示される", async ({ page }) => {

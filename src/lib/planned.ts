@@ -24,6 +24,11 @@ export function getPlannedArticles(
     .sort((a, b) => a.order - b.order);
 }
 
+/** 総合ホームなど、分野横断の公開予定一覧で使う。 */
+export function getAllPlannedArticles(): PlannedArticle[] {
+  return [...plannedArticles];
+}
+
 export function plannedArticleTitle(
   item: PlannedArticle,
   locale: Locale,

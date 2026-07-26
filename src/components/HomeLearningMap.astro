@@ -1,0 +1,306 @@
+---
+import { atlasPath, withBase } from "../lib/site";
+import { getConcepts, getPublishedSubjects } from "../lib/content";
+import { localizedName, type Locale } from "../lib/i18n";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const subjects = (await getPublishedSubjects()).filter(
+  (subject) => subject.data.status === "published",
+);
+const { list } = await getConcepts();
+const graphUrl = withBase("/atlas/graph.json");
+---
+
+<div
+  class="home-map"
+  data-home-map
+  data-graph-url={graphUrl}
+  data-locale={locale}
+  data-base={withBase("/")}
+>
+  <section class="route-card" aria-labelledby="home-route-heading">
+    <div>
+      <h2 id="home-route-heading">
+        {locale === "ja" ? "学習ルートをつくる" : "Build a learning route"}
+      </h2>
+      <p>
+        {
+          locale === "ja"
+            ? "学びたい分野と目標を選ぶと、前提から順に読む項目を表示します。"
+            : "Choose a subject and goal to see topics in prerequisite order."
+        }
+      </p>
+    </div>
+    <form data-route-form class="route-form">
+      <div>
+        <label for="home-route-subject">
+          {locale === "ja" ? "分野" : "Subject"}
+        </label>
+        <select id="home-route-subject" data-route-subject>
+          {
+            subjects.map((subject) => (
+              <option value={subject.data.slug}>
+                {localizedName(subject.data.name, locale)}
+              </option>
+            ))
+          }
+        </select>
+      </div>
+      <div>
+        <label for="home-route-goal">
+          {locale === "ja" ? "理解したい項目" : "Goal"}
+        </label>
+        <select id="home-route-goal" data-route-goal required>
+          <option value="">選択してください</option>
+          {
+            list.map((concept) => (
+              <option
+                value={concept.id}
+                data-route-option
+                data-subject={concept.subject}
+              >
+                {localizedName(concept.name, locale)}
+              </option>
+            ))
+          }
+        </select>
+      </div>
+      <button type="submit" class="button">
+        {locale === "ja" ? "ルートを表示" : "Show route"}
+      </button>
+    </form>
+    <div class="route-result" data-route-result aria-live="polite"></div>
+  </section>
+
+  <section class="map-overview" aria-labelledby="map-overview-heading">
+    <div class="map-overview-title">
+      <h2 id="map-overview-heading">
+        {locale === "ja" ? "分野からたどる" : "Browse the map"}
+      </h2>
+      <a href={atlasPath(locale, "map")}>
+        {locale === "ja" ? "詳しい概念マップ" : "Detailed concept map"}
+      </a>
+    </div>
+    <div class="map-subjects">
+      {
+        subjects.map((subject) => (
+          <section>
+            <h3>
+              <a href={atlasPath(locale, subject.data.slug)}>
+                {localizedName(subject.data.name, locale)}
+              </a>
+            </h3>
+            <ul>
+              {subject.data.categories.map((category) => (
+                <li>
+                  <a
+                    href={atlasPath(
+                      locale,
+                      subject.data.slug,
+                      category.slug,
+                    )}
+                  >
+                    {localizedName(category.name, locale)}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))
+      }
+    </div>
+  </section>
+</div>
+
+<style>
+  .home-map {
+    display: grid;
+    gap: var(--space-5);
+  }
+  .route-card {
+    padding: var(--space-4);
+    border: 2px solid var(--accent-primary);
+    background: var(--accent-subtle);
+  }
+  .route-card h2,
+  .map-overview h2 {
+    margin-top: 0;
+    font-size: calc(1.2rem * var(--text-scale));
+  }
+  .route-card p {
+    color: var(--text-secondary);
+  }
+  .route-form {
+    display: grid;
+    grid-template-columns: minmax(10rem, 0.7fr) minmax(14rem, 1.3fr) auto;
+    gap: var(--space-3);
+    align-items: end;
+  }
+  .route-form select {
+    width: 100%;
+  }
+  .route-result:empty {
+    display: none;
+  }
+  .route-result {
+    margin-top: var(--space-3);
+  }
+  :global(.home-route-steps) {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+    gap: var(--space-2);
+    margin: var(--space-2) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  :global(.home-route-steps li) {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+    padding: var(--space-2);
+    border: 1px solid var(--border-default);
+    background: var(--background-primary);
+  }
+  :global(.home-route-number) {
+    display: inline-grid;
+    place-items: center;
+    flex: 0 0 1.8rem;
+    min-height: 1.8rem;
+    color: var(--accent-primary);
+    border: 1px solid var(--accent-primary);
+    font-weight: 700;
+  }
+  .map-overview-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--space-3);
+    border-bottom: 1px solid var(--border-strong);
+  }
+  .map-subjects {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+    gap: var(--space-3);
+    margin-top: var(--space-3);
+  }
+  .map-subjects section {
+    padding: var(--space-3);
+    border: 1px solid var(--border-default);
+  }
+  .map-subjects h3 {
+    margin: 0 0 var(--space-2);
+  }
+  .map-subjects ul {
+    margin: 0;
+    padding-left: 1.2rem;
+  }
+  @media (max-width: 700px) {
+    .route-form {
+      grid-template-columns: 1fr;
+    }
+    .route-form .button {
+      width: 100%;
+    }
+  }
+</style>
+
+<script>
+  import {
+    computeLearningRoute,
+    toConceptMap,
+    type ConceptData,
+  } from "../lib/graph";
+
+  interface GraphNode extends ConceptData {
+    articles: Record<string, { title: string; path: string }[]>;
+  }
+  interface GraphData {
+    nodes: GraphNode[];
+  }
+
+  const root = document.querySelector<HTMLElement>("[data-home-map]");
+  const form = root?.querySelector<HTMLFormElement>("[data-route-form]");
+  const subject = root?.querySelector<HTMLSelectElement>("[data-route-subject]");
+  const goal = root?.querySelector<HTMLSelectElement>("[data-route-goal]");
+  const result = root?.querySelector<HTMLElement>("[data-route-result]");
+
+  if (root && form && subject && goal && result) {
+    const locale = root.dataset.locale === "en" ? "en" : "ja";
+    const base = (root.dataset.base ?? "/").replace(/\/$/, "");
+    const response = await fetch(root.dataset.graphUrl ?? "");
+    const graph: GraphData = await response.json();
+    const map = toConceptMap(graph.nodes);
+    const nodes = new Map(graph.nodes.map((node) => [node.id, node]));
+    const escapeHtml = (value: string) =>
+      value.replace(
+        /[&<>"']/g,
+        (character) =>
+          ({
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#39;",
+          })[character] ?? character,
+      );
+    const label = (node: GraphNode) =>
+      locale === "en" && node.name.en ? node.name.en : node.name.ja;
+    const renderConcept = (id: string) => {
+      const node = nodes.get(id);
+      if (!node) return "";
+      const article = (node.articles[locale] ?? [])[0];
+      const text = escapeHtml(label(node));
+      return article
+        ? `<a href="${base}${article.path}">${text}</a>`
+        : `${text} <span class="badge">${locale === "ja" ? "準備中" : "In preparation"}</span>`;
+    };
+    const filterOptions = () => {
+      goal.value = "";
+      goal
+        .querySelectorAll<HTMLOptionElement>("[data-route-option]")
+        .forEach((option) => {
+          const matches = option.dataset.subject === subject.value;
+          option.hidden = !matches;
+          option.disabled = !matches;
+        });
+      result.replaceChildren();
+    };
+    filterOptions();
+    subject.addEventListener("change", filterOptions);
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      if (!goal.value) return;
+      try {
+        const route = computeLearningRoute([], goal.value, map);
+        const additional = graph.nodes
+          .filter(
+            (node) =>
+              node.subject === nodes.get(goal.value)?.subject &&
+              !route.steps.includes(node.id),
+          )
+          .slice(0, Math.max(0, 8 - route.steps.length))
+          .map((node) => node.id);
+        const steps = [...route.steps, ...additional].slice(0, 8);
+        result.innerHTML = `<h3>${
+          locale === "ja"
+            ? `おすすめの学習順（${steps.length}件）`
+            : `Recommended order (${steps.length})`
+        }</h3><ol class="home-route-steps">${steps
+          .map(
+            (id, index) =>
+              `<li><span class="home-route-number">${index + 1}</span>${renderConcept(id)}</li>`,
+          )
+          .join("")}</ol>`;
+      } catch {
+        result.textContent =
+          locale === "ja"
+            ? "学習ルートを作成できませんでした。"
+            : "The learning route could not be created.";
+      }
+    });
+  }
+</script>

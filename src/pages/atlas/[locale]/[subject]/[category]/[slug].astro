@@ -220,6 +220,43 @@ const structuredData = {
           <span data-bookmark-icon aria-hidden="true">☆</span>
           <span data-bookmark-label>{t(locale, "saveForLater")}</span>
         </button>
+        <div
+          class="learning-state"
+          data-learning-state
+          data-article-id={entry.data.articleId}
+          data-locale={locale}
+          data-title={entry.data.title}
+          data-href={articlePath(
+            locale,
+            entry.data.subject,
+            entry.data.category,
+            entry.data.slug,
+          )}
+          data-subject={subjectName}
+          data-category={categoryName}
+          data-summary={entry.data.summary}
+        >
+          <span class="learning-state-label">
+            {locale === "ja" ? "学習記録" : "Learning history"}
+          </span>
+          <button
+            type="button"
+            data-learning-toggle="read"
+            aria-pressed="false"
+          >
+            <span aria-hidden="true">✓</span>
+            {locale === "ja" ? "読んだ" : "Read"}
+          </button>
+          <button
+            type="button"
+            data-learning-toggle="understood"
+            aria-pressed="false"
+          >
+            <span aria-hidden="true">◎</span>
+            {locale === "ja" ? "理解した" : "Understood"}
+          </button>
+          <span class="visually-hidden" data-learning-status aria-live="polite"></span>
+        </div>
         {
           [...translations.entries()].length > 0 && (
             <p class="translation-info">
@@ -475,6 +512,38 @@ const structuredData = {
     background: var(--accent-primary);
     color: var(--bg, #fff);
   }
+  .learning-state {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+    margin-top: var(--space-2);
+  }
+  .learning-state-label {
+    margin-right: var(--space-1);
+    color: var(--text-secondary);
+    font-size: calc(0.82rem * var(--text-scale));
+  }
+  .learning-state button {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    min-height: var(--touch-target);
+    padding-inline: var(--space-2);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    background: var(--background-primary);
+    color: var(--text-primary);
+    font: inherit;
+    font-size: calc(0.85rem * var(--text-scale));
+    cursor: pointer;
+  }
+  .learning-state button[aria-pressed="true"] {
+    border-color: var(--accent-primary);
+    background: var(--accent-subtle);
+    color: var(--accent-primary);
+    font-weight: 650;
+  }
   .translation-info {
     font-size: calc(0.9rem * var(--text-scale));
   }
@@ -617,6 +686,59 @@ const structuredData = {
   const mq = window.matchMedia("(max-width: 1023px)");
   const details = document.querySelector<HTMLDetailsElement>(".toc-details");
   if (details && mq.matches) details.open = false;
+</script>
+
+<script>
+  import {
+    getLearningState,
+    toggleLearningState,
+    type LearningState,
+  } from "../../../../../lib/learning-history";
+
+  const historyRoot =
+    document.querySelector<HTMLElement>("[data-learning-state]");
+  if (historyRoot) {
+    const buttons = [
+      ...historyRoot.querySelectorAll<HTMLButtonElement>(
+        "[data-learning-toggle]",
+      ),
+    ];
+    const status = historyRoot.querySelector<HTMLElement>(
+      "[data-learning-status]",
+    );
+    const articleId = historyRoot.dataset.articleId ?? "";
+    const renderState = (state: { read: boolean; understood: boolean }) => {
+      buttons.forEach((button) => {
+        const key = button.dataset.learningToggle as LearningState;
+        button.setAttribute("aria-pressed", String(state[key]));
+      });
+    };
+    renderState(getLearningState(articleId));
+    buttons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const key = button.dataset.learningToggle as LearningState;
+        const state = toggleLearningState(
+          {
+            articleId,
+            locale: historyRoot.dataset.locale ?? "",
+            title: historyRoot.dataset.title ?? "",
+            href: historyRoot.dataset.href ?? "",
+            subject: historyRoot.dataset.subject ?? "",
+            category: historyRoot.dataset.category ?? "",
+            summary: historyRoot.dataset.summary ?? "",
+          },
+          key,
+        );
+        renderState(state);
+        if (status) {
+          status.textContent =
+            document.documentElement.lang === "ja"
+              ? "学習記録を更新しました"
+              : "Learning history updated";
+        }
+      });
+    });
+  }
 </script>
 
 <script>
