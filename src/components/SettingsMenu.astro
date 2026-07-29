@@ -7,7 +7,6 @@
  * 見た目に関する操作をここだけで完結させるためのもの。
  */
 import A11ySettings from "./A11ySettings.astro";
-import ThemeToggle from "./ThemeToggle.astro";
 
 interface Props {
   locale?: "ja" | "en";
@@ -19,15 +18,13 @@ const close = locale === "ja" ? "閉じる" : "Close";
 
 <details class="settings-menu" data-settings-menu>
   <summary>
-    <span class="settings-icon" aria-hidden="true">Aa</span>
     <span class="settings-text">{title}</span>
-    <span class="settings-caret" aria-hidden="true"></span>
   </summary>
   <div class="settings-panel">
-    {/* 明暗の切り替えと細かな設定を、折りたたまずに続けて並べる */}
-    <div class="settings-theme">
-      <ThemeToggle locale={locale} />
-    </div>
+    {/*
+      明暗の切り替えは A11ySettings の「背景」（白／低刺激色／暗色）と
+      重なるので置かない。設定の入口をひとつに絞る。
+    */}
     <A11ySettings locale={locale} bare />
     <button type="button" class="settings-close" data-settings-close>
       {close}
@@ -63,34 +60,18 @@ const close = locale === "ja" ? "閉じる" : "Close";
     border-color: var(--accent-primary);
     color: var(--accent-primary);
   }
-  .settings-icon {
-    font-weight: 700;
-  }
-  .settings-caret::after {
-    content: "▾";
-  }
-  .settings-menu[open] > summary .settings-caret::after {
-    content: "▴";
-  }
-
   .settings-panel {
     position: absolute;
     right: 0;
     z-index: 30;
-    width: max-content;
-    min-width: 16rem;
-    max-width: min(22rem, calc(100vw - 2 * var(--space-3)));
+    width: 18rem;
+    max-width: min(20rem, calc(100vw - 2 * var(--space-3)));
     margin-top: var(--space-1);
     padding: var(--space-3);
     border: 1px solid var(--border-strong);
     border-radius: var(--radius);
     background: var(--background-primary);
     box-shadow: 0 6px 24px rgb(0 0 0 / 18%);
-  }
-  .settings-theme {
-    margin-bottom: var(--space-2);
-    padding-bottom: var(--space-2);
-    border-bottom: 1px solid var(--border-default);
   }
   .settings-close {
     display: none;
@@ -119,13 +100,6 @@ const close = locale === "ja" ? "閉じる" : "Close";
       padding: var(--space-2);
       padding-bottom: max(var(--space-2), env(safe-area-inset-bottom));
       box-shadow: 0 -8px 24px rgb(0 0 0 / 22%);
-    }
-    /*
-     * 明暗は「背景」の設定（白／低刺激色／暗色）と重なるので、
-     * 狭い画面ではこのボタンを出さない。設定の行数をひとつ減らせる。
-     */
-    .settings-theme {
-      display: none;
     }
     .settings-close {
       display: block;
