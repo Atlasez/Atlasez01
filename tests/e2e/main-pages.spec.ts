@@ -97,6 +97,36 @@ test.describe("学習サイト", () => {
     await expect(page.getByText("事前演習（準備中）")).toHaveCount(0);
   });
 
+  test("学習記録は未記録・読んだ・理解したの3段階トグル", async ({ page }) => {
+    await page.goto("atlas/ja/biology/overview/what-is-biology/");
+    const history = page.getByRole("slider", { name: "学習の記録" });
+
+    await expect(history).toHaveAttribute("aria-valuenow", "0");
+    await expect(history).toHaveAttribute("aria-valuetext", "未記録");
+
+    // ラベルや周囲ではなく、スイッチ本体だけを押せる
+    await page
+      .locator(".history-stage-labels")
+      .getByText("理解した", { exact: true })
+      .click();
+    await expect(history).toHaveAttribute("aria-valuenow", "0");
+
+    await history.click();
+    await expect(history).toHaveAttribute("aria-valuenow", "1");
+    await expect(history).toHaveAttribute("aria-valuetext", "読んだ");
+
+    await history.click();
+    await expect(history).toHaveAttribute("aria-valuenow", "2");
+    await expect(history).toHaveAttribute("aria-valuetext", "理解した");
+
+    // 「理解した」は集計上「読んだ」にも到達済みとして扱われる
+    await page.reload();
+    await expect(history).toHaveAttribute("aria-valuetext", "理解した");
+
+    await history.click();
+    await expect(history).toHaveAttribute("aria-valuetext", "未記録");
+  });
+
   test("グリッド／リスト表示を切り替えられる", async ({ page }) => {
     await page.goto("atlas/ja/mathematics/set-theory/");
     const list = page.locator(".article-collection");

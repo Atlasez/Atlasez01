@@ -231,31 +231,45 @@ const structuredData = {
             <span data-bookmark-icon aria-hidden="true">☆</span>
             <span data-bookmark-label>{t(locale, "saveForLater")}</span>
           </button>
-          {/*
-            「読んだ」→「理解した」は積み上がる段階。「理解した」を入れると
-            「読んだ」も入る。ひと続きのトグルとして見せ、到達した段まで
-            左から塗る。入っている段をもう一度押すと、その段から上が外れる。
-          */}
           <div
             class="history-group"
             role="group"
             aria-label={t(locale, "learningRecord")}
           >
             <span class="history-label">{t(locale, "learningRecord")}</span>
-            <div class="history-steps">
-              {HISTORY_STAGES.map((stage, index) => (
-                <button
-                  type="button"
-                  class="history-step"
-                  data-history-toggle={stage.id}
-                  data-stage-index={index}
-                  aria-pressed="false"
-                >
-                  {/* チェック枠。入っていれば ✓ が出る */}
-                  <span class="history-check" aria-hidden="true" />
+            <div
+              class="history-stage-control"
+              data-history-stage-control
+              data-state="none"
+            >
+              <button
+                type="button"
+                class="history-stage-toggle"
+                data-history-stage-toggle
+                data-state="none"
+                data-label-none={t(locale, "stateUnrecorded")}
+                data-label-read={t(locale, "markRead")}
+                data-label-understood={t(locale, "markUnderstood")}
+                role="slider"
+                aria-label={t(locale, "learningRecord")}
+                aria-valuemin="0"
+                aria-valuemax={HISTORY_STAGES.length}
+                aria-valuenow="0"
+                aria-valuetext={t(locale, "stateUnrecorded")}
+              >
+                <span class="history-stage-track" aria-hidden="true">
+                  <span class="history-stage-position" />
+                  <span class="history-stage-position" />
+                  <span class="history-stage-position" />
+                  <span class="history-stage-thumb" />
+                </span>
+              </button>
+              <span class="history-stage-labels" aria-hidden="true">
+                <span>{t(locale, "stateUnrecorded")}</span>
+                {HISTORY_STAGES.map((stage) => (
                   <span>{t(locale, stage.labelKey)}</span>
-                </button>
-              ))}
+                ))}
+              </span>
             </div>
           </div>
         </div>
@@ -474,10 +488,7 @@ const structuredData = {
     transition: none;
   }
 
-  /*
-   * 学習の記録。2つのボタンを1つの枠に収め、間に区切りを入れて
-   * 「未記録 → 読んだ → 理解した」と進む段階であることを示す。
-   */
+  /* 「未記録 → 読んだ → 理解した」と進む学習記録。 */
   .history-group {
     display: inline-flex;
     align-items: center;
@@ -488,74 +499,110 @@ const structuredData = {
     color: var(--text-secondary);
     font-size: calc(0.82rem * var(--text-scale));
   }
-  /*
-   * 学習の記録。段階ごとに独立したスイッチとして押せるが、
-   * 上の段階は下の段階を含むので連動する（「理解した」を入れると
-   * 「読んだ」も入る）。段階が増えても横に並ぶだけ。
-   */
-  /* ひと続きのトグル。段が積み上がることが形で分かるよう、
-     枠線を共有して隙間なく並べ、到達した段まで左から塗る。 */
-  .history-steps {
-    display: inline-flex;
-    border: 1px solid var(--border-strong);
-    border-radius: var(--radius);
-    overflow: hidden;
+  .history-stage-control {
+    width: 10.5rem;
   }
-  .history-step {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-2);
-    min-height: var(--touch-target);
-    padding: 0 var(--space-3);
+  .history-stage-toggle {
+    display: block;
+    width: 6.25rem;
+    height: 1.75rem;
+    margin-inline: auto;
+    padding: 0;
     border: 0;
+    border-radius: 999px;
     background: transparent;
     color: var(--text-secondary);
     font: inherit;
-    font-size: calc(0.88rem * var(--text-scale));
     cursor: pointer;
   }
-  /* 段の区切り。1段目の左には出さない */
-  .history-step + .history-step {
-    border-left: 1px solid var(--border-strong);
+  .history-stage-toggle:hover .history-stage-track {
+    border-color: var(--accent-primary);
   }
-  /* 丸い目印。到達すると塗られて ✓ が出る */
-  .history-check {
-    display: inline-flex;
+  .history-stage-toggle:focus-visible {
+    outline: 3px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+  .history-stage-track {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
     align-items: center;
-    justify-content: center;
-    width: 1.15rem;
-    height: 1.15rem;
-    flex: 0 0 auto;
+    width: 100%;
+    height: 100%;
+    padding-inline: 0.32rem;
     border: 1px solid var(--border-strong);
+    border-radius: 999px;
+    background: var(--background-secondary);
+    transition:
+      border-color 0.16s ease,
+      background-color 0.16s ease;
+  }
+  .history-stage-position {
+    width: 0.26rem;
+    height: 0.26rem;
+    justify-self: center;
+    border-radius: 50%;
+    background: var(--text-secondary);
+    opacity: 0.38;
+  }
+  .history-stage-thumb {
+    position: absolute;
+    z-index: 1;
+    top: 50%;
+    left: 0.2rem;
+    width: 1.25rem;
+    height: 1.25rem;
+    border: 1px solid color-mix(in srgb, var(--text-primary) 18%, transparent);
     border-radius: 50%;
     background: var(--background-primary);
-    font-size: 0.8rem;
-    line-height: 1;
+    box-shadow: 0 1px 3px color-mix(in srgb, var(--text-primary) 24%, transparent);
+    transform: translateY(-50%);
+    transition: left 0.16s ease;
   }
-  .history-step:hover {
-    color: var(--accent-primary);
+  .history-stage-toggle[data-state="read"] .history-stage-track {
+    border-color: var(--accent-primary);
+    background: linear-gradient(
+      to right,
+      var(--accent-primary) 0 50%,
+      var(--background-secondary) 50% 100%
+    );
   }
-  /* 到達した段。左から連続して塗られるので、進み具合が一目で分かる */
-  .history-step.is-reached {
+  .history-stage-toggle[data-state="understood"] .history-stage-track {
+    border-color: var(--accent-primary);
     background: var(--accent-primary);
-    color: var(--on-accent);
-    font-weight: 700;
   }
-  .history-step.is-reached + .history-step {
-    border-left-color: var(--on-accent);
-  }
-  .history-step.is-reached .history-check {
-    border-color: var(--on-accent);
+  .history-stage-toggle[data-state="read"]
+    .history-stage-position:nth-child(-n + 2),
+  .history-stage-toggle[data-state="understood"] .history-stage-position {
     background: var(--on-accent);
+    opacity: 1;
+  }
+  .history-stage-toggle[data-state="read"] .history-stage-thumb {
+    left: calc(50% - 0.625rem);
+  }
+  .history-stage-toggle[data-state="understood"] .history-stage-thumb {
+    left: calc(100% - 1.45rem);
+  }
+  .history-stage-labels {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.2rem;
+    margin-top: 0.15rem;
+    font-size: calc(0.72rem * var(--text-scale));
+    line-height: 1.25;
+    text-align: center;
+  }
+  .history-stage-control[data-state="none"]
+    .history-stage-labels
+    > :nth-child(1),
+  .history-stage-control[data-state="read"]
+    .history-stage-labels
+    > :nth-child(2),
+  .history-stage-control[data-state="understood"]
+    .history-stage-labels
+    > :nth-child(3) {
     color: var(--accent-primary);
-  }
-  .history-step.is-reached .history-check::after {
-    content: "✓";
-  }
-  .history-step:focus-visible {
-    outline: 3px solid var(--focus-ring);
-    outline-offset: -3px;
+    font-weight: 700;
   }
 
   .back-to-toc {
@@ -876,9 +923,9 @@ const structuredData = {
   // 「あとで読む」と「読んだ・理解した」の状態反映とトグル
   import { toggleBookmark, isBookmarked } from "../../../../../lib/bookmarks";
   import {
-    toggleHistory,
     historyStateOf,
-    historyRank,
+    setHistoryState,
+    HISTORY_STAGES,
     type HistoryState,
   } from "../../../../../lib/history";
 
@@ -921,28 +968,57 @@ const structuredData = {
       });
     }
 
-    const historyButtons = [
-      ...actions.querySelectorAll<HTMLButtonElement>("[data-history-toggle]"),
+    const historyToggle = actions.querySelector<HTMLButtonElement>(
+      "[data-history-stage-toggle]",
+    );
+    const historyControl = actions.querySelector<HTMLElement>(
+      "[data-history-stage-control]",
+    );
+    const states: Array<HistoryState | null> = [
+      null,
+      ...HISTORY_STAGES.map((stage) => stage.id),
     ];
-    /**
-     * 上の段階は下の段階を含むので、到達段階までのスイッチをすべて入れる。
-     * 押したときの連動は toggleHistory 側が担う。
-     */
+    const stateLabels = [
+      historyToggle?.dataset.labelNone ?? "",
+      historyToggle?.dataset.labelRead ?? "",
+      historyToggle?.dataset.labelUnderstood ?? "",
+    ];
     const renderHistory = (state: HistoryState | null) => {
-      const reached = historyRank(state);
-      for (const button of historyButtons) {
-        const index = Number(button.dataset.stageIndex ?? -1);
-        const on = index <= reached;
-        button.setAttribute("aria-pressed", String(on));
-        button.classList.toggle("is-reached", on);
-      }
+      if (!historyToggle) return;
+      const index = states.indexOf(state);
+      historyToggle.dataset.state = state ?? "none";
+      if (historyControl) historyControl.dataset.state = state ?? "none";
+      historyToggle.setAttribute("aria-valuenow", String(index));
+      historyToggle.setAttribute("aria-valuetext", stateLabels[index] ?? "");
     };
 
-    renderHistory(historyStateOf(articleId));
-    for (const button of historyButtons) {
-      button.addEventListener("click", () => {
-        const state = button.dataset.historyToggle as HistoryState;
-        renderHistory(toggleHistory(entry, state));
+    let currentState = historyStateOf(articleId);
+    renderHistory(currentState);
+    const moveTo = (index: number) => {
+      const bounded = Math.max(0, Math.min(states.length - 1, index));
+      currentState = setHistoryState(entry, states[bounded]);
+      renderHistory(currentState);
+    };
+    if (historyToggle) {
+      historyToggle.addEventListener("click", () => {
+        const currentIndex = states.indexOf(currentState);
+        moveTo((currentIndex + 1) % states.length);
+      });
+      historyToggle.addEventListener("keydown", (event) => {
+        const currentIndex = states.indexOf(currentState);
+        if (event.key === "ArrowRight" || event.key === "ArrowUp") {
+          event.preventDefault();
+          moveTo(currentIndex + 1);
+        } else if (event.key === "ArrowLeft" || event.key === "ArrowDown") {
+          event.preventDefault();
+          moveTo(currentIndex - 1);
+        } else if (event.key === "Home") {
+          event.preventDefault();
+          moveTo(0);
+        } else if (event.key === "End") {
+          event.preventDefault();
+          moveTo(states.length - 1);
+        }
       });
     }
   }
