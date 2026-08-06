@@ -110,19 +110,23 @@ test.describe("学習サイト", () => {
       "最近更新された記事",
       "近日公開予定の記事",
     ]);
-    await expect(
-      page.getByText("スクロールして続きを表示").first(),
-    ).toBeVisible();
+    await expect(page.locator(".recent-scroll")).toHaveCSS(
+      "overflow-y",
+      "scroll",
+    );
+    await expect(page.locator(".upcoming-list")).toHaveCSS(
+      "overflow-y",
+      "scroll",
+    );
   });
 
   test("総合リストを記事まで段階的に展開できる", async ({ page }) => {
     await page.goto("atlas/ja/?view=list");
-    await expect(page.locator(".list-group[open]")).toHaveCount(0);
+    await expect(page.locator(".list-group[open]")).not.toHaveCount(0);
 
     const natural = page.locator(".list-group", { hasText: "自然科学" });
-    await natural.locator(":scope > summary").click();
     const mathGenre = natural.locator(".list-genre", { hasText: "数理・情報" });
-    await mathGenre.locator(":scope > summary").click();
+    await expect(mathGenre).toHaveAttribute("open", "");
 
     const mathematics = mathGenre.locator(".subject-list-details", {
       has: page.getByRole("link", { name: "数学", exact: true }),
@@ -319,9 +323,6 @@ test.describe("学習サイト", () => {
     const zoomLevel = page.locator("[data-map-zoom-level]");
     await expect(zoomLevel).toBeVisible();
     await expect(page.getByRole("button", { name: "自動整列" })).toBeVisible();
-    await expect(
-      page.getByText("背景ドラッグで移動 · ノードを押すと記事へ移動"),
-    ).toBeVisible();
     await expect(page.locator("[data-map-status]")).not.toHaveText("");
     const initialZoom = Number(
       (await zoomLevel.textContent())?.replace("%", ""),
@@ -346,6 +347,18 @@ test.describe("学習サイト", () => {
     await open.click();
     await expect(page.getByLabel(/目的地点/)).toBeVisible();
     await expect(open).toHaveAttribute("aria-expanded", "true");
+    // 経路検索は canvas の上に重ねず、独立して操作できる位置に置く。
+    const routePanel = page.locator("[data-route-panel]");
+    const canvas = page.locator("#learning-map");
+    await expect(routePanel).toHaveCSS("position", "relative");
+    const [routeBox, canvasBox] = await Promise.all([
+      routePanel.boundingBox(),
+      canvas.boundingBox(),
+    ]);
+    expect(routeBox?.y).toBeLessThan(canvasBox?.y ?? 0);
+    expect((routeBox?.y ?? 0) + (routeBox?.height ?? 0)).toBeLessThanOrEqual(
+      canvasBox?.y ?? 0,
+    );
     await page.keyboard.press("Escape");
     await expect(page.getByLabel(/目的地点/)).not.toBeVisible();
   });
@@ -404,6 +417,29 @@ test.describe("学習サイト", () => {
     await expect(result.getByRole("listitem")).toHaveCount(8);
     await expect(result).toContainText("同じ分野からあわせて読む（4件）");
     await expect(result).toContainText("開始地点以前の前提（4件）");
+    await expect(page.locator("[data-map-status]")).toContainText(
+      "学習経路を表示中",
+    );
+  });
+
+  test("地図上で選んだノードを経路の始点・終点にできる", async ({ page }) => {
+    await page.goto("atlas/ja/map/");
+    const search = page.locator("[data-map-search]");
+
+    await search.fill("群の定義");
+    await search.dispatchEvent("change");
+    await page.getByRole("button", { name: "開始地点にする" }).click();
+
+    await search.fill("Schurの補題");
+    await search.dispatchEvent("change");
+    await page.getByRole("button", { name: "目的地点にする" }).click();
+
+    await expect(page.locator("[data-route-result]")).toContainText(
+      "Schurの補題",
+    );
+    await expect(page.locator("[data-map-status]")).toContainText(
+      "学習経路を表示中",
+    );
   });
 
   test("検索結果には編集済みの要約を表示する", async ({ page }) => {

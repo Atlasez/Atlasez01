@@ -28,6 +28,30 @@ export const UI_LANGUAGE_ENGLISH_NAMES: Record<UiLanguage, string> = {
   ko: "Korean",
 };
 
+/** 日本語表示中に添える各言語の日本語名。 */
+export const UI_LANGUAGE_JAPANESE_NAMES: Record<UiLanguage, string> = {
+  ja: "日本語",
+  en: "英語",
+  zh: "中国語",
+  ko: "韓国語",
+};
+
+/** 中国語表示中に添える各言語の中国語名。 */
+export const UI_LANGUAGE_CHINESE_NAMES: Record<UiLanguage, string> = {
+  ja: "日语",
+  en: "英语",
+  zh: "中文",
+  ko: "韩语",
+};
+
+/** 韓国語表示中に添える各言語の韓国語名。 */
+export const UI_LANGUAGE_KOREAN_NAMES: Record<UiLanguage, string> = {
+  ja: "일본어",
+  en: "영어",
+  zh: "중국어",
+  ko: "한국어",
+};
+
 /** 日本語 → 各言語。ja は原文なので持たない。 */
 export const UI_DICTIONARY: Record<
   string,
