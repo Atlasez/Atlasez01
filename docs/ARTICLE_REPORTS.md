@@ -4,9 +4,20 @@
 
 ## Discord通知（任意）
 
-`DISCORD_REPORT_WEBHOOK_URL` をCloudflare Worker `atlasez-web-1` のシークレットに設定すると、保存成功後にDiscordへ通知します。通知するのは記事名・分野・カテゴリ・報告種別だけで、報告本文と返信先はDiscordへ送りません。通知に失敗しても報告の保存は失敗しません。
+分野ごとの通知先は、Cloudflare Worker `atlasez-web-1` のシークレットで設定します。通知するのは記事名・分野・カテゴリ・報告種別だけで、報告本文と返信先はDiscordへ送りません。通知に失敗しても報告の保存は失敗しません。
 
-Cloudflare Dashboardで Worker & Pages → `atlasez-web-1` → Settings → Variables and Secrets を開き、**Secret** として `DISCORD_REPORT_WEBHOOK_URL` を追加してください。値にはDiscordで新規発行したIncoming Webhook URLを入力します。Webhook URLは外部に共有した場合は無効化し、再発行してください。
+Cloudflare Dashboardで Worker & Pages → `atlasez-web-1` → Settings → Variables and Secrets を開き、各DiscordチャンネルのIncoming Webhook URLを**Secret**として追加してください。分野slugを大文字にした、次の名前を使います。
+
+| 分野   | シークレット名                            |
+| ------ | ----------------------------------------- |
+| 数学   | `DISCORD_REPORT_WEBHOOK_MATHEMATICS`      |
+| 物理   | `DISCORD_REPORT_WEBHOOK_PHYSICS`          |
+| 漢字   | `DISCORD_REPORT_WEBHOOK_KANJI`            |
+| 日本史 | `DISCORD_REPORT_WEBHOOK_JAPANESE_HISTORY` |
+
+そのほかの分野も同じ規則です（小文字を大文字にし、ハイフンを `_` に変更）。分野別のシークレットが設定済みなら、その分野の通知だけ該当チャンネルに送られます。未設定の分野をまとめて受けたい場合だけ、既定の `DISCORD_REPORT_WEBHOOK_URL` を設定してください。
+
+Webhook URLは外部に共有した場合は無効化し、再発行してください。URLをGitHubやチャットに保存・投稿しないでください。
 
 ## 運営用の確認画面
 
