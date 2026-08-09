@@ -1506,52 +1506,68 @@ const mapCategoryPath = fixedSubject && fixedCategory
     const show = (selector: string) =>
       cy.elements(selector).style("display", "element");
 
-    /** 固定の初期位置から、辺の長さとノード同士の反発を使って余白を確保する。 */
+    /**
+     * 固定の初期位置から、参照プロジェクトと同じ「近接ノードだけに働く斥力」
+     * で余白を確保する。一度だけ収束させるので、操作中に地図は動かない。
+     */
     function spreadNodes(elements: ReturnType<typeof cy.nodes>): void {
       if (elements.length < 2) return;
       const nodes = elements.toArray();
+      const velocities = new Map(nodes.map((node) => [node.id(), { x: 0, y: 0 }]));
+      const cellSize = 230;
+      const iterations = Math.min(80, 36 + nodes.length * 3);
+
       // 親ノードを含む部分グラフに汎用レイアウトをそのまま渡すと、
       // Cytoscape の compound layout が隠れた子を参照してしまうため、
-      // 表示中のノードだけで小さな反発計算を行う。
+      // 表示中のノードだけで小さな力学計算を行う。
       cy.startBatch();
-      // 共有実装と同じく、反発→辺の引力→衝突解消を複数回繰り返す。
-      // 一度だけではラベル付きタイルの重なりが残るため、初期配置で収束させる。
-      for (let iteration = 0; iteration < 48; iteration += 1) {
+      for (let iteration = 0; iteration < iterations; iteration += 1) {
         const force = new Map(nodes.map((node) => [node.id(), { x: 0, y: 0 }]));
-        for (let i = 0; i < nodes.length; i += 1) {
-          for (let j = i + 1; j < nodes.length; j += 1) {
-            const a = nodes[i];
-            const b = nodes[j];
-            const delta = { x: a.position("x") - b.position("x"), y: a.position("y") - b.position("y") };
-            const distance = Math.max(18, Math.hypot(delta.x, delta.y));
-            const magnitude = Math.min(10, 9_000 / (distance * distance));
-            const fx = (delta.x / distance) * magnitude;
-            const fy = (delta.y / distance) * magnitude;
-            const aForce = force.get(a.id());
-            const bForce = force.get(b.id());
-            if (aForce) { aForce.x += fx; aForce.y += fy; }
-            if (bForce) { bForce.x -= fx; bForce.y -= fy; }
+        const cells = new Map<string, number[]>();
+        nodes.forEach((node, index) => {
+          const x = Math.floor(node.position("x") / cellSize);
+          const y = Math.floor(node.position("y") / cellSize);
+          const key = `${x},${y}`;
+          cells.set(key, [...(cells.get(key) ?? []), index]);
+        });
 
-            // 反発だけでは文字を含むタイルが少しずつ重なるため、
-            // 実際のタイル寸法に基づく衝突判定で必ず離す。
-            const minX = (a.outerWidth() + b.outerWidth()) / 2 + 30;
-            const minY = (a.outerHeight() + b.outerHeight()) / 2 + 22;
-            const overlapX = minX - Math.abs(delta.x);
-            const overlapY = minY - Math.abs(delta.y);
-            if (overlapX > 0 && overlapY > 0 && aForce && bForce) {
-              const separateHorizontally = overlapX < overlapY;
-              const direction = separateHorizontally
-                ? (delta.x || (i % 2 === 0 ? 1 : -1))
-                : (delta.y || (j % 2 === 0 ? 1 : -1));
-              const amount = (separateHorizontally ? overlapX : overlapY) * 0.18;
-              if (separateHorizontally) {
-                const sign = Math.sign(direction);
-                aForce.x += sign * amount;
-                bForce.x -= sign * amount;
-              } else {
-                const sign = Math.sign(direction);
-                aForce.y += sign * amount;
-                bForce.y -= sign * amount;
+        for (let i = 0; i < nodes.length; i += 1) {
+          const a = nodes[i];
+          const cellX = Math.floor(a.position("x") / cellSize);
+          const cellY = Math.floor(a.position("y") / cellSize);
+          for (let offsetX = -1; offsetX <= 1; offsetX += 1) {
+            for (let offsetY = -1; offsetY <= 1; offsetY += 1) {
+              const neighbors = cells.get(`${cellX + offsetX},${cellY + offsetY}`) ?? [];
+              for (const j of neighbors) {
+                if (j <= i) continue;
+                const b = nodes[j];
+                let dx = b.position("x") - a.position("x");
+                let dy = b.position("y") - a.position("y");
+                // 同一点から始まるときも、必ず安定した方向に押し離す。
+                if (dx === 0 && dy === 0) {
+                  dx = i % 2 === 0 ? 0.1 : -0.1;
+                  dy = j % 2 === 0 ? 0.1 : -0.1;
+                }
+                const distance = Math.max(1, Math.hypot(dx, dy));
+                const unitX = dx / distance;
+                const unitY = dy / distance;
+                const overlapX = (a.outerWidth() + b.outerWidth()) / 2 + 28 - Math.abs(dx);
+                const overlapY = (a.outerHeight() + b.outerHeight()) / 2 + 24 - Math.abs(dy);
+                let strength = distance < 145
+                  ? Math.min(1.2, 1_500 / (distance * distance))
+                  : 0;
+                // 矩形が重なるときは距離に関係なく強く押し離す。
+                if (overlapX > 0 && overlapY > 0) {
+                  strength += Math.min(3.2, Math.min(overlapX, overlapY) * 0.09 + 0.4);
+                }
+                const aForce = force.get(a.id());
+                const bForce = force.get(b.id());
+                if (aForce && bForce) {
+                  aForce.x -= unitX * strength;
+                  aForce.y -= unitY * strength;
+                  bForce.x += unitX * strength;
+                  bForce.y += unitY * strength;
+                }
               }
             }
           }
@@ -1567,7 +1583,7 @@ const mapCategoryPath = fixedSubject && fixedCategory
             y: b.position("y") - a.position("y"),
           };
           const distance = Math.max(1, Math.hypot(delta.x, delta.y));
-          const pull = Math.max(-2, Math.min(2, (distance - 220) * 0.01));
+          const pull = Math.max(-1.4, Math.min(1.4, (distance - 220) * 0.008));
           const fx = (delta.x / distance) * pull;
           const fy = (delta.y / distance) * pull;
           const aForce = force.get(a.id());
@@ -1578,7 +1594,16 @@ const mapCategoryPath = fixedSubject && fixedCategory
         nodes.forEach((node) => {
           const f = force.get(node.id());
           if (!f) return;
-          node.position({ x: node.position("x") + f.x, y: node.position("y") + f.y });
+          const previous = velocities.get(node.id()) ?? { x: 0, y: 0 };
+          const velocity = {
+            x: Math.max(-5, Math.min(5, (previous.x + f.x) * 0.76)),
+            y: Math.max(-5, Math.min(5, (previous.y + f.y) * 0.76)),
+          };
+          velocities.set(node.id(), velocity);
+          node.position({
+            x: node.position("x") + velocity.x,
+            y: node.position("y") + velocity.y,
+          });
         });
       }
       cy.endBatch();
