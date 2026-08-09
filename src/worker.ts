@@ -27,6 +27,9 @@ interface D1Database {
 interface Env {
   ASSETS: Fetcher;
   REPORTS: D1Database;
+  /** 分野別通知先。例: DISCORD_REPORT_WEBHOOK_PHYSICS */
+  [key: `DISCORD_REPORT_WEBHOOK_${string}`]: string | undefined;
+  /** 分野別の通知先が未設定の場合だけ使う既定の通知先。 */
   DISCORD_REPORT_WEBHOOK_URL?: string;
 }
 
@@ -110,12 +113,21 @@ type DiscordReport = {
   reportType: string;
 };
 
+const discordWebhookSecretName = (subject: string) =>
+  `DISCORD_REPORT_WEBHOOK_${subject
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "_")}` as const;
+
 /**
  * 通知先はWorkerのシークレットだけから読む。報告本文・連絡先・IP由来の情報は
  * Discordへ送らず、管理画面でのみ確認できるようにする。
  */
 async function notifyDiscord(env: Env, report: DiscordReport): Promise<void> {
-  const webhookUrl = env.DISCORD_REPORT_WEBHOOK_URL?.trim();
+  // 分野ごとの通知先を優先する。未設定の分野だけ、既存の共通通知先へフォールバックする。
+  // 例: physics の場合は DISCORD_REPORT_WEBHOOK_PHYSICS。
+  const webhookUrl =
+    env[discordWebhookSecretName(report.subject)]?.trim() ||
+    env.DISCORD_REPORT_WEBHOOK_URL?.trim();
   if (!webhookUrl) return;
   try {
     const url = new URL(webhookUrl);
