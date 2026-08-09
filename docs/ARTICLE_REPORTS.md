@@ -8,11 +8,11 @@
 
 Cloudflare Dashboardで Worker & Pages → `atlasez-web-1` → Settings → Variables and Secrets を開き、各DiscordチャンネルのIncoming Webhook URLを**Secret**として追加してください。分野slugを大文字にした、次の名前を使います。
 
-| 分野 | シークレット名 |
-| --- | --- |
-| 数学 | `DISCORD_REPORT_WEBHOOK_MATHEMATICS` |
-| 物理 | `DISCORD_REPORT_WEBHOOK_PHYSICS` |
-| 漢字 | `DISCORD_REPORT_WEBHOOK_KANJI` |
+| 分野   | シークレット名                            |
+| ------ | ----------------------------------------- |
+| 数学   | `DISCORD_REPORT_WEBHOOK_MATHEMATICS`      |
+| 物理   | `DISCORD_REPORT_WEBHOOK_PHYSICS`          |
+| 漢字   | `DISCORD_REPORT_WEBHOOK_KANJI`            |
 | 日本史 | `DISCORD_REPORT_WEBHOOK_JAPANESE_HISTORY` |
 
 そのほかの分野も同じ規則です（小文字を大文字にし、ハイフンを `_` に変更）。分野別のシークレットが設定済みなら、その分野の通知だけ該当チャンネルに送られます。未設定の分野をまとめて受けたい場合だけ、既定の `DISCORD_REPORT_WEBHOOK_URL` を設定してください。
