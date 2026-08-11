@@ -1,29 +1,23 @@
 ---
 articleId: ja-mathematics-what-is-mathematics
 locale: ja
-title: 数学とは
+title: 数学とは．
 slug: what-is-mathematics
 subject: mathematics
 category: overview
 concepts:
   - id: math.overview.what-is-mathematics
-prerequisites: []
-related: []
-authors:
-  - atlas-math-team
-reviewers: []
+authors: [editorial-workspace]
+reviewers: [ukyoukay0@gmail.com]
 status: published
-createdAt: 2026-07-28
-updatedAt: 2026-07-28
+createdAt: 2026-08-11
+updatedAt: 2026-08-11
 summary: 数学を計算の技術ではなく「定義から出発して証明で積み上げる営み」として捉えるための入口。集合論を土台に代数へ進むこの分野の構成と読む順をまとめる。
-difficulty: introductory
-estimatedMinutes: 5
-tags:
-  - 総論
+difficulty: basic
+estimatedMinutes: 10
+tags: []
 aliases: []
-exerciseIds:
-  pre: []
-  post: []
+exerciseIds: { pre: [], post: [] }
 references: []
 ---
 
