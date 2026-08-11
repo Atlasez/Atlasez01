@@ -1,7 +1,7 @@
 ---
 articleId: ja-mathematics-what-is-mathematics
 locale: ja
-title: 数学とは．
+title: 数学とは
 slug: what-is-mathematics
 subject: mathematics
 category: overview
