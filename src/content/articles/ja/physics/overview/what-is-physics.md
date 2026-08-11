@@ -8,11 +8,11 @@ category: overview
 concepts:
   - id: physics.overview.what-is-physics
 authors: [editorial-workspace]
-reviewers: [ukyoukay0@gmail.com]
+reviewers: [local-editor@atlasez.test]
 status: published
 createdAt: 2026-08-11
 updatedAt: 2026-08-11
-summary: 物理学を公式集ではなく「少数の原理から現象を導く体系」として捉えるための入口。単位と次元から量子力学までの階層と、読む順をまとめる。
+summary: 物理学の対象と基本的な見方を紹介する。
 difficulty: basic
 estimatedMinutes: 10
 tags: []
