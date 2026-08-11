@@ -1,18 +1,18 @@
 ---
 articleId: ja-physics-what-is-physics
 locale: ja
-title: 物理学とは．
+title: 物理学とは
 slug: what-is-physics
 subject: physics
 category: overview
 concepts:
   - id: physics.overview.what-is-physics
 authors: [editorial-workspace]
-reviewers: [local-editor@atlasez.test]
+reviewers: [ukyoukay0@gmail.com]
 status: published
 createdAt: 2026-08-11
 updatedAt: 2026-08-11
-summary: 物理学の対象と基本的な見方を紹介する。
+summary: 物理学を公式集ではなく「少数の原理から現象を導く体系」として捉えるための入口。単位と次元から量子力学までの階層と、読む順をまとめる。
 difficulty: basic
 estimatedMinutes: 10
 tags: []
