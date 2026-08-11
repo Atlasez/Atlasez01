@@ -9,7 +9,7 @@ concepts:
   - id: example.category.concept
 authors: [editorial-workspace]
 reviewers: [ukyoukay0@gmail.com]
-status: published
+status: draft
 createdAt: 2026-08-11
 updatedAt: 2026-08-11
 summary: テスト
