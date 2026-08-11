@@ -8,7 +8,7 @@ category: overview
 concepts:
   - id: example.category.concept
 authors: [editorial-workspace]
-reviewers: [iust3dy5xr0i@gmail.com]
+reviewers: [ukyoukay0@gmail.com]
 status: published
 createdAt: 2026-08-11
 updatedAt: 2026-08-11
