@@ -7,17 +7,23 @@ subject: mathematics
 category: overview
 concepts:
   - id: math.overview.what-is-mathematics
-authors: [editorial-workspace]
-reviewers: [ukyoukay0@gmail.com]
+prerequisites: []
+related: []
+authors:
+  - atlas-math-team
+reviewers: []
 status: published
-createdAt: 2026-08-11
-updatedAt: 2026-08-11
+createdAt: 2026-07-28
+updatedAt: 2026-07-28
 summary: 数学を計算の技術ではなく「定義から出発して証明で積み上げる営み」として捉えるための入口。集合論を土台に代数へ進むこの分野の構成と読む順をまとめる。
-difficulty: basic
-estimatedMinutes: 10
-tags: []
+difficulty: introductory
+estimatedMinutes: 5
+tags:
+  - 総論
 aliases: []
-exerciseIds: { pre: [], post: [] }
+exerciseIds:
+  pre: []
+  post: []
 references: []
 ---
 
