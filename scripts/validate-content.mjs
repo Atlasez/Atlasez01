@@ -130,12 +130,17 @@ for (const file of articleFiles) {
   if (slugKeys.has(slugKey)) errors.push(`slugが重複: ${slugKey}`);
   slugKeys.add(slugKey);
   articleTitleKeys.add(`${fm.locale}/${fm.subject}/${fm.category}/${fm.title}`);
-  for (const c of fm.concepts ?? []) {
-    if (!conceptIds.has(c.id))
-      errors.push(`${file}: 存在しない概念 ${c.id} を参照`);
-  }
-  for (const p of [...(fm.prerequisites ?? []), ...(fm.related ?? [])]) {
-    if (!conceptIds.has(p)) errors.push(`${file}: 存在しない概念 ${p} を参照`);
+  // 下書きは記事作成直後の仮ID（例: example.category.concept）を許可する。
+  // 査読・公開へ進める時点では、実在する概念だけを参照していることを必須にする。
+  if (fm.status !== "draft") {
+    for (const c of fm.concepts ?? []) {
+      if (!conceptIds.has(c.id))
+        errors.push(`${file}: 存在しない概念 ${c.id} を参照`);
+    }
+    for (const p of [...(fm.prerequisites ?? []), ...(fm.related ?? [])]) {
+      if (!conceptIds.has(p))
+        errors.push(`${file}: 存在しない概念 ${p} を参照`);
+    }
   }
   articleMeta.push({ file, fm });
 }
