@@ -8,7 +8,7 @@ category: overview
 concepts:
   - id: example.category.concept
 authors: [editorial-workspace]
-reviewers: [ukyoukay0@gmail.com]
+reviewers: [editorial-workspace]
 status: draft
 createdAt: 2026-08-11
 updatedAt: 2026-08-11
@@ -20,4 +20,3 @@ aliases: []
 exerciseIds: { pre: [], post: [] }
 references: []
 ---
-
