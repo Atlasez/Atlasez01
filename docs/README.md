@@ -4,11 +4,12 @@
 
 ## 最初に読む
 
-| ドキュメント                                         | 内容                                                                        |
-| ---------------------------------------------------- | --------------------------------------------------------------------------- |
-| **[SITE_ADMINISTRATION.md](SITE_ADMINISTRATION.md)** | **サイト全体の管理・引き継ぎマニュアル。管理担当者は最初に読むこと**        |
-| **[DEVELOPMENT_GUIDE.md](DEVELOPMENT_GUIDE.md)**     | **開発者・LLM向けの構成、変更箇所、テスト、権限、D1、デプロイの総合ガイド** |
-| **[ADMIN_GUIDE.md](ADMIN_GUIDE.md)**                 | **記事を書く人向けの使い方。編集・査読・ToDo・通知の基本手順**              |
+| ドキュメント                                                                     | 内容                                                                        |
+| -------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| [SITE_ADMINISTRATION.md](SITE_ADMINISTRATION.md)                                 | 旧モノレポ時代を含むサイト管理・引き継ぎ資料（現行境界は下記の正本を優先）  |
+| **[SITE_ARCHITECTURE_AND_MAINTENANCE.md](SITE_ARCHITECTURE_AND_MAINTENANCE.md)** | **現在のリポジトリ境界、URL・データ経路、LLMの読み込み順、保守・公開手順**  |
+| **[DEVELOPMENT_GUIDE.md](DEVELOPMENT_GUIDE.md)**                                 | **開発者・LLM向けの構成、変更箇所、テスト、権限、D1、デプロイの総合ガイド** |
+| [ADMIN_GUIDE.md](ADMIN_GUIDE.md)                                                 | Admin-Atlesez側の運営操作ガイド（現行実装は別リポジトリ）                   |
 
 ## 記事を書く・直す
 
@@ -37,6 +38,12 @@
 | [DESIGN_DECISIONS.md](DESIGN_DECISIONS.md)                       | デザイン原則                           |
 | [ADR-001-TECH-STACK.md](ADR-001-TECH-STACK.md)                   | Astro を選んだ理由                     |
 | [ADR-002-REPOSITORY-STRATEGY.md](ADR-002-REPOSITORY-STRATEGY.md) | 単一リポジトリにした理由               |
+
+> 現在は公開サイト側の`Atlasez01`と、認証付き運営サイト側の
+> [`Admin-Atlesez`](https://github.com/Atlasez/Admin-Atlesez)を分離しています。
+> `/admin/`、`src/admin-worker.ts`、`wrangler.admin.jsonc`を前提にした古い文書は、
+> 運営サイトの履歴・設計資料として扱ってください。現行の境界は
+> [サイト構成・LLM作業・運用保守ガイド](SITE_ARCHITECTURE_AND_MAINTENANCE.md)を正とします。
 
 ## 経緯（読まなくても運用できます）
 

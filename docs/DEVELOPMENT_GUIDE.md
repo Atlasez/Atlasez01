@@ -1,6 +1,10 @@
 # 開発・引き継ぎガイド
 
-日常の運営者向け操作（原稿、査読、ToDo、応募、通知）は [運営サイト管理ガイド](ADMIN_GUIDE.md) を先に参照してください。この文書は、コードを変更する開発者・LLM向けの補足です。
+現在のリポジトリ境界、URL・データ経路、LLMの読み込み順、公開・保守手順は
+[サイト構成・LLM作業・運用保守ガイド](SITE_ARCHITECTURE_AND_MAINTENANCE.md)を正とします。
+運営者向け操作（原稿、査読、ToDo、応募、通知）は、別リポジトリの
+[`Admin-Atlesez`](https://github.com/Atlasez/Admin-Atlesez)側のガイドを参照してください。
+この文書は、`Atlasez01`のコードを変更する開発者・LLM向けの補足です。
 
 この文書は、Atlasez のサイトを初めて触る人や、別のLLMに改修を依頼する人が、既存の設計を壊さずに変更できるようにするための実装ガイドです。仕様の正本はコードとこのリポジトリのドキュメントです。過去のGoogle Sitesの説明は移行の経緯であり、現在の挙動を決めるものではありません。
 
@@ -9,7 +13,7 @@
 1. 作業ディレクトリがリポジトリ直下であることを確認する。
 2. `git status` で、他の人の未コミット変更を確認する。既存変更をリセット・上書きしない。
 3. [CONTENT_MODEL.md](CONTENT_MODEL.md)、[INFORMATION_ARCHITECTURE.md](INFORMATION_ARCHITECTURE.md)、[REPOSITORY_BOUNDARIES.md](REPOSITORY_BOUNDARIES.md)を読む。
-4. 変更対象を「公式サイト」「学習サイト」「メンバー用サイト」「学習サイト運営用サイト」「Worker/D1」のどこに属するか決める。
+4. 変更対象を「公式サイト」「学習サイト」「公開Worker」のどこに属するか決める。運営サイト・運用D1は`Admin-Atlesez`側の対象です。
 5. 秘密情報（APIキー、OAuth secret、Discord webhook/token、Cloudflare token、個人メールアドレス）をコード・ログ・PRに書かない。
 
 LLMに依頼する場合も、次のように範囲を指定すると安全です。
@@ -23,23 +27,21 @@ LLMに依頼する場合も、次のように範囲を指定すると安全で�
 
 ## 1. サイトと実行環境
 
-このリポジトリは、Astroで公式サイトと学習サイトを生成し、Cloudflare Workerで管理画面・APIを提供するモノレポです。
+このリポジトリは、Astroで公式サイトと学習サイトを生成し、Cloudflare Workerで公開APIを提供します。
+認証付きの運営画面・運用D1・管理Workerは`Admin-Atlesez`へ分離済みです。
 
-| サイト                 | ローカルURL/入口                                         | 本番の役割                             |
-| ---------------------- | -------------------------------------------------------- | -------------------------------------- |
-| Atlasez公式サイト      | `http://localhost:4321/`                                 | 団体紹介、プロジェクト、募集、ニュース |
-| 学習サイト「アトラス」 | `http://localhost:4321/atlas/ja/`                        | 記事、検索、学習地図、学習記録         |
-| メンバー用サイト       | `http://localhost:8787/admin/portal/`                    | 複数プロジェクトの横断HomeとToDo       |
-| 学習サイト運営用サイト | `http://localhost:8787/admin/atlas/`                     | 原稿、査読、問題報告、進捗・ToDo・日程 |
-| 運営事務局             | `http://localhost:8787/admin/projects/secretariat/`      | 事務局のToDo・日程                     |
-| ゼミプラットフォーム   | `http://localhost:8787/admin/projects/seminar-platform/` | プロジェクト固有のToDo・日程           |
+| サイト                 | ローカルURL/入口                  | 本番の役割                                  |
+| ---------------------- | --------------------------------- | ------------------------------------------- |
+| Atlasez公式サイト      | `http://localhost:4321/`          | 団体紹介、プロジェクト、募集、ニュース      |
+| 学習サイト「アトラス」 | `http://localhost:4321/atlas/ja/` | 記事、検索、学習地図、学習記録              |
+| 運営サイト             | `Admin-Atlesez`側のWorker         | 認証、原稿、査読、ToDo、日程、通知、Discord |
 
 本番のWorker URLは、運営環境の設定を確認してから利用する。URLをコードにハードコードしてはいけない。
 
 ### Workerの分担
 
-- `src/worker.ts`: 学習サイトの静的アセット配信、問題報告API、匿名記事統計、Discord中継呼び出し。
-- `src/admin-worker.ts`: Google OAuth、セッション、D1、原稿編集・査読、通知、ToDo、日程、応募、Discordの権限/チャンネル同期。
+- `src/worker.ts`: 学習サイトの静的アセット配信、問題報告API、匿名記事統計、記事報告通知。
+- `Admin-Atlesez`のWorker: Google OAuth、セッション、運用D1、原稿編集・査読、通知、ToDo、日程、応募、Discordの権限/チャンネル同期。
 - `dist/`: `npm run build` が作る成果物。手編集しない。
 
 ## 2. ディレクトリ早見表
@@ -53,15 +55,13 @@ src/
   pages/                   Astroのページルート
     index.astro            公式サイトHome
     atlas/[locale]/        学習サイトの各ページ
-    admin/                 運営サイトの画面
     apply/                 ログイン不要の運営参加応募
   components/              再利用UI
   layouts/                 公式/学習/運営のページ枠
   lib/                     URL、i18n、グラフ、公開判定などの共通ロジック
   styles/                  デザイントークンとサイト共通CSS
-  worker.ts                学習サイトWorker
-  admin-worker.ts          運営サイトWorker
-migrations/                D1の前進のみのマイグレーション
+  worker.ts                公開サイトWorker
+migrations/                公開API用D1の前進のみのマイグレーション
 scripts/                   記事生成・検証・一括修正
 tests/                     Vitest/Playwright/axe
 public/                    静的画像、headers、favicon
@@ -69,6 +69,10 @@ docs/                      仕様・運用・引き継ぎ文書
 ```
 
 ## 3. どこを変更するか
+
+`Atlasez01`に存在しない`src/pages/admin/`、`src/admin-worker.ts`、`wrangler.admin*.jsonc`、
+管理用migrationを変更対象として探してはいけません。以下の運営機能は、現在は
+[`Admin-Atlesez`](https://github.com/Atlasez/Admin-Atlesez)で変更します。
 
 | 変更したいもの                | 主なファイル                                                                                              | 注意                                                               |
 | ----------------------------- | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
@@ -78,11 +82,11 @@ docs/                      仕様・運用・引き継ぎ文書
 | 分野/カテゴリ                 | `src/content/subjects/subjects.yaml`                                                                      | slug変更は既存URL・概念参照への影響を確認                          |
 | 学習地図                      | `src/content/concepts/concepts.yaml`, `src/components/LearningMap.astro`, `src/pages/atlas/graph.json.ts` | ノード状態、経路検索、詳細パネルを一緒に確認                       |
 | 学習記事の数式/定義枠         | Markdown処理設定、数学記事CSS、`src/styles/`                                                              | KaTeX/MathJax、スマホの横はみ出しをE2Eで確認                       |
-| 原稿一覧/編集/査読            | `src/pages/admin/articles.astro`, `editor.astro`, `src/admin-worker.ts`                                   | 認証・担当分野権限をUIだけでなくWorker側でも検証                   |
-| コメント/返信/通知            | `src/pages/admin/editor.astro`, `src/admin-worker.ts`, D1 migrations                                      | 投稿者・記事担当者以外の閲覧範囲を広げない                         |
-| ToDo/日程/横断Home            | `src/pages/admin/operations.astro`, `portal.astro`, `src/admin-worker.ts`                                 | `editorial_tasks.project_id`を必須として扱う                       |
-| 応募フォーム                  | `src/pages/apply/index.astro`, `src/admin-worker.ts`                                                      | ログイン不要だが、個人情報はD1と通知先だけに保存                   |
-| Discord連携                   | `src/admin-worker.ts`, `wrangler.admin.jsonc`                                                             | Bot secretはCloudflare Secretのみ。学習WorkerにBot tokenを置かない |
+| 原稿一覧/編集/査読            | `Admin-Atlesez`の管理画面・Worker                                                                         | 認証・担当分野権限をUIだけでなくWorker側でも検証                   |
+| コメント/返信/通知            | `Admin-Atlesez`の管理画面・D1                                                                             | 投稿者・記事担当者以外の閲覧範囲を広げない                         |
+| ToDo/日程/横断Home            | `Admin-Atlesez`の管理画面・Worker                                                                         | `project_id`と権限境界を維持する                                   |
+| 応募フォーム                  | `Admin-Atlesez`の公開応募入口・Worker                                                                     | ログイン不要だが、個人情報はD1と通知先だけに保存                   |
+| Discord連携                   | `Admin-Atlesez`のWorker・Secret                                                                           | Bot secretはCloudflare Secretのみ。公開WorkerにBot tokenを置かない |
 
 ## 4. コンテンツのルール
 
@@ -106,24 +110,22 @@ npm run new:article -- --subject mathematics --category group-theory --slug exam
 
 ## 5. 運営サイトのデータと権限
 
-運用データはD1（`atlasez-reports`）に保存され、記事リポジトリには保存しません。主なテーブルはマイグレーションを検索してください。
+運用データは`Admin-Atlesez`側のD1に保存され、記事リポジトリには保存しません。管理用migrationは
+`Admin-Atlesez`側で管理します。`Atlasez01`の公開Workerが使う公開API用D1とは責任範囲を分けます。
 
 ```bash
+# Admin-Atlesezリポジトリ側で実行する
 rg -n "CREATE TABLE|ALTER TABLE" migrations
 ```
 
 重要な領域:
 
-- 原稿、版履歴、公開状態、査読コメント、返信、コメントタグ
-- 通知と既読状態
-- `editorial_tasks`（`project_id`, 担当、期限、状態、リマインダー）
-- プロジェクト参加者、プロフィール、担当分野
-- 応募、応募承認、Discord同期状態
-- 問題報告、匿名記事統計、Discordチャンネル対応表
+- 詳細な運用テーブルは`Admin-Atlesez`のD1 schemaを正とする
+- 公開側では記事報告と匿名記事統計のAPI境界だけを確認する
 
-D1変更は必ず新しい連番migrationを追加し、既存migrationを書き換えません。ローカルで適用してから、承認済みの本番手順でremoteへ適用します。
+D1変更は`Admin-Atlesez`側で新しい連番migrationを追加し、既存migrationを書き換えません。`Atlasez01`へ管理用migrationをコピーしないでください。
 
-権限は画面の表示/非表示だけに頼らず、`src/admin-worker.ts`のAPIでも判定します。全分野管理者専用の担当者管理、応募管理、Discordロール同期などを一般運営者に公開しないでください。メールアドレス、Google subject、Discord IDなどは必要な管理者以外に返さない設計を維持します。
+権限は画面の表示/非表示だけに頼らず、`Admin-Atlesez`のAPIでも判定します。メールアドレス、Google subject、Discord IDなどは必要な管理者以外に返さない設計を維持します。
 
 ## 6. ローカル開発
 
@@ -132,10 +134,9 @@ npm ci
 npm run dev                         # Astro: http://localhost:4321
 npm run build && npm run preview    # 公開ビルドの確認
 npm run db:reports:local            # D1 local migration
-npm run dev:admin                   # 管理Worker: http://localhost:8787
 ```
 
-管理画面のローカル認証は `wrangler.admin.local.jsonc` の `ADMIN_AUTH_MODE=local` とテスト用メールを使います。本番Google OAuthをローカルにコピーしたり、実際の個人情報をD1へ投入したりしません。
+運営画面のローカル認証・D1は`Admin-Atlesez`側の手順を使います。本番Google OAuthをローカルにコピーしたり、実際の個人情報をD1へ投入したりしません。
 
 ### テスト
 
@@ -160,11 +161,10 @@ UI変更は最低でも `npm run check`、単体テスト、`npm run build`を�
 
 ```bash
 npm run build
-npx wrangler deploy --config wrangler.jsonc          # 学習サイトWorker
-npx wrangler deploy --config wrangler.admin.jsonc   # 運営サイトWorker
+npx wrangler deploy --config wrangler.jsonc          # 公開サイトWorker
 ```
 
-通常の公開記事はGitHubのPRをCIで検証し、`main`へのマージ後にCloudflare側の接続設定で公開します。Worker/D1を変更する場合は、デプロイ前にmigration、Secret、環境変数、ロールバック方法を確認します。詳細は [DEPLOYMENT.md](DEPLOYMENT.md) と [PUBLISH.md](PUBLISH.md) を参照してください。
+通常の公開記事はGitHubのPRをCIで検証し、`main`へのマージ後にCloudflare Pages側の接続設定で公開します。公開Workerを変更する場合は、デプロイ前にSecret、環境変数、ロールバック方法を確認します。運営Worker/D1のデプロイは`Admin-Atlesez`側です。詳細は [DEPLOYMENT.md](DEPLOYMENT.md) と [PUBLISH.md](PUBLISH.md) を参照してください。
 
 ### Secretの扱い
 
@@ -197,11 +197,12 @@ LLMが作った変更は、必ず人間が差分・権限・データ移行・�
 - 画像・動画が増えたらGitではなくR2などへ移し、記事からは安定したasset IDを参照します。
 - 教育機関の候補データは候補リスト＋自由入力を基本とし、公式学校コードの定期取り込みは出典・更新・国外機関の扱いを決めてから行います。
 - Pagefindのリダイレクト用ページに「外側のhtml要素がない」警告が出ることがありますが、検索対象外の転送ページであれば実害はありません。
-- `src/pages/admin/workspace.astro`には旧API取得処理の整理余地があります。変更時はプロフィールAPIとプロジェクトAPIの両方を壊さないようにします。
+- `Admin-Atlesez`側には旧API取得処理の整理余地が残る可能性があります。変更時はプロフィールAPIとプロジェクトAPIの両方を壊さないようにします。
 
 ## 10. 参照先
 
 - [ドキュメント索引](README.md)
+- [サイト構成・LLM作業・運用保守](SITE_ARCHITECTURE_AND_MAINTENANCE.md)
 - [記事の書き方](ADDING_ARTICLES.md)
 - [コンテンツモデル](CONTENT_MODEL.md)
 - [編集・査読フロー](EDITORIAL_WORKFLOW.md)

@@ -1,20 +1,20 @@
 # Atlasez01 (atlasez-web)
 
-学生団体 **Atlasez** の公式サイト、学習サイト **「アトラス」**、メンバー用サイト、
-学習サイト運営用サイトを一つのモノレポで管理しています。Astroで公開ページを生成し、
-Cloudflare Worker + D1で認証付きの運営機能とAPIを提供します。
+学生団体 **Atlasez** の公式サイトと学習サイト **「アトラス」**を管理する公開サイトリポジトリです。
+Astroで公開ページを生成し、Cloudflare Worker + D1で公開APIを提供します。
+認証付きのメンバー用・運営用サイトは、別のPrivateリポジトリ
+[`Admin-Atlesez`](https://github.com/Atlasez/Admin-Atlesez)で管理します。
 
 - 公式サイト: `/`（団体紹介・プロジェクト・お知らせ・運営募集）
 - 学習サイト: `/atlas/ja/`（記事・学習地図・検索・表示設定・運営紹介）
-- メンバー用サイト: `/admin/portal/`（参加プロジェクトと横断ToDo）
-- 学習サイト運営用サイト: `/admin/atlas/`（原稿・査読・問題報告・進捗）
 
 ## 引き継ぎ用の入口
 
-全体像、どのファイルを直すか、D1・認証・Discordの扱い、テストとデプロイ手順は
-[開発・引き継ぎガイド](docs/DEVELOPMENT_GUIDE.md)にまとめています。LLMや自動化エージェントは
+現在のサイト構成、リポジトリ境界、URL・データ経路、LLMの読み込み順、保守と公開手順は
+[サイト構成・LLM作業・運用保守ガイド](docs/SITE_ARCHITECTURE_AND_MAINTENANCE.md)を正とします。
+開発規則と詳細なコマンドは[開発・引き継ぎガイド](docs/DEVELOPMENT_GUIDE.md)を参照してください。LLMや自動化エージェントは
 作業前にルートの [AGENTS.md](AGENTS.md) も読んでください。
-記事を書く人向けの操作は [記事を書く人向けガイド](docs/ADMIN_GUIDE.md) を参照してください。
+運営サイトの操作は[`Admin-Atlesez`](https://github.com/Atlasez/Admin-Atlesez)側のガイドを参照してください。
 
 ---
 
@@ -22,13 +22,14 @@ Cloudflare Worker + D1で認証付きの運営機能とAPIを提供します。
 
 やりたいことが決まっているなら、**[docs/README.md](docs/README.md) の索引**から探すのが早いです。
 
-| 目的                                   | まず読む文書                                                         |
-| -------------------------------------- | -------------------------------------------------------------------- |
-| サイト全体を引き継ぐ                   | [docs/DEVELOPMENT_GUIDE.md](docs/DEVELOPMENT_GUIDE.md)               |
-| 記事を書く人向けの運営サイトを使う     | [docs/ADMIN_GUIDE.md](docs/ADMIN_GUIDE.md)                           |
-| リポジトリを分割・移行する             | [docs/REPOSITORY_BOUNDARIES.md](docs/REPOSITORY_BOUNDARIES.md)       |
-| ナビゲーションやサイトの境界を理解する | [docs/INFORMATION_ARCHITECTURE.md](docs/INFORMATION_ARCHITECTURE.md) |
-| 本番へ公開する                         | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)                             |
+| 目的                                   | まず読む文書                                                                           |
+| -------------------------------------- | -------------------------------------------------------------------------------------- |
+| サイト全体を引き継ぐ                   | [docs/SITE_ARCHITECTURE_AND_MAINTENANCE.md](docs/SITE_ARCHITECTURE_AND_MAINTENANCE.md) |
+| 公開サイトを開発する                   | [docs/DEVELOPMENT_GUIDE.md](docs/DEVELOPMENT_GUIDE.md)                                 |
+| 記事を書く人向けの運営サイトを使う     | [`Admin-Atlesez`](https://github.com/Atlasez/Admin-Atlesez)                            |
+| リポジトリを分割・移行する             | [docs/REPOSITORY_BOUNDARIES.md](docs/REPOSITORY_BOUNDARIES.md)                         |
+| ナビゲーションやサイトの境界を理解する | [docs/INFORMATION_ARCHITECTURE.md](docs/INFORMATION_ARCHITECTURE.md)                   |
+| 本番へ公開する                         | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)                                               |
 
 - **記事を追加したい** → [docs/ADDING_ARTICLES.md](docs/ADDING_ARTICLES.md)
 - **公開まわりを触りたい** → [docs/PUBLISH.md](docs/PUBLISH.md) / [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
@@ -84,10 +85,9 @@ versions/           # 過去バージョンのスナップショット（ビル�
 
 ## 記事が公開されるまで
 
-日常の執筆・査読は、認証付きの運営サイトで行います。`/admin/articles/` で原稿を選び、
-`保存する → 査読を依頼する →（全分野管理者が）査読完了 → 公開する` の順に進めます。
-公開後の反映は数十秒から数分かかる場合があります。詳しい操作は
-[運営サイト管理ガイド](docs/ADMIN_GUIDE.md) を参照してください。
+日常の執筆・査読は、別リポジトリの認証付き運営サイトで行います。運営サイトから公開可能な
+記事データまたはPRを作成し、`Atlasez01`のCIを通過して`main`へ反映されたものだけが公開されます。
+公開後の反映は数十秒から数分かかる場合があります。
 
 記事本文や翻訳データをGitHubで直接変更する開発作業では、`draft` / `in-review` を公開せず、
 CIで検証してからPull Requestをマージします。運営サイトのD1データとGit管理の本文は役割が異なるため、
@@ -95,8 +95,8 @@ CIで検証してからPull Requestをマージします。運営サイトのD1�
 
 ## デプロイ
 
-公開ページはCloudflare側のGit連携でビルドされます。運営機能のWorkerは
-`wrangler.jsonc`（学習サイト）と `wrangler.admin.jsonc`（運営サイト）で別々にデプロイします。
+公開ページはCloudflare Pages側のGit連携でビルドされます。公開APIのWorkerは
+`wrangler.jsonc`でデプロイします。運営機能のWorkerは`Admin-Atlesez`側で管理・デプロイします。
 GitHub Actions は `ci.yml` が検証、`deploy-pages.yml` が動作確認用の
 GitHub Pages ミラー配信を担当します。Secretはリポジトリに置きません。
 
