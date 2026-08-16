@@ -2,33 +2,47 @@
 import SettingsMenu from "./SettingsMenu.astro";
 import UiLanguage from "./UiLanguage.astro";
 
-interface Props { current: "portal" | "global" | "seminar" | "secretariat" | "atlas" | "editor" | "articles" | "workspace" | "operations" | "review" | "reports" | "permissions" | "guide" | "applications" | "introductions" | "materials"; }
+interface Props { current: "portal" | "global" | "seminar" | "secretariat" | "atlas" | "editor" | "articles" | "workspace" | "operations" | "events" | "review" | "reports" | "permissions" | "guide" | "applications" | "introductions"; }
 const { current } = Astro.props;
 const projectNavigation = !["portal", "global", "seminar", "secretariat"].includes(current);
+const showNotifications = current !== "global";
 const profileHref = current === "seminar" ? "/admin/projects/seminar-platform/workspace/" : current === "secretariat" ? "/admin/projects/secretariat/workspace/" : projectNavigation ? "/admin/projects/atlas/workspace/" : "/admin/workspace/";
 const atlasProject = projectNavigation;
 const homeHref = atlasProject ? "/admin/atlas/" : "/admin/portal/";
 const homeLabel = atlasProject ? "学習サイト「アトラス」運営用サイト" : "メンバー用サイト";
-// メンバー用トップ／共通プロフィールでは、ロゴ自体がホームへの導線になるため
-// 同じ行に「Home」を重ねて表示しない。プロジェクト画面では戻り先として残す。
-const showHomeNav = current !== "portal" && current !== "global";
+const currentProjectSlug = projectNavigation ? "atlas" : current === "seminar" ? "seminar-platform" : current === "secretariat" ? "secretariat" : "";
+const currentProjectHref = currentProjectSlug === "atlas" ? "/admin/atlas/" : currentProjectSlug ? `/admin/projects/${currentProjectSlug}/` : "/admin/portal/";
+const currentProjectLabel = projectNavigation
+  ? "学習サイト「アトラス」"
+  : current === "seminar"
+    ? "ゼミプラットフォーム"
+    : current === "secretariat"
+      ? "Atlasez運営事務局"
+      : "メンバー用サイト";
+// ロゴが常に現在のサイトのホームへの導線になるため、上部タブに重複した
+// Homeリンクは置かない。ページ間の移動は編集・査読などの主要タブで行う。
 ---
 <UiLanguage />
 <header class="admin-nav">
   <a class="admin-nav-brand" href={homeHref} data-astro-reload aria-label={`${homeLabel}のHomeへ戻る`}><img src="/images/atlasez-logo.png" alt="" width="34" height="34" /><span class="admin-brand-text">{homeLabel}</span></a>
-  <button type="button" class="admin-menu-toggle" data-admin-menu-toggle aria-expanded="false" aria-controls="admin-primary-nav"><span aria-hidden="true">☰</span><span>メニュー</span></button>
+  <details class="admin-project-switcher" data-admin-project-switcher data-current-project={currentProjectSlug}>
+    <summary aria-label="プロジェクトを切り替える"><span>サイト</span><b>{currentProjectLabel}</b><span aria-hidden="true">⌄</span></summary>
+    <div data-admin-project-list>
+      <a href={currentProjectHref} data-astro-reload aria-current={!currentProjectSlug ? "page" : undefined}>{currentProjectLabel}</a>
+    </div>
+  </details>
+  {projectNavigation && <button type="button" class="admin-menu-toggle" data-admin-menu-toggle aria-expanded="false" aria-controls="admin-primary-nav" aria-label="メニューを開く"><span aria-hidden="true" data-admin-menu-icon>☰</span><span data-admin-menu-label>メニュー</span></button>}
   <nav id="admin-primary-nav" aria-label={`${homeLabel}メニュー`}>
-    {showHomeNav && <a href={homeHref} data-astro-reload aria-current={current === "atlas" ? "page" : undefined}>Home</a>}
     {projectNavigation && <>
       <a href="/admin/articles" data-astro-reload aria-current={current === "articles" ? "page" : undefined}>編集・査読</a>
       <a href="/admin/operations" data-astro-reload aria-current={current === "operations" ? "page" : undefined}>進捗・ToDo・日程</a>
+      <a href="/admin/events/" data-astro-reload aria-current={current === "events" ? "page" : undefined}>同時作業会</a>
     </>}
     {projectNavigation && <details class="admin-management-menu" data-management-menu>
       <summary>管理 <span aria-hidden="true">⌄</span></summary>
       <div>
         <a href="/admin/permissions" data-manager-only hidden data-astro-reload aria-current={current === "permissions" ? "page" : undefined}>運営者・担当管理</a>
         <a href="/admin/reports" data-astro-reload aria-current={current === "reports" ? "page" : undefined}>問題報告・統計</a>
-        <a href="/admin/materials" data-astro-reload aria-current={current === "materials" ? "page" : undefined}>資料</a>
         <a href="/admin/guide" data-astro-reload aria-current={current === "guide" ? "page" : undefined}>作業の進め方</a>
         <a href="/admin/introductions" data-astro-reload aria-current={current === "introductions" ? "page" : undefined}>運営内自己紹介</a>
         <a href="/admin/applications" data-manager-only hidden data-astro-reload aria-current={current === "applications" ? "page" : undefined}>応募管理</a>
@@ -37,9 +51,9 @@ const showHomeNav = current !== "portal" && current !== "global";
   </nav>
   <div class="admin-account is-loading" data-admin-account data-account-loading="true" aria-busy="true">
     <SettingsMenu locale="ja" />
-    {projectNavigation && <>
+    {showNotifications && <>
       <button type="button" class="admin-notifications" data-admin-notifications aria-expanded="false" aria-label="学習サイトの通知を開く"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" /></svg><span data-admin-notification-count hidden>0</span></button>
-      <div class="admin-notification-panel" data-admin-notification-panel hidden><div class="notification-panel-heading"><strong>学習サイトの通知</strong><button type="button" class="mark-all-read" data-mark-all-notifications-read>すべて既読</button><button type="button" data-close-notifications aria-label="通知を閉じる">×</button></div><div data-admin-notification-list><span class="admin-notification-loading">通知を確認しています…</span></div><button type="button" class="notification-retry" data-notification-retry hidden>再読み込み</button></div>
+      <div class="admin-notification-panel" data-admin-notification-panel hidden><div class="notification-panel-heading"><strong>プロジェクト通知</strong><button type="button" class="mark-all-read" data-mark-all-notifications-read>すべて既読</button><button type="button" data-close-notifications aria-label="通知を閉じる">×</button></div><div data-admin-notification-list><span class="admin-notification-loading">通知を確認しています…</span></div><button type="button" class="notification-retry" data-notification-retry hidden>再読み込み</button></div>
     </>}
     <a class="admin-account-profile" href={profileHref} data-astro-reload aria-label="プロフィールを開く">
       <span class="admin-account-avatar admin-account-avatar--skeleton" data-admin-account-avatar aria-hidden="true"><img data-admin-account-image alt="" hidden /><span data-admin-account-fallback>•••</span></span>
@@ -87,7 +101,10 @@ const showHomeNav = current !== "portal" && current !== "global";
       const primaryNav = document.querySelector<HTMLElement>('#admin-primary-nav');
       const managementMenu = document.querySelector<HTMLDetailsElement>('[data-management-menu]');
       const notificationRetry = document.querySelector<HTMLButtonElement>('[data-notification-retry]');
-      const showAdminError = (message: string) => { document.documentElement.dataset.adminErrorMessage = message; window.dispatchEvent(new CustomEvent('atlasez-admin-error', { detail: { message } })); };
+      const projectSwitcher = document.querySelector<HTMLDetailsElement>('[data-admin-project-switcher]');
+      const projectList = projectSwitcher?.querySelector<HTMLElement>('[data-admin-project-list]');
+      const menuIcon = menuToggle?.querySelector<HTMLElement>('[data-admin-menu-icon]');
+      const menuLabel = menuToggle?.querySelector<HTMLElement>('[data-admin-menu-label]');
       const closeManagementMenu = () => { if (managementMenu) managementMenu.open = false; };
       const readAccountCache = (): AccountSnapshot | null => {
         try {
@@ -145,9 +162,39 @@ const showHomeNav = current !== "portal" && current !== "global";
       };
       let cachedAccount = readAccountCache();
       if (cachedAccount) applyAccountSnapshot(cachedAccount);
-      let notifications: Array<{ id: string; title: string; detail: string; href: string; kind?: string; updatedAt?: string; read?: boolean }> = [];
+      let notifications: Array<{ id: string; title: string; detail: string; href: string; kind?: string; updatedAt?: string; read?: boolean; notificationIds?: string[]; projectName?: string; projectSlug?: string }> = [];
       const escape = (value: string) => value.replace(/[&<>"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[character] ?? character);
+      const projectHref = (slug: string) => slug === 'atlas' ? '/admin/atlas/' : `/admin/projects/${encodeURIComponent(slug)}/`;
+      const loadProjects = async () => {
+        if (!projectList) return;
+        try {
+          const response = await fetch('/api/admin/portal', { credentials: 'same-origin', cache: 'no-store' });
+          const contentType = response.headers.get('content-type') ?? '';
+          if (!response.ok || !contentType.includes('application/json')) return;
+          const data = await response.json() as { projects?: Array<{ slug?: string; name?: string }> };
+          const currentSlug = projectSwitcher?.dataset.currentProject ?? '';
+          const projects = (data.projects ?? [])
+            .filter((project): project is { slug: string; name?: string } => typeof project.slug === 'string' && /^[a-z0-9-]{2,60}$/i.test(project.slug))
+            .map((project) => ({ slug: project.slug, label: project.slug === 'atlas' ? '学習サイト「アトラス」' : (project.name?.trim() || project.slug) }));
+          if (currentSlug && !projects.some((project) => project.slug === currentSlug)) {
+            projects.push({ slug: currentSlug, label: currentSlug === 'atlas' ? '学習サイト「アトラス」' : projectSwitcher?.querySelector('summary b')?.textContent?.trim() || currentSlug });
+          }
+          const items = [{ slug: '', href: '/admin/portal/', label: 'メンバー用サイト' }, ...projects.map((project) => ({ ...project, href: projectHref(project.slug) }))];
+          const unique = [...new Map(items.map((item) => [item.href, item])).values()];
+          projectList.innerHTML = unique.map((item) => `<a href="${escape(item.href)}" data-astro-reload${item.slug === currentSlug || (!currentSlug && !item.slug) ? ' aria-current="page"' : ''}>${escape(item.label)}</a>`).join('');
+        } catch {
+          // 現在地だけはサーバー側で安全に描画済みなので、候補取得失敗時も導線を壊さない。
+        }
+      };
+      let projectLoadStarted = false;
+      projectSwitcher?.addEventListener('toggle', () => {
+        if (projectSwitcher.open && !projectLoadStarted) {
+          projectLoadStarted = true;
+          void loadProjects();
+        }
+      });
       const formatNotificationTime = (value?: string) => value ? new Intl.DateTimeFormat('ja-JP', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) : '';
+      const notificationIds = (item: typeof notifications[number]) => item.notificationIds?.length ? item.notificationIds : [item.id];
       const loadAccount = async () => {
         try {
           const statusResponse = await fetch('/api/admin/auth-status', { credentials: 'same-origin', cache: 'no-store' });
@@ -188,7 +235,6 @@ const showHomeNav = current !== "portal" && current !== "global";
           avatar?.classList.remove('admin-account-avatar--skeleton');
           if (avatarImage) { avatarImage.hidden = true; avatarImage.removeAttribute('src'); }
           if (avatarFallback) { avatarFallback.hidden = false; avatarFallback.textContent = '?'; }
-          showAdminError(error instanceof Error ? error.message : 'ログイン情報を取得できませんでした。');
         } finally { account.hidden = false; }
       };
       document.addEventListener('atlasez-profile-updated', (event) => {
@@ -210,18 +256,31 @@ const showHomeNav = current !== "portal" && current !== "global";
           if (!contentType.includes('application/json')) throw new Error('通知の応答を読み取れませんでした。');
           const data = await response.json() as { notifications?: typeof notifications; error?: string };
           if (!response.ok) throw new Error(data.error ?? '通知を取得できませんでした。');
-          notifications = data.notifications ?? [];
+          const unique = new Map<string, typeof notifications[number]>();
+          for (const item of data.notifications ?? []) {
+            const key = `${item.projectSlug ?? "project"}:${item.id}`;
+            const existing = unique.get(key);
+            if (!existing || String(item.updatedAt ?? "") > String(existing.updatedAt ?? "")) unique.set(key, item);
+          }
+          notifications = [...unique.values()];
           const unreadCount = notifications.filter((item) => !item.read).length;
           if (notificationCount) { notificationCount.textContent = unreadCount > 99 ? "99+" : String(unreadCount); notificationCount.hidden = unreadCount === 0; }
           if (markAllRead) markAllRead.hidden = unreadCount === 0;
-          const kindLabel = (kind: string) => ({ comment: 'コメント', review: '査読依頼', approved: '査読完了', published: '公開', task: 'ToDo' } as Record<string, string>)[kind] ?? '記事';
-          notificationList.innerHTML = notifications.length ? notifications.map((item) => `<div class="admin-notification-item${item.read ? ' is-read' : ''}"><a href="${item.href}" data-astro-reload data-open-notification="${escape(item.id)}"><span class="notification-kind">${escape(kindLabel((item as any).kind))}</span><b>${escape(item.title)}</b><small>${escape(item.detail)}</small><time datetime="${escape(item.updatedAt ?? '')}">${escape(formatNotificationTime(item.updatedAt))}</time></a>${item.read ? '<span class="notification-read">確認済み</span>' : `<button type="button" data-read-notification="${escape(item.id)}">既読にする</button>`}</div>`).join('') : '<span class="admin-notification-empty">通知はありません。</span>';
+          const kindLabel = (kind: string) => ({ comment: 'コメント', mention: 'メンション', combined: '記事', review: '査読依頼', approved: '査読完了', published: '公開', task: 'ToDo', event: '日程', progress: '進捗' } as Record<string, string>)[kind] ?? '記事';
+          notificationList.innerHTML = notifications.length ? notifications.map((item) => { const ids = escape(notificationIds(item).join(',')); return `<div class="admin-notification-item${item.read ? ' is-read' : ''}"><a href="${item.href}" data-astro-reload data-open-notification="${ids}"><span class="notification-meta"><span class="notification-project">${escape(item.projectName ?? 'プロジェクト')}</span><span class="notification-kind">${escape(kindLabel((item as any).kind))}</span></span><b>${escape(item.title)}</b><small>${escape(item.detail)}</small><time datetime="${escape(item.updatedAt ?? '')}">${escape(formatNotificationTime(item.updatedAt))}</time></a>${item.read ? '<span class="notification-read">確認済み</span>' : `<button type="button" data-read-notification="${ids}">既読にする</button>`}</div>`; }).join('') : '<span class="admin-notification-empty">通知はありません。</span>';
         } catch (error) {
           notificationList.textContent = error instanceof Error ? error.message : '通知を取得できませんでした。';
           if (notificationRetry) notificationRetry.hidden = false;
-          showAdminError(error instanceof Error ? error.message : '通知を取得できませんでした。');
         }
       };
+      const setPrimaryNavOpen = (open: boolean) => {
+        primaryNav?.classList.toggle('is-open', open);
+        menuToggle?.setAttribute('aria-expanded', String(open));
+        menuToggle?.setAttribute('aria-label', open ? 'メニューを閉じる' : 'メニューを開く');
+        if (menuIcon) menuIcon.textContent = open ? '×' : '☰';
+        if (menuLabel) menuLabel.textContent = open ? '閉じる' : 'メニュー';
+      };
+      setPrimaryNavOpen(false);
       notificationButton?.addEventListener('click', () => {
         const open = !notificationPanel?.hidden;
         if (notificationPanel) {
@@ -231,14 +290,13 @@ const showHomeNav = current !== "portal" && current !== "global";
         notificationButton.setAttribute('aria-expanded', String(!open));
       });
       closeNotifications?.addEventListener('click', () => { if (notificationPanel) notificationPanel.hidden = true; notificationButton?.setAttribute('aria-expanded', 'false'); });
-      menuToggle?.addEventListener('click', () => { const open = !primaryNav?.classList.contains('is-open'); primaryNav?.classList.toggle('is-open', open); menuToggle.setAttribute('aria-expanded', String(open)); });
+      menuToggle?.addEventListener('click', () => { setPrimaryNavOpen(!primaryNav?.classList.contains('is-open')); });
       notificationRetry?.addEventListener('click', () => { void loadNotifications(); });
       document.addEventListener('click', (event) => {
         const target = event.target as Node;
         if (managementMenu && !managementMenu.contains(target)) closeManagementMenu();
-        if (primaryNav?.classList.contains('is-open') && !primaryNav.contains(target) && target !== menuToggle) {
-          primaryNav.classList.remove('is-open');
-          menuToggle?.setAttribute('aria-expanded', 'false');
+        if (primaryNav?.classList.contains('is-open') && !primaryNav.contains(target) && !menuToggle?.contains(target)) {
+          setPrimaryNavOpen(false);
         }
         const navigation = (event.target as HTMLElement).closest('a[data-astro-reload]');
         if (navigation) closeManagementMenu();
@@ -247,8 +305,7 @@ const showHomeNav = current !== "portal" && current !== "global";
         if (event.key !== 'Escape') return;
         closeManagementMenu();
         if (notificationPanel && !notificationPanel.hidden) { notificationPanel.hidden = true; notificationButton?.setAttribute('aria-expanded', 'false'); }
-        primaryNav?.classList.remove('is-open');
-        menuToggle?.setAttribute('aria-expanded', 'false');
+        setPrimaryNavOpen(false);
       });
       const markRead = async (ids: string[]) => {
         if (!ids.length) return;
@@ -256,17 +313,18 @@ const showHomeNav = current !== "portal" && current !== "global";
         if (!response.ok) throw new Error('通知を既読にできませんでした。');
         await loadNotifications();
       };
+      const notificationIdsFromAttribute = (value?: string) => (value ?? '').split(',').filter(Boolean);
       notificationList?.addEventListener('click', (event) => {
         const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-read-notification]');
-        if (button) { event.preventDefault(); void markRead([button.dataset.readNotification ?? '']).catch(() => { notificationList.textContent = '通知を既読にできませんでした'; }); }
+        if (button) { event.preventDefault(); void markRead(notificationIdsFromAttribute(button.dataset.readNotification)).catch(() => { notificationList.textContent = '通知を既読にできませんでした'; }); }
         const link = (event.target as HTMLElement).closest<HTMLAnchorElement>('[data-open-notification]');
         if (link && !link.dataset.opened) {
           event.preventDefault();
           link.dataset.opened = 'true';
-          void markRead([link.dataset.openNotification ?? '']).catch(() => undefined).finally(() => { window.location.assign(link.href); });
+          void markRead(notificationIdsFromAttribute(link.dataset.openNotification)).catch(() => undefined).finally(() => { window.location.assign(link.href); });
         }
       });
-      markAllRead?.addEventListener('click', () => { void markRead(notifications.filter((item) => !item.read).map((item) => item.id)).catch(() => { if (notificationList) notificationList.textContent = '通知を既読にできませんでした'; }); });
+      markAllRead?.addEventListener('click', () => { void markRead([...new Set(notifications.filter((item) => !item.read).flatMap(notificationIds))]).catch(() => { if (notificationList) notificationList.textContent = '通知を既読にできませんでした'; }); });
       void loadNotifications();
       // ベルの未読件数を開き直さなくても更新できるよう、短い間隔で再確認します。
       if (notificationTimer === undefined) notificationTimer = window.setInterval(() => { void loadNotifications(); }, 60_000);
@@ -278,7 +336,43 @@ const showHomeNav = current !== "portal" && current !== "global";
   })();
 </script>
 <style>
-  .admin-nav{align-items:center;border-bottom:1px solid var(--border-default);box-sizing:border-box;display:flex;gap:.65rem;left:50%;min-height:4.15rem;padding:0 max(1rem,calc((100vw - 1500px)/2));position:relative;transform:translateX(-50%);width:100vw}.admin-nav-brand{align-items:center;color:var(--accent-primary);display:flex;flex:0 0 auto;font-size:1.15rem;font-weight:700;gap:.45rem;text-decoration:none}.admin-nav-brand span{border-left:1px solid var(--border-default);color:var(--text-primary);font-size:.8rem;margin-left:.1rem;padding-left:.55rem}.admin-menu-toggle{display:none}.admin-nav nav{align-items:stretch;display:flex;flex:1 1 auto;min-height:4.15rem;min-width:0}.admin-nav nav>a{align-items:center;border-bottom:3px solid transparent;color:var(--text-primary);display:flex;flex:0 0 auto;font:inherit;font-size:.84rem;padding:0 .62rem;text-decoration:none}.admin-nav nav>a[aria-current="page"],.admin-nav nav>a:hover{border-bottom-color:var(--accent-primary);color:var(--accent-primary)}.admin-management-menu{align-items:center;display:flex;position:relative}.admin-management-menu summary{align-items:center;color:var(--text-secondary);cursor:pointer;display:flex;font-size:.84rem;gap:.28rem;height:100%;list-style:none;padding:0 .6rem;white-space:nowrap}.admin-management-menu summary::-webkit-details-marker{display:none}.admin-management-menu[open] summary,.admin-management-menu summary:hover{color:var(--accent-primary)}.admin-management-menu>div{background:var(--background-primary);border:1px solid var(--border-default);box-shadow:0 .8rem 2rem #001a2c1c;display:grid;min-width:11rem;padding:.35rem;position:absolute;top:3.3rem;z-index:30}.admin-management-menu>div a{border:0!important;color:var(--text-primary);font-size:.78rem;padding:.55rem .6rem;text-decoration:none}.admin-management-menu>div a:hover,.admin-management-menu>div a[aria-current="page"]{background:var(--background-secondary);color:var(--accent-primary)}.admin-account{align-items:center;display:flex;flex:0 0 auto;gap:.4rem;position:relative}.admin-account-profile{align-items:center;color:var(--text-primary);display:flex;gap:.4rem;max-width:17rem;min-width:0;text-decoration:none}.admin-account-profile:hover .admin-account-email{color:var(--accent-primary)}.admin-account-avatar{align-items:center;background:linear-gradient(145deg,#2d6ea8,#153c66);border:1px solid var(--border-default);border-radius:50%;color:#fff;display:flex;flex:0 0 2.4rem;font-size:.9rem;font-weight:800;height:2.4rem;justify-content:center;overflow:hidden;width:2.4rem}.admin-account-email{font-size:.73rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.admin-account form{margin:0}.admin-logout{background:transparent;border:1px solid var(--border-default);border-radius:.35rem;color:var(--text-secondary);cursor:pointer;font:inherit;font-size:.72rem;padding:.4rem .5rem;white-space:nowrap}.admin-logout:hover,.admin-logout:focus-visible{border-color:var(--accent-primary);color:var(--accent-primary)}.admin-notifications{align-items:center;background:transparent;border:0;color:var(--text-primary);cursor:pointer;display:inline-flex;height:2.55rem;justify-content:center;padding:.3rem;position:relative;width:2.55rem}.admin-notifications svg{fill:none;height:1.72rem;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round;stroke-width:1.8;width:1.72rem}.admin-notifications:hover{background:var(--background-secondary);border-radius:50%;color:var(--accent-primary)}.admin-notifications [data-admin-notification-count]{background:#e10000;border:2px solid var(--background-primary);border-radius:999px;color:#fff;font-size:.62rem;font-weight:800;line-height:1;min-width:1.05rem;padding:.2rem .25rem;position:absolute;right:-.1rem;text-align:center;top:-.08rem}.admin-notification-panel{background:var(--background-primary);border:1px solid var(--border-default);border-radius:.65rem;box-shadow:0 .8rem 2rem #001a2c26;min-width:22rem;overflow:hidden;padding:.55rem;position:absolute;right:0;top:3.2rem;z-index:40}.admin-notification-panel[hidden]{display:none!important}.notification-panel-heading{align-items:center;border-bottom:1px solid var(--border-default);display:flex;gap:.35rem;padding:.15rem .2rem .55rem}.notification-panel-heading strong{margin-right:auto}.notification-panel-heading button{background:transparent;border:0;color:var(--text-secondary);cursor:pointer;font-size:1.2rem}.notification-panel-heading .mark-all-read{border-radius:999px;font-size:.68rem;font-weight:800;padding:.3rem .45rem}.notification-panel-heading .mark-all-read:hover{background:var(--background-secondary);color:var(--accent-primary)}.admin-notification-item{align-items:center;display:flex;gap:.2rem}.admin-notification-item a{color:var(--text-primary);display:grid;flex:1;gap:.15rem;padding:.6rem;text-decoration:none}.admin-notification-item a:hover{background:var(--background-secondary);border-radius:.35rem}.admin-notification-item.is-read{opacity:.58}.admin-notification-item button{background:transparent;border:0;border-radius:.3rem;color:var(--accent-primary);cursor:pointer;font-size:.68rem;font-weight:800;padding:.35rem}.admin-notification-item button:hover{background:var(--background-secondary)}.admin-notification-panel small,.admin-notification-empty,.admin-notification-loading{color:var(--text-secondary);font-size:.7rem}@media(max-width:980px){.admin-nav{display:grid;grid-template-columns:minmax(0,1fr) auto auto;padding-block:.45rem}.admin-menu-toggle{align-items:center;background:transparent;border:1px solid var(--border-default);border-radius:.35rem;color:var(--text-primary);cursor:pointer;display:inline-flex;font:inherit;font-size:.75rem;gap:.28rem;padding:.45rem .55rem}.admin-nav nav{display:none;grid-column:1/-1;grid-row:2;min-height:0;padding:.35rem 0 .1rem}.admin-nav nav.is-open{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.admin-nav nav>a{border:1px solid var(--border-default);border-width:0 0 1px;font-size:.8rem;min-height:2.6rem;padding:.2rem .45rem}.admin-management-menu{display:block}.admin-management-menu summary{height:2.6rem;padding:.2rem .45rem}.admin-management-menu>div{box-shadow:none;position:static}.admin-management-menu>div a{display:block}.admin-account{grid-column:3;grid-row:1}.admin-account-email{max-width:10rem}}@media(max-width:620px){.admin-nav{gap:.4rem;padding-left:.75rem;padding-right:.75rem}.admin-nav-brand{font-size:1rem}.admin-nav-brand span{display:none}.admin-account-email{display:none}.admin-account-avatar{flex-basis:2.15rem;height:2.15rem;width:2.15rem}.admin-logout{font-size:.68rem;padding:.34rem .4rem}.admin-notification-panel{min-width:calc(100vw - 1.5rem);right:-.3rem}.admin-nav nav.is-open{grid-template-columns:1fr}.admin-menu-toggle span:last-child{display:none}}
+  .admin-nav{align-items:center;border-bottom:1px solid var(--border-default);box-sizing:border-box;display:flex;gap:.65rem;left:50%;min-height:4.15rem;padding:0 max(1rem,calc((100vw - 1500px)/2));position:relative;transform:translateX(-50%);width:100vw}.admin-nav-brand{align-items:center;color:var(--accent-primary);display:flex;flex:0 0 auto;font-size:1.15rem;font-weight:700;gap:.45rem;text-decoration:none}.admin-nav-brand span{border-left:1px solid var(--border-default);color:var(--text-primary);font-size:.8rem;margin-left:.1rem;padding-left:.55rem}.admin-project-switcher{align-items:center;display:flex;position:relative}.admin-project-switcher summary{align-items:center;border:1px solid var(--border-default);border-radius:.45rem;color:var(--text-secondary);cursor:pointer;display:flex;font-size:.67rem;gap:.25rem;list-style:none;max-width:13rem;padding:.35rem .45rem;white-space:nowrap}.admin-project-switcher summary::-webkit-details-marker{display:none}.admin-project-switcher summary span:first-child{color:var(--text-secondary);font-size:.6rem}.admin-project-switcher summary b{color:var(--text-primary);overflow:hidden;text-overflow:ellipsis}.admin-project-switcher[open] summary,.admin-project-switcher summary:hover{border-color:var(--accent-primary);color:var(--accent-primary)}.admin-project-switcher>div{background:var(--background-primary);border:1px solid var(--border-default);box-shadow:0 .8rem 2rem #001a2c1c;display:grid;min-width:14rem;padding:.35rem;position:absolute;top:3.25rem;z-index:30}.admin-project-switcher>div a{color:var(--text-primary);font-size:.76rem;padding:.55rem .6rem;text-decoration:none}.admin-project-switcher>div a:hover,.admin-project-switcher>div a[aria-current="page"]{background:var(--background-secondary);color:var(--accent-primary)}.admin-menu-toggle{display:none}.admin-nav nav{align-items:stretch;display:flex;flex:1 1 auto;min-height:4.15rem;min-width:0}.admin-nav nav>a{align-items:center;border-bottom:3px solid transparent;color:var(--text-primary);display:flex;flex:0 0 auto;font:inherit;font-size:.84rem;padding:0 .62rem;text-decoration:none}.admin-nav nav>a[aria-current="page"],.admin-nav nav>a:hover{border-bottom-color:var(--accent-primary);color:var(--accent-primary)}.admin-management-menu{align-items:center;display:flex;position:relative}.admin-management-menu summary{align-items:center;color:var(--text-secondary);cursor:pointer;display:flex;font-size:.84rem;gap:.28rem;height:100%;list-style:none;padding:0 .6rem;white-space:nowrap}.admin-management-menu summary::-webkit-details-marker{display:none}.admin-management-menu[open] summary,.admin-management-menu summary:hover{color:var(--accent-primary)}.admin-management-menu>div{background:var(--background-primary);border:1px solid var(--border-default);box-shadow:0 .8rem 2rem #001a2c1c;display:grid;min-width:11rem;padding:.35rem;position:absolute;top:3.3rem;z-index:30}.admin-management-menu>div a{border:0!important;color:var(--text-primary);font-size:.78rem;padding:.55rem .6rem;text-decoration:none}.admin-management-menu>div a:hover,.admin-management-menu>div a[aria-current="page"]{background:var(--background-secondary);color:var(--accent-primary)}.admin-account{align-items:center;display:flex;flex:0 0 auto;gap:.4rem;position:relative}.admin-account-profile{align-items:center;color:var(--text-primary);display:flex;gap:.4rem;max-width:17rem;min-width:0;text-decoration:none}.admin-account-profile:hover .admin-account-email{color:var(--accent-primary)}.admin-account-avatar{align-items:center;background:linear-gradient(145deg,#2d6ea8,#153c66);border:1px solid var(--border-default);border-radius:50%;color:#fff;display:flex;flex:0 0 2.4rem;font-size:.9rem;font-weight:800;height:2.4rem;justify-content:center;overflow:hidden;width:2.4rem}.admin-account-email{font-size:.73rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.admin-account form{margin:0}.admin-logout{background:transparent;border:1px solid var(--border-default);border-radius:.35rem;color:var(--text-secondary);cursor:pointer;font:inherit;font-size:.72rem;padding:.4rem .5rem;white-space:nowrap}.admin-logout:hover,.admin-logout:focus-visible{border-color:var(--accent-primary);color:var(--accent-primary)}.admin-notifications{align-items:center;background:transparent;border:0;color:var(--text-primary);cursor:pointer;display:inline-flex;height:2.55rem;justify-content:center;padding:.3rem;position:relative;width:2.55rem}.admin-notifications svg{fill:none;height:1.72rem;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round;stroke-width:1.8;width:1.72rem}.admin-notifications:hover{background:var(--background-secondary);border-radius:50%;color:var(--accent-primary)}.admin-notifications [data-admin-notification-count]{background:#e10000;border:2px solid var(--background-primary);border-radius:999px;color:#fff;font-size:.62rem;font-weight:800;line-height:1;min-width:1.05rem;padding:.2rem .25rem;position:absolute;right:-.1rem;text-align:center;top:-.08rem}.admin-notification-panel{background:var(--background-primary);border:1px solid var(--border-default);border-radius:.65rem;box-shadow:0 .8rem 2rem #001a2c26;min-width:22rem;overflow:hidden;padding:.55rem;position:absolute;right:0;top:3.2rem;z-index:40}.admin-notification-panel[hidden]{display:none!important}.notification-panel-heading{align-items:center;border-bottom:1px solid var(--border-default);display:flex;gap:.35rem;padding:.15rem .2rem .55rem}.notification-panel-heading strong{margin-right:auto}.notification-panel-heading button{background:transparent;border:0;color:var(--text-secondary);cursor:pointer;font-size:1.2rem}.notification-panel-heading .mark-all-read{border-radius:999px;font-size:.68rem;font-weight:800;padding:.3rem .45rem}.notification-panel-heading .mark-all-read:hover{background:var(--background-secondary);color:var(--accent-primary)}.admin-notification-item{align-items:center;display:flex;gap:.2rem}.admin-notification-item a{color:var(--text-primary);display:grid;flex:1;gap:.15rem;padding:.6rem;text-decoration:none}.admin-notification-item a:hover{background:var(--background-secondary);border-radius:.35rem}.admin-notification-item.is-read{opacity:.58}.admin-notification-item button{background:transparent;border:0;border-radius:.3rem;color:var(--accent-primary);cursor:pointer;font-size:.68rem;font-weight:800;padding:.35rem}.admin-notification-item button:hover{background:var(--background-secondary)}.admin-notification-panel small,.admin-notification-empty,.admin-notification-loading{color:var(--text-secondary);font-size:.7rem}@media(max-width:980px){.admin-nav{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;padding-block:.45rem}.admin-menu-toggle{align-items:center;background:transparent;border:1px solid var(--border-default);border-radius:.35rem;color:var(--text-primary);cursor:pointer;display:inline-flex;font:inherit;font-size:.75rem;gap:.28rem;padding:.45rem .55rem}.admin-nav nav{display:none;grid-column:1/-1;grid-row:2;min-height:0;padding:.35rem 0 .1rem}.admin-nav nav.is-open{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.admin-nav nav>a{border:1px solid var(--border-default);border-width:0 0 1px;font-size:.8rem;min-height:2.6rem;padding:.2rem .45rem}.admin-management-menu{display:block}.admin-management-menu summary{height:2.6rem;padding:.2rem .45rem}.admin-management-menu>div{box-shadow:none;position:static}.admin-management-menu>div a{display:block}.admin-account{grid-column:4;grid-row:1}.admin-account-email{max-width:10rem}}@media(max-width:620px){.admin-nav{gap:.4rem;padding-left:.75rem;padding-right:.75rem}.admin-nav-brand{font-size:1rem}.admin-nav-brand span{display:none}.admin-project-switcher summary{max-width:8rem}.admin-project-switcher summary span:first-child,.admin-project-switcher summary>span:last-child{display:none}.admin-account-email{display:none}.admin-account-avatar{flex-basis:2.15rem;height:2.15rem;width:2.15rem}.admin-logout{font-size:.68rem;padding:.34rem .4rem}.admin-notification-panel{min-width:calc(100vw - 1.5rem);right:-.3rem}.admin-nav nav.is-open{grid-template-columns:1fr}.admin-menu-toggle span:last-child{display:none}}
+</style>
+<style is:global>
+  .admin-nav,
+  .admin-nav-brand,
+  .admin-project-switcher,
+  .admin-project-switcher summary { min-width: 0; }
+  .admin-nav .admin-brand-text { min-width: 0; overflow-wrap: anywhere; }
+  .admin-project-switcher summary b { min-width: 0; }
+  @media (max-width: 980px) {
+    html:has(.admin-nav) .admin-nav { grid-template-columns: minmax(0, 1fr) auto auto; }
+    .admin-nav .admin-account {
+      border-top: 1px solid var(--border-default);
+      grid-column: 1 / -1;
+      grid-row: 2;
+      justify-content: space-between;
+      min-width: 0;
+      padding-top: .4rem;
+      width: 100%;
+    }
+    html:has(.admin-nav) .admin-nav nav { grid-row: 3; }
+    .admin-nav .admin-account-profile { flex: 1 1 auto; max-width: none; }
+    html:has(.admin-nav) .admin-nav .admin-notification-panel { top: 7.15rem; }
+  }
+  @media (max-width: 620px) {
+    html:has(.admin-nav) .admin-nav { padding-left: .75rem; padding-right: .75rem; }
+    .admin-nav .admin-nav-brand .admin-brand-text { display: none; }
+    .admin-nav .admin-project-switcher summary { max-width: min(8rem, 28vw); }
+    .admin-nav .admin-project-switcher > div {
+      box-sizing: border-box;
+      max-width: calc(100vw - 1.5rem);
+      min-width: min(14rem, calc(100vw - 1.5rem));
+      right: 0;
+    }
+    .admin-account-email { display: block; max-width: min(12rem, 42vw); }
+    .admin-account-avatar { flex-basis: 2.15rem; height: 2.15rem; width: 2.15rem; }
+  }
 </style>
 <style is:global>
   .admin-nav .admin-brand-text { border-left: 1px solid var(--border-default); color: var(--text-primary); display: block; font-size: .8rem; line-height: 1.25; margin-left: .1rem; max-width: 15rem; padding-left: .55rem; white-space: normal; }
@@ -288,6 +382,15 @@ const showHomeNav = current !== "portal" && current !== "global";
   body:has(.admin-nav) { overflow-x: clip; }
   /* 管理メニューのドロップダウンを途中で切らないよう、nav自身はクリップしない。 */
   .admin-nav nav { overflow: visible; min-width: 0; }
+  /*
+   * デスクトップでは、ページ側の最大幅からヘッダーを viewport 全体へ
+   * 広げるために translateX(-50%) を使う。スマホではこの transform が
+   * fixed の子要素（表示設定シートや通知）にも新しい包含ブロックを作り、
+   * 画面外へ配置してしまうため、通常の幅・座標に戻す。
+   */
+  @media (max-width: 980px) {
+    html:has(.admin-nav) .admin-nav { left: auto; transform: none; width: 100%; }
+  }
   /* ページ側の汎用 header a ルールより優先し、通知を読みやすいカードとして表示する。 */
   .admin-nav .admin-notification-panel {
     max-height: min(24rem, calc(100vh - 5.5rem));
@@ -314,6 +417,8 @@ const showHomeNav = current !== "portal" && current !== "global";
   .admin-nav .admin-notification-item:last-child { border-bottom: 0; }
   .admin-nav .admin-notification-item b { font-size: .78rem; line-height: 1.35; }
   .admin-nav .admin-notification-item small { line-height: 1.4; }
+  .admin-nav .notification-meta { align-items: center; display: flex; flex-wrap: wrap; gap: .35rem; }
+  .admin-nav .notification-project { background: color-mix(in srgb, var(--accent-primary) 12%, transparent); border: 1px solid color-mix(in srgb, var(--accent-primary) 35%, var(--border-default)); border-radius: 999px; color: var(--accent-primary); font-size: .62rem; font-weight: 800; padding: .12rem .38rem; }
   .admin-nav .notification-kind { color: var(--accent-primary); font-size: .65rem; font-weight: 900; letter-spacing: .04em; }
   .admin-nav .admin-notification-item > button { align-self: center; }
   .admin-nav .notification-read { align-self: center; color: var(--text-secondary); font-size: .65rem; padding: .35rem .25rem; white-space: nowrap; }
@@ -339,9 +444,11 @@ const showHomeNav = current !== "portal" && current !== "global";
   .admin-nav [data-manager-only][hidden] { display: none !important; }
   @media (max-width: 620px) {
     .admin-nav .admin-notification-panel {
+      left: .75rem;
       right: .75rem;
       top: 4.35rem;
-      width: calc(100vw - 1.5rem);
+      width: auto;
+      min-width: 0;
     }
   }
 </style>

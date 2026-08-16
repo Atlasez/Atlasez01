@@ -16,6 +16,25 @@ const { title, description } = Astro.props;
   </head>
   <body>
     <ClientRouter />
-    <main><slot /></main>
+    <a class="admin-skip-link" href="#admin-main">本文へ移動</a>
+    <slot />
   </body>
 </html>
+
+<style is:global>
+  .admin-skip-link {
+    background: var(--accent-primary, #2d6ea8);
+    color: #fff;
+    left: .75rem;
+    padding: .55rem .75rem;
+    position: fixed;
+    top: .5rem;
+    transform: translateY(-160%);
+    transition: transform .15s ease;
+    z-index: 2000;
+  }
+  .admin-skip-link:focus { transform: translateY(0); }
+  /* 共通ナビを含む運営ページは、狭い画面で横スクロールを作らない。 */
+  html:has(.admin-nav),
+  body:has(.admin-nav) { min-width: 0; overflow-x: clip; }
+</style>

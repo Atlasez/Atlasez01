@@ -1,11 +1,13 @@
 ---
 import AdminLayout from "../../layouts/AdminLayout.astro";
 import AdminNav from "../../components/AdminNav.astro";
+import AdminErrorActions from "../../components/AdminErrorActions.astro";
 ---
 
 <AdminLayout title="作業の進め方" description="記事を書く人向けのアトラス運営サイトガイド">
-  <main class="guide" id="main">
+  <main class="guide" id="admin-main">
     <AdminNav current="guide" />
+    <AdminErrorActions />
     <header class="guide-heading">
       <h1>記事を書く人向けガイド</h1>
       <span>記事の作成、確認、コメント、公開までの基本的な使い方です。</span>
@@ -102,8 +104,8 @@ import AdminNav from "../../components/AdminNav.astro";
 
         <section id="resources">
           <h2>参考資料の集め方</h2>
-          <p>記事を書く前に、参考になる本・サイト・動画を探しておくと、説明の順序や例を考えやすくなります。旧サイトで使っていた資料の一覧も、必要に応じて引き続き確認できます。</p>
-          <ul><li>同じテーマを扱う資料を複数見比べ、共通する説明と違いをメモする。</li><li>サイト・動画・書籍を分けて記録し、後からもう一度見つけられるようにする。</li><li>資料一覧で同じ題名がないか検索してから追加する。</li><li>調べ終わった項目にはチェックを付け、まだ確認していない項目と区別する。</li></ul>
+          <p>記事を書く前に、参考になる本・サイト・動画を探しておくと、説明の順序や例を考えやすくなります。共有している資料の保管場所も確認し、必要な出典を手元に整理してください。</p>
+          <ul><li>同じテーマを扱う資料を複数見比べ、共通する説明と違いをメモする。</li><li>サイト・動画・書籍を分けて記録し、後からもう一度見つけられるようにする。</li><li>同じ題名の資料がないか確認してから追加する。</li><li>調べ終わった項目にはチェックを付け、まだ確認していない項目と区別する。</li></ul>
           <p>資料をそのまま写すのではなく、読者がどこでつまずくかを考え、自分の言葉で整理してください。引用や画像を使うときは、出典と利用条件を確認します。</p>
         </section>
 

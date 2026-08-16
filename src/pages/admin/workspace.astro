@@ -2,11 +2,13 @@
 import AdminLayout from "../../layouts/AdminLayout.astro";
 import AdminNav from "../../components/AdminNav.astro";
 import AdminBreadcrumb from "../../components/AdminBreadcrumb.astro";
+import AdminErrorActions from "../../components/AdminErrorActions.astro";
 ---
 
 <AdminLayout title="マイページ" description="運営者プロフィールと自分の作業を確認します">
-  <main class="personal-workspace" data-personal-workspace>
+  <main id="admin-main" class="personal-workspace" data-personal-workspace>
     <AdminNav current="global" />
+    <AdminErrorActions />
     <AdminBreadcrumb items={[{ label: "メンバー用サイト", href: "/admin/portal/" }, { label: "マイページ" }]} />
     <header class="workspace-heading">
       <div><h1>マイページ</h1><p>Atlasez全体のアカウント情報と、参加中のプロジェクトを確認できます。</p></div>

@@ -57,6 +57,106 @@ test.describe("公式サイト", () => {
     await page.getByRole("link", { name: /ベータ版を公開/ }).click();
     await expect(page.locator("h1")).toContainText("ベータ版");
   });
+
+  test("表示設定を右端に置き、応募フォームに現行項目を含める", async ({
+    page,
+  }) => {
+    await page.goto("./");
+    const headerChildren = await page
+      .locator(".org-header-inner > *")
+      .evaluateAll((items) => items.map((item) => item.className));
+    expect(headerChildren.indexOf("org-settings")).toBeGreaterThan(
+      headerChildren.indexOf("org-nav"),
+    );
+    await expect(page.locator(".org-settings")).toBeVisible();
+
+    await page.goto("apply/");
+    for (const field of [
+      'input[name="birthDate"]',
+      'select[name="residencePrefecture"]',
+      'input[name="residenceCity"]',
+      'textarea[name="currentOrganizations"]',
+      'select[name="studentCouncilExperience"]',
+      'input[name="studentCouncilRole"]',
+      'input[name="desiredProjects"]',
+      'input[name="desiredRoles"]',
+      'input[name="discoverySource"]',
+      'input[name="participationReasons"]',
+      'textarea[name="interviewAvailability"]',
+      'textarea[name="questions"]',
+    ]) {
+      await expect(page.locator(field).first()).toBeVisible();
+    }
+  });
+});
+
+test.describe("運営用プロジェクト画面", () => {
+  test("メンバー用サイトに複数プロジェクト通知のベルを表示する", async ({
+    page,
+  }) => {
+    await page.goto("admin/portal/");
+    await expect(page.locator("[data-admin-notifications]")).toBeVisible();
+    await expect(page.locator("[data-admin-notification-panel]")).toContainText(
+      "プロジェクト通知",
+    );
+  });
+
+  test("ゼミ運営ページに進捗・ToDo・日程の操作欄がある", async ({ page }) => {
+    await page.goto("admin/projects/seminar-platform/");
+    await expect(page.locator("[data-progress-form]")).toBeVisible();
+    await expect(page.locator("[data-todo-form]")).toBeVisible();
+    await expect(page.locator("[data-event-form]")).toBeVisible();
+    await expect(page.locator("[data-progress-details]")).toBeVisible();
+    await expect(page.locator("[data-relative-reminder-list]")).toHaveCount(1);
+    await expect(
+      page.locator("[data-relative-reminder-kind] option", {
+        hasText: "N日前",
+      }),
+    ).toHaveCount(1);
+    await expect(
+      page.locator("[data-relative-reminder-kind] option", {
+        hasText: "N時間前",
+      }),
+    ).toHaveCount(1);
+    await expect(
+      page.locator("[data-relative-reminder-kind] option", {
+        hasText: "当日毎時",
+      }),
+    ).toHaveCount(1);
+  });
+
+  test("運営のToDoに複数リマインダーと予定不可期間の入力欄がある", async ({
+    page,
+  }) => {
+    await page.goto("admin/operations/");
+    await page.getByRole("button", { name: "リマインダーを設定する" }).click();
+    await expect(page.locator("[data-task-reminder-row]")).toHaveCount(1);
+    await expect(
+      page.locator("[data-task-reminder-kind] option", { hasText: "N日前" }),
+    ).toHaveCount(1);
+    await expect(
+      page.locator("[data-task-reminder-kind] option", { hasText: "N時間前" }),
+    ).toHaveCount(1);
+    await expect(
+      page.locator("[data-task-reminder-kind] option", { hasText: "当日毎時" }),
+    ).toHaveCount(1);
+    await expect(page.locator("[data-task-reminder-amount]")).toBeVisible();
+    await expect(page.locator("[data-add-task-reminder]")).toBeVisible();
+    await expect(page.locator("[data-task-reminder-email]")).toBeVisible();
+    await expect(page.locator("[data-unavailable-start]")).toBeVisible();
+    await expect(page.locator("[data-unavailable-end]")).toBeVisible();
+    await expect(page.locator("[data-unavailable-timezone]")).toBeVisible();
+    await expect(page.locator("[data-task-view='assigned']")).toHaveCount(1);
+    await expect(page.locator("[data-task-view='created']")).toHaveCount(1);
+    await expect(page.locator("[data-task-summary]")).toBeVisible();
+    await expect(
+      page.locator("[data-task-summary-view='assigned']"),
+    ).toBeVisible();
+    await expect(
+      page.locator("[data-task-summary-filter='overdue']"),
+    ).toBeVisible();
+    await expect(page.locator("[data-timezone-search]")).toHaveCount(4);
+  });
 });
 
 test.describe("学習サイト", () => {
@@ -74,6 +174,22 @@ test.describe("学習サイト", () => {
       /\/atlas\/ja\/mathematics\//,
     );
     await expect(page.getByText("準備中").first()).toBeVisible();
+  });
+
+  test("漢字記事に専用の見出し・表スタイルが適用され、同時作業会タイルは一覧へ進む", async ({
+    page,
+  }) => {
+    await page.goto("atlas/ja/kanji/culture/musical-instruments/");
+    await expect(page.locator(".article-body.kanji-article")).toBeVisible();
+    await expect(
+      page.locator(".article-body.kanji-article table").first(),
+    ).toHaveCSS("border-style", "solid");
+    await page.goto("admin/atlas/");
+    await expect(
+      page.locator('.project-links a[href="/admin/events/"]'),
+    ).toHaveCount(1);
+    await page.goto("admin/events/");
+    await expect(page.locator("[data-event-list]")).toBeVisible();
   });
 
   test("はじめての方へは専用ガイドに移動する", async ({ page }) => {
@@ -117,6 +233,30 @@ test.describe("学習サイト", () => {
     await expect(page.locator(".upcoming-list")).toHaveCSS(
       "overflow-y",
       "scroll",
+    );
+  });
+
+  test("学習地図で選んだカテゴリの表示タブへ遷移し、分野地図へ戻れる", async ({
+    page,
+  }) => {
+    await page.goto("atlas/ja/?view=map");
+    await expect(page.locator("[data-map-status]")).toContainText("カテゴリ");
+    await page.evaluate(() => {
+      window.dispatchEvent(
+        new CustomEvent("atlas-map-category-change", {
+          detail: {
+            subject: "mathematics",
+            categoryKey: "mathematics/group-theory",
+          },
+        }),
+      );
+    });
+    await expect(
+      page.getByRole("link", { name: "数学の学習地図を開く" }),
+    ).toHaveAttribute("href", /\/atlas\/ja\/mathematics\/\?view=map$/);
+    await page.getByRole("tab", { name: "リスト表示" }).click();
+    await expect(page).toHaveURL(
+      /\/atlas\/ja\/mathematics\/group-theory\/\?view=list$/,
     );
   });
 
@@ -264,14 +404,60 @@ test.describe("学習サイト", () => {
     await expect(openProofs).toHaveCount(0);
     await toggle.click();
     await expect(openProofs).toHaveCount(await proofs.count());
-    await expect(toggle).toHaveText("証明を閉じる");
+    await expect(toggle).toHaveText("▼ 証明を閉じる");
     await toggle.click();
     await expect(openProofs).toHaveCount(0);
-    await expect(toggle).toHaveText("証明を展開");
+    await expect(toggle).toHaveText("▶ 証明を展開");
 
     await page.setViewportSize({ width: 390, height: 844 });
     await page.reload();
     await expect(toggle).toHaveCSS("position", "static");
+  });
+
+  test("数学記事のMathJax・書式・内部参照を保持する", async ({ page }) => {
+    await page.goto("atlas/ja/mathematics/linear-algebra/vector-space/");
+    await expect(
+      page.locator(".article-body mjx-container").first(),
+    ).toBeVisible();
+    await expect(page.locator(".article-body strong").first()).toHaveCSS(
+      "font-weight",
+      "700",
+    );
+    await expect(page.locator(".article-body ol").first()).toHaveCSS(
+      "list-style-type",
+      "decimal",
+    );
+
+    await page.goto("atlas/ja/mathematics/module-theory/module-homomorphisms/");
+    const reference = page.locator("a.article-reference").first();
+    await expect(reference).toHaveAttribute(
+      "href",
+      /module-homomorphisms\/#math-block-\d+$/,
+    );
+  });
+
+  test("数学記事の証明矢印・folding境界・命題枠を整える", async ({ page }) => {
+    await page.goto("atlas/ja/mathematics/module-theory/module-homomorphisms/");
+    const toggle = page.locator("[data-proof-toggle]");
+    await expect(toggle).toHaveText("▶ 証明を展開");
+    await expect(toggle).toHaveCSS("justify-content", "center");
+    await expect(page.locator("details.folding").first()).toHaveCSS(
+      "border-top-width",
+      "0px",
+    );
+    await expect(page.locator(".proof-details-inner").first()).toHaveCSS(
+      "border-left-width",
+      "3px",
+    );
+    const proposition = page.locator(".prop").first();
+    for (const side of ["top", "right", "bottom", "left"] as const) {
+      await expect(proposition).toHaveCSS(
+        `border-${side}-color`,
+        "rgb(224, 195, 117)",
+      );
+    }
+    await toggle.click();
+    await expect(toggle).toHaveText("▼ 証明を閉じる");
   });
 
   test("学習記録は触れた位置へ移動し、記事の上下で同期する", async ({
@@ -546,6 +732,7 @@ test.describe("学習サイト", () => {
     await xlarge.click();
     const language = menu.locator('select[name="lang"]');
     await language.selectOption("en");
+    await expect(page).toHaveURL(/\/atlas\/en\/$/);
     await expect(language.locator('option[value="ja"]')).toHaveText(
       "日本語(Japanese)",
     );

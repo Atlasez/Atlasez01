@@ -3,6 +3,7 @@ import { getCollection } from "astro:content";
 import AdminLayout from "../../layouts/AdminLayout.astro";
 import AdminNav from "../../components/AdminNav.astro";
 import AdminErrorActions from "../../components/AdminErrorActions.astro";
+import AdminBreadcrumb from "../../components/AdminBreadcrumb.astro";
 
 const subjects = (await getCollection("subjects"))
   .sort((a, b) => a.data.order - b.data.order)
@@ -30,16 +31,17 @@ const editorData = JSON.stringify({ subjects, articles }).replace(/</g, "\\u003c
 ---
 
 <AdminLayout title="記事編集ワークスペース" description="アトラス運営者用の記事執筆・査読画面">
-  <main class="editor-workspace" data-editor-workspace>
+  <main id="admin-main" class="editor-workspace" data-editor-workspace>
     <AdminNav current="editor" />
     <AdminErrorActions />
+    <AdminBreadcrumb items={[{ label: "編集・査読", href: "/admin/articles/" }, { label: "記事編集ワークスペース" }]} />
     <header class="workspace-header">
       <div>
         <h1>記事編集ワークスペース</h1>
         <p>原稿を書く、数式を確かめる、コメントで査読する。公開まで、この画面で完結します。</p>
       </div>
       <nav aria-label="運営メニュー">
-        <a href="/admin/articles/">編集・査読へ戻る</a>
+        <a href="/admin/articles/" data-astro-reload>編集・査読へ戻る</a>
       </nav>
     </header>
 
@@ -87,7 +89,7 @@ const editorData = JSON.stringify({ subjects, articles }).replace(/</g, "\\u003c
               <h2 data-document-heading>新規原稿</h2>
             </div>
             <div class="toolbar-actions">
-              <label class="engine-control">Webプレビュー組版<select data-preview-engine><option value="katex">KaTeX（高速）</option><option value="mathjax">MathJax（LaTeX互換）</option></select></label>
+              <label class="engine-control">Webプレビュー組版<select data-preview-engine><option value="mathjax">MathJax（LaTeX互換）</option><option value="katex">KaTeX（高速）</option></select></label>
               <div class="document-actions">
                 <button type="button" class="quiet-action" data-request-review hidden>査読を依頼する</button>
                 <button type="button" class="primary-action" data-publish-document hidden>公開する</button>
@@ -95,6 +97,7 @@ const editorData = JSON.stringify({ subjects, articles }).replace(/</g, "\\u003c
                 <button type="submit" class="primary-action" data-save-document>保存する</button>
               </div>
               <output class="save-status" data-save-message aria-live="polite">保存状態：原稿を選択してください</output>
+              <button type="button" class="quiet-action conflict-reload" data-reload-conflict hidden>最新の原稿を読み込む</button>
             </div>
           </section>
 
@@ -104,11 +107,12 @@ const editorData = JSON.stringify({ subjects, articles }).replace(/</g, "\\u003c
               <label>タイトル<input name="title" required maxlength="180" placeholder="例：群の定義" /></label>
               <label>要約<input name="summary" required maxlength="800" placeholder="記事一覧に表示される短い説明" /></label>
               <label>分野<select name="subject" required data-subject></select></label>
-              <label>カテゴリ<select name="category" required data-category></select></label>
+              <label>カテゴリ<select name="category" data-category></select><small>カテゴリがない分野では空欄のまま保存できます。</small></label>
               <label>URL用の名前<input name="slug" required pattern="[a-z0-9-]+" maxlength="100" placeholder="group-definition" /></label>
               <label>概念ID<input name="conceptId" required pattern="[a-z0-9-]+\.[a-z0-9-]+\.[a-z0-9-]+" maxlength="180" placeholder="math.group-theory.group-definition" /></label>
               <label>言語<select name="locale"><option value="jpn">日本語（jpn）</option><option value="eng">English（eng）</option></select></label>
               <label>LaTeXコンパイル形式<select name="latexEngine"><option value="uplatex">upLaTeX（日本語文書）</option><option value="pdflatex">LaTeX標準</option><option value="xelatex">XeLaTeX</option><option value="lualatex">LuaLaTeX</option></select><small>外部のLaTeX処理で使う形式です。上の「Webプレビュー組版」は、この画面内での数式表示だけを切り替えます。</small></label>
+              <label>査読担当<select name="reviewerEmail" data-reviewer><option value="">指定なし</option></select><small>査読を依頼する相手を指定すると、相手の「査読」一覧で最上位に表示されます。</small></label>
               <label>状態<select name="status"><option value="draft">下書き</option><option value="in-review">査読中</option><option value="on-hold">保留</option><option value="approved">査読済み</option></select></label>
             </div>
           </details>
@@ -185,6 +189,7 @@ const editorData = JSON.stringify({ subjects, articles }).replace(/</g, "\\u003c
         <p class="eyebrow">保存が完了しました</p>
         <h2 id="progress-dialog-title">進捗を記録しますか？</h2>
         <p>記録した進捗は、設定済みの分野Discordチャンネルと全体進捗チャンネルに自動転送されます。</p>
+        <label class="progress-detail-field">具体的内容（任意）<textarea data-progress-details maxlength="8000" placeholder="今回行った修正、確認したコメント、次に進める作業など"></textarea></label>
         <div class="approval-actions">
           <button type="submit" value="continue" class="quiet-action">編集を続ける</button>
           <button type="submit" value="progress" class="primary-action">進捗を記録する</button>
@@ -231,7 +236,9 @@ const editorData = JSON.stringify({ subjects, articles }).replace(/</g, "\\u003c
   .editor-panel { background: var(--surface); min-width: 0; padding: clamp(1rem, 2vw, 1.5rem); }
   .editorial-note-panel { background: var(--surface-alt); border: 1px solid var(--border); border-radius: .65rem; margin: 1rem 0; padding: .9rem; }
   .editorial-note-panel .pane-heading { margin: 0 0 .55rem; }
-  .editorial-note-panel textarea { box-sizing: border-box; min-height: 6rem; padding: .65rem; resize: vertical; width: 100%; }
+  .editorial-note-panel textarea { background: #fcfdfe; box-sizing: border-box; font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace); font-size: .9rem; line-height: 1.7; min-height: clamp(20rem, 42vh, 34rem); padding: 1rem; resize: vertical; width: 100%; }
+  .progress-detail-field { color: var(--muted); display: grid; font-size: .78rem; font-weight: 800; gap: .35rem; margin: .85rem 0 0; text-align: left; }
+  .progress-detail-field textarea { background: var(--surface); border: 1px solid var(--border); box-sizing: border-box; color: var(--text); font: inherit; font-weight: 500; line-height: 1.6; min-height: 9rem; padding: .65rem; resize: vertical; width: 100%; }
   .private-note-badge { color: var(--muted); font-size: .72rem; font-weight: 800; white-space: nowrap; }
   .empty-state { color: var(--muted); margin: 5rem auto; max-width: 38rem; text-align: center; }.empty-state h2 { color: var(--text); }.editor-start-actions{display:grid;gap:1rem;margin:1.4rem auto 0;max-width:32rem;text-align:left}.editor-start-actions>.primary-action{justify-self:center}.editor-start-actions .source-picker{background:var(--surface-alt);border:1px solid var(--border);border-radius:.65rem;margin:0;padding:1rem}.editor-start-actions .source-picker strong{color:var(--text);font-size:.9rem}.editor-start-actions .source-picker>span{font-size:.76rem;font-weight:500;line-height:1.5}.editor-start-actions .source-picker .quiet-action{justify-self:start}
   .document-form { display: grid; gap: 1rem; }.document-form[hidden]{display:none!important}
@@ -289,11 +296,11 @@ const editorData = JSON.stringify({ subjects, articles }).replace(/</g, "\\u003c
 <!-- 動的に生成するペインホストにはAstroのスコープ属性が付かないため、配置だけ明示的にグローバル適用する。 -->
 <style>
   :global(.editor-pane-host) { align-items: stretch; display: grid; gap: 1rem; grid-template-columns: repeat(var(--pane-count, 2), minmax(0, 1fr)); min-width: 0; }
-  :global(.editor-pane-host[data-pane-direction="vertical"]) { grid-template-columns: 1fr; }
+  :global(.editor-pane-host[data-pane-direction="vertical"]) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   :global(.editor-pane-host > [data-editor-pane]) { min-width: 0; }
   :global(.editor-pane-host > [data-editor-pane][hidden]) { display: none !important; }
   @media (max-width: 700px) {
-    :global(.editor-pane-host), :global(.editor-pane-host[data-pane-direction="horizontal"]) { grid-template-columns: 1fr; }
+    :global(.editor-pane-host), :global(.editor-pane-host[data-pane-direction="horizontal"]), :global(.editor-pane-host[data-pane-direction="vertical"]) { grid-template-columns: 1fr; }
   }
 </style>
 
@@ -469,7 +476,8 @@ const editorData = JSON.stringify({ subjects, articles }).replace(/</g, "\\u003c
 
   type Subject = { slug: string; name: string; categories: { slug: string; name: string }[] };
   type SourceArticle = { articleId: string; title: string; subject: string; category: string; slug: string; summary: string; conceptId: string; body: string };
-  type Document = { id: string; source_article_id: string | null; subject: string; category: string; locale: string; slug: string; title: string; summary: string; concept_id: string; body: string; editorial_note: string; latex_engine: "uplatex" | "pdflatex" | "xelatex" | "lualatex" | "mathjax" | "katex"; status: "draft" | "in-review" | "on-hold" | "approved"; created_by: string; updated_by: string; created_at: string; updated_at: string; reviewed_at: string | null; published_at: string | null };
+  type Document = { id: string; source_article_id: string | null; subject: string; category: string; locale: string; slug: string; title: string; summary: string; concept_id: string; body: string; editorial_note: string; latex_engine: "uplatex" | "pdflatex" | "xelatex" | "lualatex" | "mathjax" | "katex"; status: "draft" | "in-review" | "on-hold" | "approved"; created_by: string; updated_by: string; created_at: string; updated_at: string; reviewed_at: string | null; published_at: string | null; reviewer_email: string | null };
+  type Reviewer = { email: string; displayName: string };
   type SelectedRange = { start: number | null; end: number | null; text: string; source: "本文" | "プレビュー" };
   type CommentSelection = { id?: string; position?: number; selection_start: number | null; selection_end: number | null; selection_text: string };
   type CommentFeedback = { displayName: string; status: "confirmed" | "unreflected"; updatedAt: string };
@@ -490,6 +498,7 @@ const editorData = JSON.stringify({ subjects, articles }).replace(/</g, "\\u003c
     const sourceSubject = root.querySelector<HTMLSelectElement>("[data-source-subject]")!;
     const subject = form.elements.namedItem("subject") as HTMLSelectElement;
     const category = form.elements.namedItem("category") as HTMLSelectElement;
+    const reviewer = form.elements.namedItem("reviewerEmail") as HTMLSelectElement;
     const status = form.elements.namedItem("status") as HTMLSelectElement;
     const body = root.querySelector<HTMLTextAreaElement>("[data-body]")!;
     const preview = root.querySelector<HTMLElement>("[data-preview]")!;
@@ -519,6 +528,7 @@ const editorData = JSON.stringify({ subjects, articles }).replace(/</g, "\\u003c
     const wordCount = root.querySelector<HTMLElement>("[data-word-count]")!;
     const previewEngine = root.querySelector<HTMLSelectElement>("[data-preview-engine]")!;
     const saveButton = root.querySelector<HTMLButtonElement>("[data-save-document]")!;
+    const conflictReloadButton = root.querySelector<HTMLButtonElement>("[data-reload-conflict]")!;
     const publishButton = root.querySelector<HTMLButtonElement>("[data-publish-document]")!;
     const unpublishButton = root.querySelector<HTMLButtonElement>("[data-unpublish-document]")!;
     const reviewButton = root.querySelector<HTMLButtonElement>("[data-request-review]")!;
@@ -526,11 +536,13 @@ const editorData = JSON.stringify({ subjects, articles }).replace(/</g, "\\u003c
     const approvalDialog = root.querySelector<HTMLDialogElement>("[data-approval-dialog]")!;
     const unpublishDialog = root.querySelector<HTMLDialogElement>("[data-unpublish-dialog]")!;
     const progressDialog = root.querySelector<HTMLDialogElement>("[data-progress-dialog]")!;
+    const progressDetails = root.querySelector<HTMLTextAreaElement>("[data-progress-details]")!;
     const revisions = root.querySelector<HTMLElement>("[data-revision-list]")!;
     const revisionPanel = root.querySelector<HTMLDetailsElement>(".revision-panel")!;
     const newDocumentButton = root.querySelector<HTMLButtonElement>("[data-new-document]")!;
     const sidebarCollapseButton = root.querySelector<HTMLButtonElement>("[data-sidebar-collapse]")!;
     let documents: Omit<Document, "body">[] = [];
+    let reviewers: Reviewer[] = [];
     let currentComments: Comment[] = [];
     let selectedCommentRange: SelectedRange | null = null;
     let selectedCommentRanges: SelectedRange[] = [];
@@ -542,6 +554,7 @@ const editorData = JSON.stringify({ subjects, articles }).replace(/</g, "\\u003c
     let availableMentionNames: string[] = [];
     let mathJaxLoading: Promise<void> | undefined;
     let hasUnsavedChanges = false;
+    let currentDocumentUpdatedAt = "";
     const paneKeys = ["writing", "preview", "note", "comments"] as const;
     type PaneKey = (typeof paneKeys)[number];
     const paneLabels: Record<PaneKey, string> = { writing: "本文", preview: "プレビュー", note: "執筆メモ", comments: "コメント" };
@@ -563,6 +576,7 @@ const editorData = JSON.stringify({ subjects, articles }).replace(/</g, "\\u003c
     window.addEventListener("beforeunload", (event) => {
       if (!hasUnsavedChanges) return;
       event.preventDefault();
+      event.returnValue = "";
     });
     const setSidebarCollapsed = (collapsed: boolean, persist = false) => {
       root.classList.toggle("sidebar-collapsed", collapsed);
@@ -611,6 +625,9 @@ const editorData = JSON.stringify({ subjects, articles }).replace(/</g, "\\u003c
       const direction: PaneDirection = candidate.direction === "vertical" ? "vertical" : "horizontal";
       return { count, visible: visible.length ? visible : defaultPaneLayout.visible.slice(0, count), direction };
     };
+    // visible 以外の detached pane も含めた論理順。別窓を複数開いたときも、
+    // 元の index ではなくこの順序で復帰位置を決めるため、復帰順に依存しない。
+    let paneOrder: PaneKey[] = [...paneKeys];
     const setPaneLayout = (layout: { count: number; visible: PaneKey[]; direction: PaneDirection }, persist = true) => {
       const normalized = normalizePaneLayout(layout);
       paneHost.dataset.paneCount = String(normalized.count);
@@ -620,9 +637,21 @@ const editorData = JSON.stringify({ subjects, articles }).replace(/</g, "\\u003c
       // 配置方向をインラインでも設定する（狭い画面では常に上下）。
       const narrow = window.matchMedia("(max-width: 700px)").matches;
       paneHost.style.display = "grid";
-      paneHost.style.gridTemplateColumns = narrow || normalized.direction === "vertical"
+      const visibleCount = Math.min(normalized.count, normalized.visible.length);
+      // 上下移動では順序を入れ替えたうえで、3枠以上なら2列グリッドにする。
+      // これにより A・B・C の B を下へ移動したとき、A/C が上段に残り B が次段になる。
+      const columns = normalized.direction === "vertical"
+        ? (visibleCount >= 3 ? 2 : 1)
+        : visibleCount;
+      paneHost.style.gridTemplateColumns = narrow
         ? "1fr"
-        : `repeat(${Math.min(normalized.count, normalized.visible.length)}, minmax(0, 1fr))`;
+        : `repeat(${Math.max(1, columns)}, minmax(0, 1fr))`;
+      // 表示順の配列だけでなくDOM順も同期させる。CSS GridはDOM順で配置するため、
+      // ここを更新しないと矢印を押しても見た目のpanelが入れ替わらない。
+      paneOrder.forEach((key) => {
+        const panel = paneHost.querySelector<HTMLElement>(`[data-editor-pane="${key}"]`);
+        if (panel) paneHost.append(panel);
+      });
       paneKeys.forEach((key) => {
         const panel = paneHost.querySelector<HTMLElement>(`[data-editor-pane="${key}"]`);
         const button = root.querySelector<HTMLButtonElement>(`[data-pane-tab="${key}"]`);
@@ -635,6 +664,7 @@ const editorData = JSON.stringify({ subjects, articles }).replace(/</g, "\\u003c
     };
     let paneLayout = defaultPaneLayout;
     try { paneLayout = normalizePaneLayout(JSON.parse(localStorage.getItem(paneStorageKey) ?? "null")); } catch { paneLayout = defaultPaneLayout; }
+    paneOrder = [...paneLayout.visible, ...paneKeys.filter((key) => !paneLayout.visible.includes(key))];
     historyButton?.addEventListener("click", () => {
       revisionPanel.open = true;
       historyButton.setAttribute("aria-pressed", "true");
@@ -649,10 +679,27 @@ const editorData = JSON.stringify({ subjects, articles }).replace(/</g, "\\u003c
         ? paneLayout.visible.filter((item) => item !== key)
         : [...paneLayout.visible, key].slice(-paneLayout.count);
       if (!visible.length) return;
+      paneOrder = [...visible, ...paneOrder.filter((item) => !visible.includes(item))];
       paneLayout = { count: paneLayout.count, visible, direction: paneLayout.direction };
       setPaneLayout(paneLayout);
     }));
     setPaneLayout(paneLayout, false);
+    const movePaneByEdge = (key: PaneKey, edge: "top" | "right" | "bottom" | "left") => {
+      const visible = [...paneLayout.visible];
+      const index = visible.indexOf(key);
+      if (index < 0) return;
+      const delta = edge === "top" || edge === "left" ? -1 : 1;
+      const adjacent = index + delta;
+      if (adjacent < 0 || adjacent >= visible.length) return;
+      [visible[index], visible[adjacent]] = [visible[adjacent], visible[index]];
+      const orderIndex = (paneKey: PaneKey) => paneOrder.indexOf(paneKey);
+      const firstOrderIndex = orderIndex(key);
+      const adjacentOrderIndex = orderIndex(visible[index]);
+      if (firstOrderIndex >= 0 && adjacentOrderIndex >= 0)
+        [paneOrder[firstOrderIndex], paneOrder[adjacentOrderIndex]] = [paneOrder[adjacentOrderIndex], paneOrder[firstOrderIndex]];
+      paneLayout = { ...paneLayout, direction: edge === "top" || edge === "bottom" ? "vertical" : "horizontal", visible };
+      setPaneLayout(paneLayout);
+    };
     const addPaneEdgeControls = (panel: HTMLElement, key: PaneKey) => {
       const edges = document.createElement("div");
       edges.className = "pane-edge-controls";
@@ -664,14 +711,7 @@ const editorData = JSON.stringify({ subjects, articles }).replace(/</g, "\\u003c
         button.dataset.edge = edge;
         button.setAttribute("aria-label", `${paneLabels[key]}を${edge === "top" ? "上" : edge === "right" ? "右" : edge === "bottom" ? "下" : "左"}側に配置`);
         button.textContent = edge === "top" ? "↑" : edge === "right" ? "→" : edge === "bottom" ? "↓" : "←";
-        button.addEventListener("click", () => {
-          const direction: PaneDirection = edge === "top" || edge === "bottom" ? "vertical" : "horizontal";
-          const visible = paneLayout.visible.includes(key)
-            ? paneLayout.visible
-            : [...paneLayout.visible, key].slice(-paneLayout.count);
-          paneLayout = { ...paneLayout, direction, visible };
-          setPaneLayout(paneLayout);
-        });
+        button.addEventListener("click", () => movePaneByEdge(key, edge));
         edges.append(button);
       });
       panel.append(edges);
@@ -686,16 +726,33 @@ const editorData = JSON.stringify({ subjects, articles }).replace(/</g, "\\u003c
       const popup = window.open("", `atlasez-editor-${key}`, "popup,width=980,height=820,resizable=yes,scrollbars=yes");
       if (!popup) { saveMessage.value = "別ウィンドウを開けませんでした。ブラウザのポップアップ許可を確認してください。"; return; }
       const styles = [...document.querySelectorAll<HTMLStyleElement>("style")].map((style) => style.textContent ?? "").join("\n");
-      const popupHtml = `<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(paneLabels[key])} - Atlasez</title><style>html,body{margin:0;min-height:100%;}body{background:var(--background,var(--surface,#fff));color:var(--text,#182027);font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif;padding:1rem;}*{box-sizing:border-box;} ${styles}</style></head><body><main class="editor-popup-shell"><div class="popup-toolbar"><strong>${esc(paneLabels[key])}</strong><button type="button" id="reattach-pane">元の画面に戻す</button></div></main></body>`;
+      const styleLinks = [...document.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]')].map((link) => `<link rel="stylesheet" href="${esc(link.href)}">`).join("");
+      const rootStyles = getComputedStyle(document.documentElement);
+      const workspaceStyles = getComputedStyle(root);
+      const variableNames = [...new Set([...rootStyles, ...workspaceStyles].filter((name) => name.startsWith("--")))];
+      const variables = variableNames.map((name) => {
+        const value = workspaceStyles.getPropertyValue(name).trim() || rootStyles.getPropertyValue(name).trim();
+        return value ? `${name}:${value};` : "";
+      }).join("");
+      const popupHtml = `<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(paneLabels[key])} - Atlasez</title>${styleLinks}<style>:root{${variables}}html,body{margin:0;min-height:100%;}body{background:var(--background-primary);color:var(--text-primary);font-family:var(--font-sans,system-ui,-apple-system,"Noto Sans JP",sans-serif);padding:1rem;}*{box-sizing:border-box;} ${styles}</style></head><body><main class="editor-popup-shell"></main></body>`;
       popup.document.open();
       popup.document.close();
       popup.document.documentElement.lang = "ja";
+      popup.document.documentElement.dataset.site = "atlas";
       popup.document.documentElement.innerHTML = popupHtml;
       const placeholder = document.createElement("div");
       placeholder.className = "detached-pane-placeholder";
+      // 復帰処理の参照は残すが、元画面には空き枠やダミーカードを表示しない。
+      placeholder.hidden = true;
+      placeholder.setAttribute("aria-hidden", "true");
       placeholder.dataset.detachedPane = key;
       placeholder.innerHTML = `<span>${esc(paneLabels[key])}を別ウィンドウで表示中</span><button type="button">元の画面に戻す</button>`;
-      panel.replaceWith(placeholder);
+      panel.remove();
+      const remaining = paneLayout.visible.filter((item) => item !== key);
+      paneLayout = { ...paneLayout, visible: remaining };
+      if (remaining.length) setPaneLayout(paneLayout, false);
+      else paneHost.style.display = "none";
+      paneHost.parentElement?.insertBefore(placeholder, paneHost);
       panel.hidden = false;
       const shell = popup.document.querySelector(".editor-popup-shell");
       const popupToolbar = popup.document.createElement("div");
@@ -706,7 +763,13 @@ const editorData = JSON.stringify({ subjects, articles }).replace(/</g, "\\u003c
       const restore = () => {
         if (!placeholder.isConnected) return;
         window.clearInterval(watcher);
-        placeholder.replaceWith(panel);
+        paneHost.append(panel);
+        placeholder.remove();
+        const visible = [...paneLayout.visible, key]
+          .sort((left, right) => paneOrder.indexOf(left) - paneOrder.indexOf(right))
+          .slice(0, paneLayout.count);
+        paneLayout = { ...paneLayout, visible };
+        paneHost.style.display = "grid";
         setPaneLayout(paneLayout, false);
         try { if (!popup.closed) popup.close(); } catch { /* noop */ }
       };
@@ -737,9 +800,15 @@ const editorData = JSON.stringify({ subjects, articles }).replace(/</g, "\\u003c
       return await response.json() as T;
     };
     const selectedSubject = () => subjects.find((item) => item.slug === subject.value) ?? subjects[0];
+    const fillReviewers = (selected = "") => {
+      reviewer.innerHTML = '<option value="">指定なし</option>' + reviewers.map((item) => `<option value="${esc(item.email)}">${esc(item.displayName)}</option>`).join("");
+      reviewer.value = reviewers.some((item) => item.email === selected) ? selected : "";
+    };
     const fillCategories = (selected = "") => {
       const subjectData = selectedSubject();
-      category.innerHTML = subjectData.categories.map((item) => `<option value="${esc(item.slug)}">${esc(item.name)}</option>`).join("");
+      category.innerHTML = subjectData.categories.length
+        ? subjectData.categories.map((item) => `<option value="${esc(item.slug)}">${esc(item.name)}</option>`).join("")
+        : '<option value="">カテゴリなし</option>';
       category.value = subjectData.categories.some((item) => item.slug === selected) ? selected : subjectData.categories[0]?.slug ?? "";
     };
     const initializeSelects = () => {
@@ -824,12 +893,16 @@ const editorData = JSON.stringify({ subjects, articles }).replace(/</g, "\\u003c
       const confirmed = feedback.filter((entry) => entry.status === "confirmed");
       const unreflected = feedback.filter((entry) => entry.status === "unreflected");
       const viewer = item.viewerFeedbackStatus ?? null;
-      const feedbackMarkup = feedback.length ? `<div class="comment-feedback-popover" data-feedback-popover="${item.id}" hidden><strong>リアクションしたメンバー</strong>${feedback.map((entry) => `<span>${esc(entry.displayName)}：${entry.status === "confirmed" ? "確認済み" : "未反映"}</span>`).join("")}</div>` : "";
+      const feedbackGroup = (label: string, entries: CommentFeedback[]) => `<section class="feedback-status-group"><strong>${label}</strong>${entries.length ? `<ul>${entries.map((entry) => `<li>${esc(entry.displayName)}</li>`).join("")}</ul>` : "<span>なし</span>"}</section>`;
+      // 件数が0件でも同じポップオーバーを生成する。これにより確認済み・未反映の
+      // どちらを右クリックしても同じ status 中心の一覧 UI が開き、空の場合も
+      // 「なし」と明示できる。
+      const feedbackMarkup = `<div class="comment-feedback-popover" data-feedback-popover="${item.id}" hidden><strong>リアクションの内訳</strong>${feedbackGroup("確認済み", confirmed)}${feedbackGroup("未反映", unreflected)}</div>`;
       const confirmAction = viewer === "confirmed" ? "unacknowledge" : "acknowledge";
       const unreflectedAction = viewer === "unreflected" ? "clear-unreflected" : "unreflected";
       const edit = canChange ? `<button type="button" data-edit-comment="${item.id}">編集</button><button type="button" class="comment-delete" data-delete-comment="${item.id}">削除</button>` : "";
       const editTags = commentTagOptions.map((tag) => `<label class="comment-tag-option"><input type="checkbox" value="${esc(tag)}" data-edit-comment-tag="${item.id}"${(item.tags ?? []).includes(tag) ? " checked" : ""}><span>${esc(tag)}</span></label>`).join("");
-      return `<article class="comment${isReply ? " comment-reply" : ""}" data-comment-author="${esc(item.created_by)}"><div class="comment-row"><span class="comment-avatar"${avatarStyle} aria-hidden="true"><span class="comment-avatar-fallback" data-comment-avatar-fallback>${esc(avatar)}</span></span><div class="comment-main"><header class="comment-header"><b>${esc(displayName)}</b><time>${isReply ? "返信・" : ""}${date(item.created_at)}</time></header><div class="comment-content">${tagMarkup ? `<div class="comment-tags-list">${tagMarkup}</div>` : ""}${quotes}${item.body ? `<p>${renderCommentBody(item.body)}</p>` : ""}</div><div class="comment-actions"><button type="button" data-feedback-menu="${item.id}" aria-expanded="false" title="右クリックでリアクションしたメンバーを表示" data-comment-action="${confirmAction}" data-comment-id="${item.id}">${viewer === "confirmed" ? "✓ 確認を取り消す" : "確認済みにする"}（${confirmed.length}）</button><button type="button" class="comment-unreflected" data-comment-action="${unreflectedAction}" data-comment-id="${item.id}">${viewer === "unreflected" ? "未反映を取り消す" : "未反映"}（${unreflected.length}）</button>${edit}</div>${feedbackMarkup}</div></div>${canChange ? `<div class="comment-edit-entry" data-comment-edit-entry="${item.id}" hidden><span>コメントを編集</span><textarea data-edit-comment-body="${item.id}" autocomplete="off" maxlength="8000">${esc(item.body)}</textarea><fieldset class="comment-edit-tags"><legend>タグ</legend><div>${editTags}</div></fieldset><div><button type="button" class="quiet-action" data-cancel-edit="${item.id}">キャンセル</button><button type="button" class="primary-action" data-save-edit="${item.id}">保存</button></div></div>` : ""}</article>`;
+      return `<article class="comment${isReply ? " comment-reply" : ""}" data-comment-author="${esc(item.created_by)}"><div class="comment-row"><span class="comment-avatar"${avatarStyle} aria-hidden="true"><span class="comment-avatar-fallback" data-comment-avatar-fallback>${esc(avatar)}</span></span><div class="comment-main"><header class="comment-header"><b>${esc(displayName)}</b><time>${isReply ? "返信・" : ""}${date(item.created_at)}</time></header><div class="comment-content">${tagMarkup ? `<div class="comment-tags-list">${tagMarkup}</div>` : ""}${quotes}${item.body ? `<p>${renderCommentBody(item.body)}</p>` : ""}</div><div class="comment-actions"><button type="button" data-feedback-menu="${item.id}" aria-expanded="false" title="右クリックでリアクションしたメンバーを表示" data-comment-action="${confirmAction}" data-comment-id="${item.id}">${viewer === "confirmed" ? "✓ 確認を取り消す" : "確認済みにする"}（${confirmed.length}）</button><button type="button" class="comment-unreflected" data-feedback-menu="${item.id}" aria-expanded="false" title="右クリックで未反映にしたメンバーを表示" data-comment-action="${unreflectedAction}" data-comment-id="${item.id}">${viewer === "unreflected" ? "未反映を取り消す" : "未反映"}（${unreflected.length}）</button>${edit}</div>${feedbackMarkup}</div></div>${canChange ? `<div class="comment-edit-entry" data-comment-edit-entry="${item.id}" hidden><span>コメントを編集</span><textarea data-edit-comment-body="${item.id}" autocomplete="off" maxlength="8000">${esc(item.body)}</textarea><fieldset class="comment-edit-tags"><legend>タグ</legend><div>${editTags}</div></fieldset><div><button type="button" class="quiet-action" data-cancel-edit="${item.id}">キャンセル</button><button type="button" class="primary-action" data-save-edit="${item.id}">保存</button></div></div>` : ""}</article>`;
     };
     let commentQuery = "";
     let commentFilter = "all";
@@ -988,19 +1061,29 @@ const editorData = JSON.stringify({ subjects, articles }).replace(/</g, "\\u003c
     window.addEventListener("resize", positionMentionSuggestions, { passive: true });
     window.addEventListener("scroll", positionMentionSuggestions, { passive: true });
     const formValue = (name: string) => (form.elements.namedItem(name) as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement).value;
-    const documentPayload = () => ({ sourceArticleId: (form.elements.namedItem("documentId") as HTMLInputElement).dataset.sourceArticleId ?? "", subject: subject.value, category: category.value, locale: formValue("locale"), slug: formValue("slug"), title: formValue("title"), summary: formValue("summary"), conceptId: formValue("conceptId"), body: body.value, editorialNote: editorialNote.value, latexEngine: formValue("latexEngine"), status: status.value });
+    const documentPayload = () => ({ sourceArticleId: (form.elements.namedItem("documentId") as HTMLInputElement).dataset.sourceArticleId ?? "", subject: subject.value, category: category.value, locale: formValue("locale"), slug: formValue("slug"), title: formValue("title"), summary: formValue("summary"), conceptId: formValue("conceptId"), body: body.value, editorialNote: editorialNote.value, latexEngine: formValue("latexEngine"), reviewerEmail: reviewer.value, status: status.value, expectedUpdatedAt: currentDocumentUpdatedAt });
     let autosaveTimer: number | undefined;
     let autosaveInFlight = false;
+    let saveInFlight = false;
     const autosaveDraft = async () => {
       const id = (form.elements.namedItem("documentId") as HTMLInputElement).value;
       if (!id || status.value !== "draft" || autosaveInFlight) return;
       autosaveInFlight = true;
       try {
         saveMessage.value = "下書きを自動保存中…";
-        const response = await fetch(`/api/admin/editor/documents/${encodeURIComponent(id)}`, { method: "PATCH", headers: { "content-type": "application/json" }, credentials: "same-origin", body: JSON.stringify(documentPayload()) });
+        const payload = documentPayload();
+        const fingerprint = JSON.stringify({ ...payload, expectedUpdatedAt: "" });
+        const response = await fetch(`/api/admin/editor/documents/${encodeURIComponent(id)}`, { method: "PATCH", headers: { "content-type": "application/json" }, credentials: "same-origin", body: JSON.stringify(payload) });
+        const result = await response.clone().json().catch(() => ({})) as { updatedAt?: string; error?: string };
+        if (response.status === 409) { conflictReloadButton.hidden = false; throw new Error(result.error ?? "別のユーザーが先に更新しました。最新内容を読み込んでください。"); }
         if (!response.ok) throw new Error("自動保存に失敗しました。");
-        setUnsavedChanges(false); saveMessage.value = "下書きを自動保存しました。"; await loadDocuments();
-      } catch { saveMessage.value = "自動保存に失敗しました。手動で保存してください。"; }
+        if (result.updatedAt) currentDocumentUpdatedAt = result.updatedAt;
+        const stillCurrent = JSON.stringify({ ...documentPayload(), expectedUpdatedAt: "" }) === fingerprint;
+        setUnsavedChanges(!stillCurrent);
+        saveMessage.value = stillCurrent ? "下書きを自動保存しました。" : "保存中に変更があったため、続けて自動保存します。";
+        if (!stillCurrent) scheduleAutosave();
+        await loadDocuments();
+      } catch (error) { saveMessage.value = error instanceof Error ? error.message : "自動保存に失敗しました。手動で保存してください。"; }
       finally { autosaveInFlight = false; }
     };
     const scheduleAutosave = () => {
@@ -1009,9 +1092,10 @@ const editorData = JSON.stringify({ subjects, articles }).replace(/</g, "\\u003c
       autosaveTimer = window.setTimeout(() => { void autosaveDraft(); }, 2_000);
     };
     const setDocument = (item: Document, commentsForDocument: Comment[] = []) => {
-      empty.hidden = true; form.hidden = false;
+      empty.hidden = true; form.hidden = false; conflictReloadButton.hidden = true;
       const id = form.elements.namedItem("documentId") as HTMLInputElement;
       id.value = item.id; id.dataset.sourceArticleId = item.source_article_id ?? "";
+      currentDocumentUpdatedAt = item.id ? item.updated_at ?? "" : "";
       subject.value = item.subject; fillCategories(item.category); category.value = item.category;
       (form.elements.namedItem("locale") as HTMLSelectElement).value = item.locale;
       (form.elements.namedItem("latexEngine") as HTMLSelectElement).value = item.latex_engine && ["uplatex", "pdflatex", "xelatex", "lualatex"].includes(item.latex_engine) ? item.latex_engine : "uplatex";
@@ -1019,7 +1103,7 @@ const editorData = JSON.stringify({ subjects, articles }).replace(/</g, "\\u003c
       (form.elements.namedItem("title") as HTMLInputElement).value = item.title;
       (form.elements.namedItem("summary") as HTMLInputElement).value = item.summary;
       (form.elements.namedItem("conceptId") as HTMLInputElement).value = item.concept_id;
-      status.value = item.status; body.value = item.body; editorialNote.value = item.editorial_note ?? "";
+      status.value = item.status; body.value = item.body; editorialNote.value = item.editorial_note ?? ""; fillReviewers(item.reviewer_email ?? "");
       const reviewOnly = false;
       form.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>("input, select, textarea").forEach((field) => { if (field.name !== "documentId" && field.name !== "status") field.disabled = reviewOnly; });
       heading.textContent = item.title || "新規原稿"; state.textContent = statusLabel[item.status]; publicationState.textContent = item.published_at ? "公開済み" : "未公開"; updateWorkflow(item.status, Boolean(item.published_at)); currentComments = commentsForDocument; renderComments(); renderHeadingOutline(); void renderPreview(); publishButton.hidden = !(isManager && Boolean(item.id) && item.status === "approved" && !item.published_at); unpublishButton.hidden = !(isManager && Boolean(item.id) && Boolean(item.published_at)); reviewButton.hidden = !(Boolean(item.id) && item.status === "draft"); saveMessage.value = item.id ? "保存済み" : "未保存の新規原稿"; setUnsavedChanges(false);
@@ -1028,12 +1112,13 @@ const editorData = JSON.stringify({ subjects, articles }).replace(/</g, "\\u003c
       const selected = source ? subjects.find((item) => item.slug === source.subject) ?? subjects[0] : subjects[0];
       const categoryValue = source?.category ?? selected.categories[0]?.slug ?? "";
       const now = new Date().toISOString();
-      setDocument({ id: "", source_article_id: source?.articleId ?? null, subject: source?.subject ?? selected.slug, category: categoryValue, locale: "jpn", slug: source?.slug ?? "new-article", title: source?.title ?? "", summary: source?.summary ?? "", concept_id: source?.conceptId ?? "example.category.concept", body: source?.body ?? "", editorial_note: "", latex_engine: "uplatex", status: "draft", created_by: "", updated_by: "", created_at: now, updated_at: now, reviewed_at: null, published_at: null });
+      currentDocumentUpdatedAt = "";
+      setDocument({ id: "", source_article_id: source?.articleId ?? null, subject: source?.subject ?? selected.slug, category: categoryValue, locale: "jpn", slug: source?.slug ?? "new-article", title: source?.title ?? "", summary: source?.summary ?? "", concept_id: source?.conceptId ?? "example.category.concept", body: source?.body ?? "", editorial_note: "", latex_engine: "uplatex", status: "draft", created_by: "", updated_by: "", created_at: now, updated_at: now, reviewed_at: null, published_at: null, reviewer_email: null });
       (form.elements.namedItem("documentId") as HTMLInputElement).dataset.sourceArticleId = source?.articleId ?? "";
       heading.textContent = source ? `${source.title}（編集用の下書き）` : "新規原稿";
     };
     const renderDocuments = () => { const unique = [...new Map(documents.map((item) => [item.source_article_id || `${item.subject}/${item.category}/${item.slug}`, item])).values()]; list.innerHTML = unique.length ? unique.map((item) => `<button class="document-card" type="button" data-document-id="${item.id}" aria-label="${esc(item.subject)} / ${esc(item.category)}・${statusLabel[item.status]}の原稿を開く"><small>${esc(item.subject)} / ${esc(item.category)}</small><span class="state state-${item.status}">${statusLabel[item.status]}</span></button>`).join("") : '<p class="comment-empty">まだ保存された原稿はありません。</p>'; };
-    const loadDocuments = async () => { const response = await fetch("/api/admin/editor/documents", { credentials: "same-origin" }); const data = await read<{ documents?: Omit<Document, "body">[]; mentionNames?: string[]; scope?: { email: string; subjects: string[]; isManager?: boolean }; error?: string }>(response); if (!response.ok) throw new Error(data.error ?? "原稿一覧を読み込めませんでした。"); documents = data.documents ?? []; availableMentionNames = data.mentionNames ?? []; isManager = Boolean(data.scope?.isManager); currentUserEmail = data.scope?.email ?? ""; assignedSubjects = data.scope?.subjects ?? []; root.dataset.manager = String(isManager); scopeHeading.hidden = isManager; scopeLabel.textContent = assignedSubjects.join("・") || "担当なし"; newDocumentButton.disabled = !(isManager || assignedSubjects.length); (status.querySelector('option[value="approved"]') as HTMLOptionElement).disabled = !isManager; populateSourceSubjects(); fillSourceArticles(); renderDocuments(); };
+    const loadDocuments = async () => { const response = await fetch("/api/admin/editor/documents", { credentials: "same-origin" }); const data = await read<{ documents?: Omit<Document, "body">[]; mentionNames?: string[]; reviewers?: Reviewer[]; scope?: { email: string; subjects: string[]; isManager?: boolean }; error?: string }>(response); if (!response.ok) throw new Error(data.error ?? "原稿一覧を読み込めませんでした。"); documents = data.documents ?? []; reviewers = data.reviewers ?? []; fillReviewers(reviewer.value); availableMentionNames = data.mentionNames ?? []; isManager = Boolean(data.scope?.isManager); currentUserEmail = data.scope?.email ?? ""; assignedSubjects = data.scope?.subjects ?? []; root.dataset.manager = String(isManager); scopeHeading.hidden = isManager; scopeLabel.textContent = assignedSubjects.join("・") || "担当なし"; newDocumentButton.disabled = !(isManager || assignedSubjects.length); (status.querySelector('option[value="approved"]') as HTMLOptionElement).disabled = !isManager; populateSourceSubjects(); fillSourceArticles(); renderDocuments(); };
     const openDocument = async (id: string) => { saveMessage.value = "原稿を読み込み中…"; const response = await fetch(`/api/admin/editor/documents/${encodeURIComponent(id)}`, { credentials: "same-origin" }); const data = await read<{ document?: Document; comments?: Comment[]; error?: string }>(response); if (!response.ok || !data.document) throw new Error(data.error ?? "原稿を読み込めませんでした。"); setDocument(data.document, data.comments ?? []); };
     const loadRevisions = async (id:string) => { if(!id) return; const response=await fetch(`/api/admin/editor/documents/${id}/revisions`,{credentials:"same-origin"}); const data=await read<{revisions?:{title:string;status:string;saved_by:string;saved_at:string}[]}>(response); const revisionItems = data.revisions ?? []; revisions.innerHTML=revisionItems.map(x=>`<div class="revision-item"><b>${esc(x.title)}</b> ・ ${esc(x.status)}<br>${esc(x.saved_by)} ・ ${date(x.saved_at)}</div>`).join("")||"まだ過去版はありません。次回の保存から記録されます。"; if (historyButton) historyButton.textContent = `履歴${revisionItems.length ? ` (${revisionItems.length})` : ""}`; };
     subject.addEventListener("change", () => { fillCategories(); setUnsavedChanges(true); }); sourceSubject.addEventListener("change", fillSourceArticles);
@@ -1056,14 +1141,29 @@ const editorData = JSON.stringify({ subjects, articles }).replace(/</g, "\\u003c
       if (unpublishDialog.returnValue === "yes") void unpublishCurrentDocument();
       else if (unpublishDialog.returnValue === "no") saveMessage.value = "公開取り消しを中止しました。";
     });
+    const recordProgressFromDialog = async () => {
+      const documentId = (form.elements.namedItem("documentId") as HTMLInputElement).value;
+      const title = formValue("title").trim();
+      const details = progressDetails.value.trim();
+      const body = details || `${title || "原稿"}の保存が完了しました。`;
+      try {
+        const response = await fetch("/api/admin/operations/progress", { method: "POST", headers: { "content-type": "application/json" }, credentials: "same-origin", body: JSON.stringify({ body, details, documentId, subject: subject.value }) });
+        const data = await read<{ error?: string }>(response);
+        if (!response.ok) throw new Error(data.error ?? "進捗を記録できませんでした。");
+        progressDetails.value = "";
+        saveMessage.value = "進捗を記録しました。";
+      } catch (error) {
+        saveMessage.value = error instanceof Error ? error.message : "進捗を記録できませんでした。";
+      }
+    };
     progressDialog.addEventListener("close", () => {
-      if (progressDialog.returnValue === "progress") window.location.href = "/admin/operations/?progress=1";
+      if (progressDialog.returnValue === "progress") void recordProgressFromDialog();
     });
     const renderSelectedRanges = () => { selectedRanges.hidden = !selectedCommentRanges.length; selectedRanges.innerHTML = selectedCommentRanges.length ? `<b>${activeReplyId ? "この返信" : "このコメント"}に添付する対象文章（${selectedCommentRanges.length}/8）</b>${selectedCommentRanges.map((range, index) => `<span class="selected-range-chip"><span>${esc(range.source)}：${esc(range.text.slice(0, 64))}${range.text.length > 64 ? "…" : ""}</span><button type="button" data-remove-selection="${index}" aria-label="この選択範囲を外す">×</button></span>`).join("")}` : ""; };
     const setCommentSelection = (selection: SelectedRange | null) => { selectedCommentRange = selection; if (!selection) { commentSelection.textContent = "範囲未選択：記事全体へのコメントとして送信します。"; commentSelection.classList.remove("has-selection"); selectionAction.hidden = true; return; } const shortText = selection.text.slice(0, 80); commentSelection.textContent = `${selection.source}で選択した文章を追加できます：${shortText}${selection.text.length > 80 ? "…" : ""}`; commentSelection.classList.add("has-selection"); selectionActionText.textContent = `${selection.source}で ${selection.text.length} 文字を選択中`; selectionAction.hidden = false; };
     const captureCommentSelection = () => { const start = body.selectionStart; const end = body.selectionEnd; const selected = body.value.slice(start, end).trim(); setCommentSelection(selected ? { start, end, text: selected.slice(0, 2_000), source: "本文" } : null); };
     const capturePreviewSelection = () => { const selection = window.getSelection(); const selected = selection?.toString().trim() ?? ""; if (!selected || !selection?.anchorNode || !preview.contains(selection.anchorNode)) return; setCommentSelection({ start: null, end: null, text: selected.slice(0, 2_000), source: "プレビュー" }); };
-    body.addEventListener("input", () => { setCommentSelection(null); renderHeadingOutline(); void renderPreview(); }); body.addEventListener("select", captureCommentSelection); body.addEventListener("keyup", captureCommentSelection); preview.addEventListener("mouseup", capturePreviewSelection); preview.addEventListener("keyup", capturePreviewSelection); root.querySelector<HTMLButtonElement>("[data-use-selection]")!.addEventListener("click", () => { if (!selectedCommentRange) return; const alreadyAdded = selectedCommentRanges.some((range) => range.source === selectedCommentRange!.source && range.start === selectedCommentRange!.start && range.end === selectedCommentRange!.end && range.text === selectedCommentRange!.text); if (!alreadyAdded && selectedCommentRanges.length < 8) selectedCommentRanges.push(selectedCommentRange); renderSelectedRanges(); setCommentSelection(null); const replyBody = activeReplyId ? comments.querySelector<HTMLTextAreaElement>(`[data-reply-body="${activeReplyId}"]`) : null; const target = replyBody ?? commentBody; target.focus(); target.scrollIntoView({ behavior: "smooth", block: "center" }); }); selectedRanges.addEventListener("click", (event) => { const button = (event.target as HTMLElement).closest<HTMLButtonElement>("[data-remove-selection]"); if (!button) return; const index = Number(button.dataset.removeSelection); if (Number.isInteger(index)) { selectedCommentRanges.splice(index, 1); renderSelectedRanges(); } }); headingOutline.addEventListener("click", (event) => { const button = (event.target as HTMLElement).closest<HTMLButtonElement>("[data-heading-offset]"); if (!button) return; const offset = Number(button.dataset.headingOffset); body.focus(); body.setSelectionRange(offset, offset); body.scrollTop = Math.max(0, offset / Math.max(1, body.value.length) * body.scrollHeight - body.clientHeight / 2); }); previewEngine.addEventListener("change", () => void renderPreview());
+    body.addEventListener("input", () => { setCommentSelection(null); setUnsavedChanges(true); scheduleAutosave(); renderHeadingOutline(); void renderPreview(); }); editorialNote.addEventListener("input", () => { setUnsavedChanges(true); scheduleAutosave(); }); body.addEventListener("select", captureCommentSelection); body.addEventListener("keyup", captureCommentSelection); preview.addEventListener("mouseup", capturePreviewSelection); preview.addEventListener("keyup", capturePreviewSelection); root.querySelector<HTMLButtonElement>("[data-use-selection]")!.addEventListener("click", () => { if (!selectedCommentRange) return; const alreadyAdded = selectedCommentRanges.some((range) => range.source === selectedCommentRange!.source && range.start === selectedCommentRange!.start && range.end === selectedCommentRange!.end && range.text === selectedCommentRange!.text); if (!alreadyAdded && selectedCommentRanges.length < 8) selectedCommentRanges.push(selectedCommentRange); renderSelectedRanges(); setCommentSelection(null); const replyBody = activeReplyId ? comments.querySelector<HTMLTextAreaElement>(`[data-reply-body="${activeReplyId}"]`) : null; const target = replyBody ?? commentBody; target.focus(); target.scrollIntoView({ behavior: "smooth", block: "center" }); }); selectedRanges.addEventListener("click", (event) => { const button = (event.target as HTMLElement).closest<HTMLButtonElement>("[data-remove-selection]"); if (!button) return; const index = Number(button.dataset.removeSelection); if (Number.isInteger(index)) { selectedCommentRanges.splice(index, 1); renderSelectedRanges(); } }); headingOutline.addEventListener("click", (event) => { const button = (event.target as HTMLElement).closest<HTMLButtonElement>("[data-heading-offset]"); if (!button) return; const offset = Number(button.dataset.headingOffset); body.focus(); body.setSelectionRange(offset, offset); body.scrollTop = Math.max(0, offset / Math.max(1, body.value.length) * body.scrollHeight - body.clientHeight / 2); }); previewEngine.addEventListener("change", () => void renderPreview());
     commentSearch.addEventListener("input", () => { commentQuery = commentSearch.value.trim().toLocaleLowerCase(); renderComments(); });
     commentFilterSelect.addEventListener("change", () => { commentFilter = commentFilterSelect.value; renderComments(); });
     root.querySelector<HTMLButtonElement>("[data-jump-writing]")!.addEventListener("click", () => body.scrollIntoView({ behavior:"smooth", block:"center" })); root.querySelector<HTMLButtonElement>("[data-jump-preview]")!.addEventListener("click", () => preview.scrollIntoView({ behavior:"smooth", block:"center" })); root.querySelector<HTMLButtonElement>("[data-jump-comments]")!.addEventListener("click", () => comments.scrollIntoView({ behavior:"smooth", block:"center" }));
@@ -1071,22 +1171,24 @@ const editorData = JSON.stringify({ subjects, articles }).replace(/</g, "\\u003c
     root.querySelector<HTMLButtonElement>("[data-new-document]")!.addEventListener("click", () => emptyDocument());
     root.querySelector<HTMLButtonElement>("[data-import-source]")!.addEventListener("click", () => { const source = articles.find((item) => item.articleId === sourcePicker.value); if (!source) { saveMessage.value = "取り込む既存記事を選んでください。"; return; } const existing = documents.find((item) => item.source_article_id === source.articleId); if (existing) { void openDocument(existing.id).then(() => loadRevisions(existing.id)); saveMessage.value = "既存の原稿を開きました。新しい原稿は作成していません。"; return; } emptyDocument(source); });
     list.addEventListener("click", (event) => { const button = (event.target as HTMLElement).closest<HTMLButtonElement>("[data-document-id]"); if (button) { const id=button.dataset.documentId??""; void openDocument(id).then(()=>loadRevisions(id)).catch((error: unknown) => { saveMessage.value = error instanceof Error ? error.message : "原稿を読み込めませんでした。"; }); } });
-    form.addEventListener("submit", (event) => { event.preventDefault(); void (async () => {
+    conflictReloadButton.addEventListener("click", () => { const id = (form.elements.namedItem("documentId") as HTMLInputElement).value; if (!id) return; conflictReloadButton.disabled = true; void openDocument(id).then(() => loadRevisions(id)).then(() => { saveMessage.value = "最新の原稿を読み込みました。変更内容を確認してから保存してください。"; }).catch((error: unknown) => { saveMessage.value = error instanceof Error ? error.message : "最新の原稿を読み込めませんでした。"; }).finally(() => { conflictReloadButton.disabled = false; }); });
+    form.addEventListener("submit", (event) => { event.preventDefault(); if (saveInFlight) return; saveInFlight = true; saveButton.disabled = true; saveButton.textContent = "保存中…"; conflictReloadButton.hidden = true; void (async () => {
       saveMessage.value = "保存中…";
       const id = (form.elements.namedItem("documentId") as HTMLInputElement).value;
       const response = await fetch(id ? `/api/admin/editor/documents/${id}` : "/api/admin/editor/documents", { method: id ? "PATCH" : "POST", headers: { "content-type": "application/json" }, credentials: "same-origin", body: JSON.stringify(documentPayload()) });
-      const data = await read<{ id?: string; error?: string }>(response);
-      if (!response.ok) throw new Error(data.error ?? "保存できませんでした。");
+      const data = await read<{ id?: string; updatedAt?: string; conflict?: boolean; error?: string }>(response);
+      if (!response.ok) { if (data.conflict) conflictReloadButton.hidden = false; throw new Error(data.error ?? "保存できませんでした。"); }
       const savedId = id || data.id || "";
       if (!id && data.id) (form.elements.namedItem("documentId") as HTMLInputElement).value = data.id;
+      if (data.updatedAt) currentDocumentUpdatedAt = data.updatedAt;
       publishButton.hidden = !(isManager && Boolean(savedId) && status.value === "approved");
       setUnsavedChanges(false);
       saveMessage.value = status.value === "approved" ? "査読済みとして保存しました。公開する場合は「公開」ボタンを押してください。" : "保存しました。";
       await loadDocuments();
       progressDialog.showModal();
-    })().catch((error: unknown) => { saveMessage.value = error instanceof Error ? error.message : "保存できませんでした。"; }); });
+    })().catch((error: unknown) => { saveMessage.value = error instanceof Error ? error.message : "保存できませんでした。"; }).finally(() => { saveInFlight = false; saveButton.disabled = false; saveButton.textContent = "保存する"; }); });
     root.querySelector<HTMLButtonElement>("[data-send-comment]")!.addEventListener("click", () => { const id = (form.elements.namedItem("documentId") as HTMLInputElement).value; const tags = [...commentTags.querySelectorAll<HTMLInputElement>("[data-comment-tag]:checked")].map((input) => input.value); if (!id) { saveMessage.value = "先に原稿を保存してからコメントしてください。"; return; } if (!commentBody.value.trim() && !tags.length) { saveMessage.value = "コメント本文またはタグを1つ以上選択してください。"; return; } void (async () => { const response = await fetch(`/api/admin/editor/documents/${id}/comments`, { method: "POST", headers: { "content-type": "application/json" }, credentials: "same-origin", body: JSON.stringify({ body: commentBody.value, tags, selections: selectedCommentRanges }) }); const data = await read<{ error?: string }>(response); if (!response.ok) throw new Error(data.error ?? "コメントを送れませんでした。"); commentBody.value = ""; commentTags.querySelectorAll<HTMLInputElement>("[data-comment-tag]").forEach((input) => { input.checked = false; }); activeReplyId = null; selectedCommentRanges = []; renderSelectedRanges(); setCommentSelection(null); await openDocument(id); })().catch((error: unknown) => { saveMessage.value = error instanceof Error ? error.message : "コメントを送れませんでした。"; }); });
-    const closeFeedbackMenus = (except?: HTMLElement) => comments.querySelectorAll<HTMLElement>("[data-feedback-popover]").forEach((popover) => { if (popover !== except) { popover.hidden = true; const id = popover.dataset.feedbackPopover; comments.querySelector<HTMLButtonElement>(`[data-feedback-menu="${id}"]`)?.setAttribute("aria-expanded", "false"); } });
+    const closeFeedbackMenus = (except?: HTMLElement) => comments.querySelectorAll<HTMLElement>("[data-feedback-popover]").forEach((popover) => { if (popover !== except) { popover.hidden = true; const id = popover.dataset.feedbackPopover; comments.querySelectorAll<HTMLButtonElement>(`[data-feedback-menu="${id}"]`).forEach((button) => button.setAttribute("aria-expanded", "false")); } });
     const toggleFeedbackMenu = (button: HTMLButtonElement) => { const id = button.dataset.feedbackMenu; if (!id) return; const popover = comments.querySelector<HTMLElement>(`[data-feedback-popover="${id}"]`); if (!popover) return; const wasHidden = popover.hidden; closeFeedbackMenus(popover); popover.hidden = !wasHidden; button.setAttribute("aria-expanded", String(wasHidden)); };
     comments.addEventListener("contextmenu", (event) => { const button = (event.target as HTMLElement).closest<HTMLButtonElement>("[data-feedback-menu]"); if (!button) return; event.preventDefault(); toggleFeedbackMenu(button); });
     comments.addEventListener("click", (event) => { if (!(event.target as HTMLElement).closest("[data-feedback-popover]")) closeFeedbackMenus(); });
@@ -1132,6 +1234,9 @@ const editorData = JSON.stringify({ subjects, articles }).replace(/</g, "\\u003c
   .comment-feedback-popover[hidden] { display:none; }
   .comment-feedback-popover strong { color:var(--text); font-size:.7rem; }
   .comment-feedback-popover span { overflow-wrap:anywhere; }
+  .feedback-status-group { border-top:1px solid var(--border); display:grid; gap:.15rem; padding-top:.25rem; }
+  .feedback-status-group ul { display:grid; gap:.1rem; list-style:none; margin:0; padding:0; }
+  .feedback-status-group li::before { content:"・"; }
   .comment-unreflected { color:#a33838!important; }
   .thread-status.is-unreflected { background:#fff0f0; border-color:#d88b8b; color:#8b2d2d; }
   .comment-edit-tags { border:0; margin:.2rem 0 0; padding:0; }

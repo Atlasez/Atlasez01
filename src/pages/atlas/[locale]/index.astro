@@ -128,7 +128,7 @@ const views = [
   alternates={alternates}
 >
   <div class="container atlas-home">
-    <div class="content-columns" data-home-layout data-active-view="tiles">
+    <div class="content-columns" data-home-layout data-atlas-locale={locale} data-active-view="tiles">
       <section aria-labelledby="subjects-heading" class="home-main">
         <h1 id="subjects-heading" class="visually-hidden">
           {t(locale, "subjects")}
@@ -163,6 +163,9 @@ const views = [
               ))
             }
           </div>
+          <a class="map-subject-link" data-map-subject-link hidden href="#">
+            {locale === "ja" ? "分野の学習地図" : "Subject learning map"}
+          </a>
           <p class="section-meta">{summary}</p>
         </div>
 
@@ -499,10 +502,46 @@ const views = [
   const homeCategoryDetails = [
     ...document.querySelectorAll<HTMLDetailsElement>("[data-category-key]"),
   ];
+  const mapSubjectLink = document.querySelector<HTMLAnchorElement>(
+    "[data-map-subject-link]",
+  );
   let mapCategoryKey = new URL(location.href).searchParams.get("category");
+  let mapSubject = new URL(location.href).searchParams.get("subject");
+
+  function atlasSubjectPath(subject: string, view: string): string {
+    const locale = layout?.dataset.atlasLocale ?? "ja";
+    const base = location.pathname.split("/atlas/")[0] || "";
+    const path = `${base}/atlas/${locale}/${subject}/`;
+    return view === "tiles" ? path : `${path}?view=${encodeURIComponent(view)}`;
+  }
+
+  function categoryPath(categoryKey: string, view: string): string {
+    const locale = layout?.dataset.atlasLocale ?? "ja";
+    const base = location.pathname.split("/atlas/")[0] || "";
+    const path = `${base}/atlas/${locale}/${categoryKey.split("/").map(encodeURIComponent).join("/")}/`;
+    return view === "tiles" ? path : `${path}?view=${encodeURIComponent(view)}`;
+  }
+
+  function updateMapSubjectLink(subject: string | null): void {
+    mapSubject = subject || null;
+    if (!mapSubjectLink || !mapSubject) {
+      if (mapSubjectLink) mapSubjectLink.hidden = true;
+      return;
+    }
+    const subjectDetails = homeCategoryDetails.find((details) =>
+      details.dataset.categoryKey?.startsWith(`${mapSubject}/`),
+    )?.closest(".subject-list-details");
+    const name = subjectDetails?.querySelector(".subject-list-head > a")?.textContent?.trim() ?? mapSubject;
+    mapSubjectLink.href = atlasSubjectPath(mapSubject, "map");
+    mapSubjectLink.textContent = layout?.dataset.atlasLocale === "ja"
+      ? `${name}の学習地図を開く`
+      : `Open ${name} learning map`;
+    mapSubjectLink.hidden = false;
+  }
 
   function syncHomeMapContext(categoryKey: string | null): void {
     mapCategoryKey = categoryKey || null;
+    updateMapSubjectLink(categoryKey?.split("/")[0] ?? mapSubject);
     const selected = homeCategoryDetails.find(
       (details) => details.dataset.categoryKey === mapCategoryKey,
     );
@@ -538,12 +577,22 @@ const views = [
   }
 
   window.addEventListener("atlas-map-category-change", (event) => {
-    const detail = (event as CustomEvent<{ categoryKey?: string | null }>).detail;
+    const detail = (event as CustomEvent<{ subject?: string; categoryKey?: string | null }>).detail;
+    updateMapSubjectLink(detail.subject ?? detail.categoryKey?.split("/")[0] ?? null);
     syncHomeMapContext(detail.categoryKey ?? null);
   });
+  updateMapSubjectLink(mapSubject);
 
   function activate(view: string, focus = false): void {
     if (!tabs.some((tab) => tab.dataset.viewTab === view)) view = "tiles";
+    if (mapCategoryKey && view !== "map") {
+      window.location.assign(categoryPath(mapCategoryKey, view));
+      return;
+    }
+    if (!mapCategoryKey && mapSubject && view !== "map") {
+      window.location.assign(atlasSubjectPath(mapSubject, view));
+      return;
+    }
     for (const tab of tabs) {
       const on = tab.dataset.viewTab === view;
       tab.setAttribute("aria-selected", String(on));
@@ -742,8 +791,21 @@ const views = [
   .view-panel {
     padding-top: var(--space-3);
   }
+  .view-panel > :global(.map-section) {
+    margin-top: 0;
+  }
+  .map-subject-link {
+    align-self: center;
+    display: inline-flex;
+    min-height: var(--touch-target);
+    align-items: center;
+    padding-inline: var(--space-2);
+    color: var(--accent-primary);
+    font-size: calc(0.84rem * var(--text-scale));
+    font-weight: 700;
+  }
   /* JSが無いときは3つとも並ぶ。どの表示かが分かるよう区切りを入れる */
-  .view-panel + .view-panel:not([hidden]) {
+  .view-panel:not([hidden]) + .view-panel:not([hidden]) {
     margin-top: var(--space-5);
     border-top: 1px dashed var(--border-default);
   }

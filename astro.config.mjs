@@ -18,9 +18,12 @@ const normalizeLegacyMath = () => (/** @type {any} */ tree) => {
   const visit = (node) => {
     if (!node || typeof node !== "object") return;
     if (node.type === "element" && node.tagName === "span") {
-      const classes = Array.isArray(node.properties?.className)
-        ? node.properties.className.map(String)
-        : [];
+      const rawClasses = node.properties?.className;
+      const classes = Array.isArray(rawClasses)
+        ? rawClasses.map(String)
+        : typeof rawClasses === "string"
+          ? rawClasses.split(/\s+/u).filter(Boolean)
+          : [];
       const isInline =
         classes.includes("math-inline") ||
         (classes.includes("math") && classes.includes("inline"));
@@ -69,10 +72,16 @@ const normalizeLegacyFolding = () => (/** @type {any} */ tree) => {
   /** @param {any} node */
   const visit = (node) => {
     if (!node || typeof node !== "object") return;
-    if (node.type === "element" && node.tagName === "div") {
-      const classes = Array.isArray(node.properties?.className)
-        ? node.properties.className.map(String)
-        : [];
+    if (
+      node.type === "element" &&
+      ["div", "section", "article"].includes(String(node.tagName))
+    ) {
+      const rawClasses = node.properties?.className;
+      const classes = Array.isArray(rawClasses)
+        ? rawClasses.map(String)
+        : typeof rawClasses === "string"
+          ? rawClasses.split(/\s+/u).filter(Boolean)
+          : [];
       const isSupplement = classes.includes("supp");
       const isFolding = classes.includes("folding");
       if (isSupplement || isFolding) {
@@ -125,9 +134,39 @@ const normalizeLegacyFolding = () => (/** @type {any} */ tree) => {
         node.tagName = "details";
         node.properties = {
           ...(node.properties ?? {}),
-          className: [isSupplement ? "supp-details" : "folding"],
+          className: [
+            isSupplement ? "supp-details" : "folding",
+            ...classes.filter((name) => name !== "supp" && name !== "folding"),
+          ],
         };
         node.children = [summary, inner];
+      }
+    }
+    if (Array.isArray(node.children)) node.children.forEach(visit);
+  };
+  visit(tree);
+};
+
+/**
+ * Google Sites/Pandoc 由来の見出し属性 `{#anchor}` は、標準Markdownの
+ * 文字列として残ると見出し本文に露出する。IDへ移して本文から除去し、
+ * 既存記事の内部リンクと目次アンカーを両立させる。
+ */
+const normalizeHeadingAttributes = () => (/** @type {any} */ tree) => {
+  /** @param {any} node */
+  const visit = (node) => {
+    if (!node || typeof node !== "object") return;
+    if (node.type === "element" && /^h[1-6]$/u.test(String(node.tagName))) {
+      const children = Array.isArray(node.children) ? node.children : [];
+      const lastText = [...children]
+        .reverse()
+        .find((child) => child?.type === "text");
+      const match = String(lastText?.value ?? "").match(
+        /\s+\{#([A-Za-z][\w:-]*)\}\s*$/u,
+      );
+      if (lastText && match?.[1] && typeof match.index === "number") {
+        lastText.value = String(lastText.value).slice(0, match.index).trimEnd();
+        node.properties = { ...(node.properties ?? {}), id: match[1] };
       }
     }
     if (Array.isArray(node.children)) node.children.forEach(visit);
@@ -188,6 +227,7 @@ export default defineConfig({
         rehypeRaw,
         normalizeLegacyFolding,
         normalizeLegacyMath,
+        normalizeHeadingAttributes,
         [
           rehypeMathjax,
           {

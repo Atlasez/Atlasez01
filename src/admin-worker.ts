@@ -93,6 +93,7 @@ type EditorialDocument = {
   updated_at: string;
   reviewed_at: string | null;
   published_at: string | null;
+  reviewer_email: string | null;
 };
 
 /**
@@ -162,6 +163,8 @@ type EditorialDocumentPayload = {
   editorialNote?: unknown;
   latexEngine?: unknown;
   status?: unknown;
+  reviewerEmail?: unknown;
+  expectedUpdatedAt?: unknown;
 };
 type EditorialCommentPayload = {
   body?: unknown;
@@ -327,8 +330,10 @@ const MEMBER_AFFILIATION_TYPES = [
   "高等専門学校",
   "大学",
   "大学院",
+  "浪人生",
   "研究機関・教育機関",
   "社会人",
+  "無職",
   "その他",
 ] as const;
 const MEMBER_INTERESTS = [
@@ -382,6 +387,11 @@ const APPLICATION_SUBJECT_LABELS: Record<string, string> = {
   "taiwanese-mandarin": "台湾華語",
   linguistics: "言語学",
   other: "その他",
+};
+const APPLICATION_PROJECT_LABELS: Record<string, string> = {
+  atlas: "学習サイト運営",
+  "seminar-platform": "ゼミプラットフォーム運営",
+  secretariat: "運営事務局",
 };
 
 /** 学習サイトに存在する全分野。問題報告用チャンネルをこの一覧から冪等に準備する。 */
@@ -448,8 +458,10 @@ const APPLICATION_GRADES_BY_AFFILIATION: Record<string, readonly string[]> = {
   高等専門学校: ["高専1", "高専2", "高専3", "高専4", "高専5", "その他"],
   大学: ["B1", "B2", "B3", "B4", "教職員・研究者", "その他"],
   大学院: ["M1", "M2", "D1", "D2", "D3", "教職員・研究者", "その他"],
+  浪人生: ["その他"],
   "研究機関・教育機関": ["教職員・研究者", "その他"],
   社会人: ["社会人", "その他"],
+  無職: ["その他"],
   その他: MEMBER_YEARS,
 };
 const ADMIN_SESSION_COOKIE = "atlasez_admin_session";
@@ -552,7 +564,20 @@ type MaterialItemRow = {
   updated_at: string;
 };
 
-async function listMaterialLibrary(request: Request, env: Env): Promise<Response> {
+type MaterialRunRow = {
+  id: string;
+  collection_id: string;
+  status: string;
+  file_count: number;
+  imported_count: number;
+  total_bytes: number;
+  imported_bytes: number;
+};
+
+async function listMaterialLibrary(
+  request: Request,
+  env: Env,
+): Promise<Response> {
   const scope = await getAdminScope(request, env);
   if (isResponse(scope)) return scope;
   const collections = await env.REPORTS.prepare(
@@ -561,9 +586,14 @@ async function listMaterialLibrary(request: Request, env: Env): Promise<Response
   const items = await env.REPORTS.prepare(
     "SELECT id, collection_id, title, mime_type, size_bytes, storage_key, status, updated_at FROM material_items WHERE status <> 'archived' ORDER BY parent_path COLLATE NOCASE, title COLLATE NOCASE",
   ).all<MaterialItemRow>();
+  const runs = await env.REPORTS.prepare(
+    "SELECT r.id, r.collection_id, r.status, r.file_count, r.imported_count, r.total_bytes, r.imported_bytes FROM material_import_runs r WHERE r.created_at = (SELECT MAX(created_at) FROM material_import_runs newer WHERE newer.collection_id = r.collection_id)",
+  ).all<MaterialRunRow>();
   return json({
     collections: collections.results.map((collection) => ({
       ...collection,
+      latest_run:
+        runs.results.find((run) => run.collection_id === collection.id) ?? null,
       items: items.results
         .filter((item) => item.collection_id === collection.id)
         .map((item) => ({
@@ -589,16 +619,26 @@ async function downloadMaterialItem(
     "SELECT id, title, mime_type, storage_key FROM material_items WHERE id = ? AND status = 'ready'",
   )
     .bind(itemId)
-    .first<{ id: string; title: string; mime_type: string; storage_key: string | null }>();
+    .first<{
+      id: string;
+      title: string;
+      mime_type: string;
+      storage_key: string | null;
+    }>();
   if (!item?.storage_key) return new Response("Not found", { status: 404 });
   if (!env.MATERIALS)
     return json({ error: "資料ストレージはまだ有効化されていません。" }, 503);
   const object = await env.MATERIALS.get(item.storage_key);
   if (!object) return new Response("Not found", { status: 404 });
-  const safeName = item.title.replace(/[\\\\/:*?\"<>|\u0000-\u001f]+/g, "_").slice(0, 180) || "material";
+  const safeName =
+    item.title.replace(/[\\\\/:*?\"<>|\u0000-\u001f]+/g, "_").slice(0, 180) ||
+    "material";
   return new Response(object.body, {
     headers: {
-      "content-type": object.httpMetadata?.contentType || item.mime_type || "application/octet-stream",
+      "content-type":
+        object.httpMetadata?.contentType ||
+        item.mime_type ||
+        "application/octet-stream",
       "content-length": String(object.size),
       "content-disposition": `inline; filename*=UTF-8''${encodeURIComponent(safeName)}`,
       "cache-control": "private, no-store",
@@ -643,6 +683,211 @@ const validTimeZone = (value: string) => {
   } catch {
     return false;
   }
+};
+
+// datetime-local values are wall-clock values in their selected timezone. Convert
+// them without depending on the Worker host's timezone (which is usually UTC).
+const wallTimeToEpoch = (value: string, timeZone: string) => {
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(value);
+  if (!match || !validTimeZone(timeZone)) return Number.NaN;
+  const [year, month, day, hour, minute] = match.slice(1).map(Number);
+  const wall = Date.UTC(year, month - 1, day, hour, minute);
+  let guess = wall;
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  });
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const parts = Object.fromEntries(
+      formatter
+        .formatToParts(new Date(guess))
+        .filter((part) => part.type !== "literal")
+        .map((part) => [part.type, part.value]),
+    );
+    const represented = Date.UTC(
+      Number(parts.year),
+      Number(parts.month) - 1,
+      Number(parts.day),
+      Number(parts.hour),
+      Number(parts.minute),
+    );
+    guess = wall - (represented - guess);
+  }
+  return guess;
+};
+
+const nextReminderWallTime = (
+  value: string,
+  repeat: string,
+  timeZone: string,
+): string | null => {
+  if (!new Set(["daily", "weekly", "monthly"]).has(repeat)) return null;
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(value);
+  if (!match || !validTimeZone(timeZone)) return null;
+  const [, yearText, monthText, dayText, hourText, minuteText] = match;
+  const next = new Date(
+    Date.UTC(
+      Number(yearText),
+      Number(monthText) - 1,
+      Number(dayText),
+      Number(hourText),
+      Number(minuteText),
+    ),
+  );
+  if (repeat === "daily") next.setUTCDate(next.getUTCDate() + 1);
+  if (repeat === "weekly") next.setUTCDate(next.getUTCDate() + 7);
+  if (repeat === "monthly") {
+    const day = next.getUTCDate();
+    next.setUTCDate(1);
+    next.setUTCMonth(next.getUTCMonth() + 1);
+    const lastDay = new Date(
+      Date.UTC(next.getUTCFullYear(), next.getUTCMonth() + 1, 0),
+    ).getUTCDate();
+    next.setUTCDate(Math.min(day, lastDay));
+  }
+  const wall = next.toISOString().slice(0, 16);
+  return wallTimeToEpoch(wall, timeZone) > Date.now()
+    ? wall
+    : nextReminderWallTime(wall, repeat, timeZone);
+};
+
+type TaskReminderRowInput = {
+  remindAt: string;
+  timezone: string;
+  label: string;
+  repeat: string;
+  relativeKind: "absolute" | "before" | "due_day_hourly";
+  relativeAmount: number | null;
+  relativeUnit: "days" | "hours" | null;
+  relativeStart: string | null;
+};
+
+const shiftReminderWallTime = (value: string, minutes: number) => {
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(value);
+  if (!match) return "";
+  const shifted = new Date(
+    Date.UTC(
+      Number(match[1]),
+      Number(match[2]) - 1,
+      Number(match[3]),
+      Number(match[4]),
+      Number(match[5]),
+    ) +
+      minutes * 60_000,
+  );
+  return shifted.toISOString().slice(0, 16);
+};
+
+const hourlyReminderWallTimes = (dueAt: string, start: string) => {
+  const dueMatch = /^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})$/.exec(dueAt);
+  const startMatch = /^(\d{2}):(\d{2})$/.exec(start);
+  if (!dueMatch || !startMatch) return [] as string[];
+  const dueMinutes = Number(dueMatch[2]) * 60 + Number(dueMatch[3]);
+  const startMinutes = Number(startMatch[1]) * 60 + Number(startMatch[2]);
+  if (startMinutes > dueMinutes) return [] as string[];
+  const times: string[] = [];
+  for (let minutes = startMinutes; minutes <= dueMinutes; minutes += 60) {
+    const hour = String(Math.floor(minutes / 60)).padStart(2, "0");
+    const minute = String(minutes % 60).padStart(2, "0");
+    times.push(`${dueMatch[1]}T${hour}:${minute}`);
+  }
+  return times;
+};
+
+const reminderInputRows = (
+  payload: unknown[],
+  dueAt: string,
+  dueTimezone: string,
+): { rows?: TaskReminderRowInput[]; error?: string } => {
+  const rows: TaskReminderRowInput[] = [];
+  for (const value of payload.slice(0, 100)) {
+    const item =
+      typeof value === "object" && value !== null
+        ? (value as Record<string, unknown>)
+        : {};
+    const kind = text(item.kind ?? item.relativeKind, 30) || "absolute";
+    if (kind === "before") {
+      const amount = Number(item.amount);
+      const unit = text(item.unit, 12);
+      if (
+        !dueAt ||
+        !validTimeZone(dueTimezone) ||
+        !Number.isInteger(amount) ||
+        amount < 1 ||
+        (unit !== "days" && unit !== "hours") ||
+        amount > (unit === "days" ? 365 : 8_760)
+      )
+        return {
+          error:
+            "期限基準のリマインダーには、期限・正しい数量・単位が必要です。",
+        };
+      const offsetMinutes = amount * (unit === "days" ? 24 * 60 : 60);
+      const remindAt = shiftReminderWallTime(dueAt, -offsetMinutes);
+      if (wallTimeToEpoch(remindAt, dueTimezone) > Date.now())
+        rows.push({
+          remindAt,
+          timezone: dueTimezone,
+          label: `${amount}${unit === "days" ? "日前" : "時間前"}`,
+          repeat: "none",
+          relativeKind: "before",
+          relativeAmount: amount,
+          relativeUnit: unit,
+          relativeStart: null,
+        });
+      continue;
+    }
+    if (kind === "due_day_hourly") {
+      if (!dueAt || !validTimeZone(dueTimezone))
+        return { error: "当日毎時のリマインダーには期限が必要です。" };
+      const start = text(item.start, 5) || "09:00";
+      if (
+        !/^\d{2}:\d{2}$/.test(start) ||
+        Number(start.slice(0, 2)) > 23 ||
+        Number(start.slice(3, 5)) > 59
+      )
+        return { error: "当日毎時の開始時刻を確認してください。" };
+      const times = hourlyReminderWallTimes(dueAt, start);
+      if (!times.length)
+        return { error: "当日毎時の開始時刻は期限時刻より前にしてください。" };
+      rows.push(
+        ...times
+          .filter(
+            (remindAt) => wallTimeToEpoch(remindAt, dueTimezone) > Date.now(),
+          )
+          .map((remindAt) => ({
+            remindAt,
+            timezone: dueTimezone,
+            label: `期限当日の毎時（${start}から）`,
+            repeat: "none",
+            relativeKind: "due_day_hourly" as const,
+            relativeAmount: null,
+            relativeUnit: null,
+            relativeStart: start,
+          })),
+      );
+      continue;
+    }
+    const remindAt = text(item.remindAt, 32);
+    const timezone = text(item.timezone, 80) || dueTimezone;
+    const repeat = text(item.repeat, 12) || "none";
+    if (!remindAt) continue;
+    rows.push({
+      remindAt,
+      timezone,
+      label: text(item.label, 120),
+      repeat,
+      relativeKind: "absolute",
+      relativeAmount: null,
+      relativeUnit: null,
+      relativeStart: null,
+    });
+  }
+  return { rows };
 };
 
 type AdminScope = {
@@ -806,6 +1051,11 @@ async function listArticleReports(
   if (status) {
     filters.push("status = ?");
     values.push(status);
+  }
+  if (!scope.isManager) {
+    if (!scope.subjects.length) return json({ reports: [] });
+    filters.push(`subject IN (${scope.subjects.map(() => "?").join(", ")})`);
+    values.push(...scope.subjects);
   }
   const where = filters.length ? ` WHERE ${filters.join(" AND ")}` : "";
   const statement = env.REPORTS.prepare(`${select}${where}${order}`);
@@ -1486,7 +1736,8 @@ async function deleteReportAdminPermission(
 }
 
 const editorialDocumentSelect = `SELECT id, source_article_id, subject, category, locale, slug,
-  title, summary, concept_id, body, editorial_note, latex_engine, status, created_by, updated_by, created_at, updated_at, reviewed_at, published_at
+  title, summary, concept_id, body, editorial_note, latex_engine, status, created_by, updated_by, created_at, updated_at, reviewed_at, published_at,
+  (SELECT reviewer_email FROM editorial_review_assignments WHERE document_id = editorial_documents.id) AS reviewer_email
   FROM editorial_documents`;
 
 const canEditSubject = (scope: AdminScope, subject: string) =>
@@ -1498,6 +1749,48 @@ const canReviewDocument = (
   status: EditorialDocumentStatus,
 ) =>
   canEditSubject(scope, subject) || (scope.isManager && status === "in-review");
+
+async function reviewerCanReviewSubject(
+  env: Env,
+  subject: string,
+  reviewerEmail: string,
+): Promise<boolean> {
+  const reviewer = await env.REPORTS.prepare(
+    "SELECT email FROM report_admin_permissions WHERE lower(email) = ? AND (subject = ? OR subject = '*') LIMIT 1",
+  )
+    .bind(reviewerEmail, subject)
+    .first<{ email: string }>();
+  return Boolean(reviewer);
+}
+
+async function saveEditorialReviewAssignment(
+  env: Env,
+  documentId: string,
+  subject: string,
+  reviewerEmail: string,
+  requestedBy: string,
+  now: string,
+): Promise<string | null> {
+  if (!reviewerEmail) {
+    await env.REPORTS.prepare(
+      "DELETE FROM editorial_review_assignments WHERE document_id = ?",
+    )
+      .bind(documentId)
+      .run();
+    return null;
+  }
+  if (!(await reviewerCanReviewSubject(env, subject, reviewerEmail)))
+    return "この分野の権限を持つ査読担当者を選択してください。";
+  await env.REPORTS.prepare(
+    `INSERT INTO editorial_review_assignments (document_id, reviewer_email, requested_by, requested_at, updated_at)
+     VALUES (?, ?, ?, ?, ?)
+     ON CONFLICT(document_id) DO UPDATE SET reviewer_email = excluded.reviewer_email,
+       requested_by = excluded.requested_by, updated_at = excluded.updated_at`,
+  )
+    .bind(documentId, reviewerEmail, requestedBy, now, now)
+    .run();
+  return null;
+}
 
 async function readEditorialPayload(
   request: Request,
@@ -1529,20 +1822,30 @@ const editorialValues = (payload: EditorialDocumentPayload) => {
     (text(payload.latexEngine, 24) as LatexEngine) || "mathjax";
   const status = text(payload.status, 20) as EditorialDocumentStatus;
   const sourceArticleId = text(payload.sourceArticleId, 180) || null;
+  const reviewerEmail =
+    payload.reviewerEmail === undefined
+      ? null
+      : text(payload.reviewerEmail, 254).toLowerCase();
+  const expectedUpdatedAt = text(payload.expectedUpdatedAt, 80);
   if (
     !SUBJECT_SLUG.test(subject) ||
-    !SUBJECT_SLUG.test(category) ||
+    (category !== "" && !SUBJECT_SLUG.test(category)) ||
     !locale ||
     !SUBJECT_SLUG.test(slug) ||
     !title ||
     !summary ||
     !/^[a-z0-9-]+\.[a-z0-9-]+\.[a-z0-9-]+$/.test(conceptId) ||
     !EDITORIAL_DOCUMENT_STATUSES.has(status) ||
-    !LATEX_ENGINES.has(latexEngine)
+    !LATEX_ENGINES.has(latexEngine) ||
+    (reviewerEmail !== null &&
+      reviewerEmail !== "" &&
+      !EMAIL_PATTERN.test(reviewerEmail))
   )
     return null;
   return {
     sourceArticleId,
+    reviewerEmail: reviewerEmail === "" ? "" : reviewerEmail,
+    expectedUpdatedAt,
     subject,
     category,
     locale,
@@ -1570,6 +1873,7 @@ async function listEditorialDocuments(
       return json({
         documents: [],
         mentionNames: [],
+        reviewers: [],
         scope: { email: scope.email, subjects: [], isManager: scope.isManager },
       });
     filters.push(`d.subject IN (${scope.subjects.map(() => "?").join(", ")})`);
@@ -1582,10 +1886,16 @@ async function listEditorialDocuments(
   const [result, memberResult] = await Promise.all([
     env.REPORTS.prepare(
       `SELECT d.id, d.source_article_id, d.subject, d.category, d.locale, d.slug, d.title, d.summary, d.concept_id, d.editorial_note, d.latex_engine,
-        d.status, d.created_by, d.updated_by, d.created_at, d.updated_at, d.reviewed_at, d.published_at
-       FROM editorial_documents d${where} ORDER BY d.updated_at DESC LIMIT 200`,
+        d.status, d.created_by, d.updated_by, d.created_at, d.updated_at, d.reviewed_at, d.published_at,
+        (SELECT reviewer_email FROM editorial_review_assignments assignment WHERE assignment.document_id = d.id) AS reviewer_email,
+        CASE WHEN EXISTS (
+          SELECT 1 FROM editorial_review_assignments ra
+          WHERE ra.document_id = d.id AND lower(ra.reviewer_email) = lower(?)
+        ) THEN 1 ELSE 0 END AS assigned_to_current_user
+       FROM editorial_documents d${where}
+       ORDER BY d.updated_at DESC LIMIT 200`,
     )
-      .bind(...values)
+      .bind(scope.email, ...values)
       .all<Omit<EditorialDocument, "body">>(),
     env.REPORTS.prepare(
       `SELECT DISTINCT p.email, COALESCE(NULLIF(TRIM(m.display_name), ''), '') AS display_name
@@ -1604,6 +1914,17 @@ async function listEditorialDocuments(
     mentionNames: memberResult.results
       .map((member) => memberDisplayName(member.display_name, member.email))
       .filter(Boolean),
+    reviewers: [
+      ...new Map(
+        memberResult.results.map((member) => [
+          member.email.toLowerCase(),
+          {
+            email: member.email.toLowerCase(),
+            displayName: memberDisplayName(member.display_name, member.email),
+          },
+        ]),
+      ).values(),
+    ],
     scope: {
       email: scope.email,
       subjects: scope.subjects,
@@ -2281,12 +2602,19 @@ async function notifyProgressToDiscord(
   env: Env,
   subject: string | null,
   body: string,
+  details = "",
 ) {
   const subjectLabel = subject ? `【${subject}】` : "【全体】";
-  const message = `📌 ${subjectLabel} 進捗報告\n${body}`;
+  const message = `📌 ${subjectLabel} 進捗報告\n${body}${details ? `\n\n具体的内容：\n${details}` : ""}`;
+  const webhookUrls = [
+    ...new Set(
+      [env.DISCORD_PROGRESS_WEBHOOK_URL, env.DISCORD_ATLAS_WEBHOOK_URL].filter(
+        (value): value is string => Boolean(value),
+      ),
+    ),
+  ];
   await Promise.all([
-    postDiscordWebhook(env.DISCORD_PROGRESS_WEBHOOK_URL, message),
-    postDiscordWebhook(env.DISCORD_ATLAS_WEBHOOK_URL, message),
+    ...webhookUrls.map((url) => postDiscordWebhook(url, message)),
     postDiscordChannel(env, env.DISCORD_PROGRESS_CHANNEL_ID, message),
     postDiscordSubjectChannel(env, subject, message),
   ]);
@@ -2708,7 +3036,7 @@ async function portalOverview(request: Request, env: Env): Promise<Response> {
           .all(),
     requestedProject
       ? env.REPORTS.prepare(
-          `SELECT t.id,t.project_id,t.subject,t.assignee_email,t.title,t.details,t.status,t.due_at,t.due_timezone,t.reminder_at,t.reminder_repeat,t.updated_at,p.name AS project_name
+          `SELECT t.id,t.project_id,t.subject,t.assignee_email,t.title,t.details,t.status,t.due_at,t.due_timezone,t.reminder_at,t.reminder_repeat,t.reminder_email,t.updated_at,p.name AS project_name
            FROM editorial_tasks t JOIN atlasez_projects p ON p.id=t.project_id
            WHERE t.assignee_email=? AND t.project_id IN (SELECT id FROM atlasez_projects WHERE slug=?)
              AND t.status != 'done' ORDER BY t.updated_at DESC LIMIT 100`,
@@ -2716,7 +3044,7 @@ async function portalOverview(request: Request, env: Env): Promise<Response> {
           .bind(scope.email, requestedProject)
           .all()
       : env.REPORTS.prepare(
-          `SELECT t.id,t.project_id,t.subject,t.assignee_email,t.title,t.details,t.status,t.due_at,t.due_timezone,t.reminder_at,t.reminder_repeat,t.updated_at,p.name AS project_name
+          `SELECT t.id,t.project_id,t.subject,t.assignee_email,t.title,t.details,t.status,t.due_at,t.due_timezone,t.reminder_at,t.reminder_repeat,t.reminder_email,t.updated_at,p.name AS project_name
            FROM editorial_tasks t JOIN atlasez_projects p ON p.id=t.project_id
            WHERE t.assignee_email=? AND t.status != 'done' ORDER BY t.updated_at DESC LIMIT 100`,
         )
@@ -2752,15 +3080,55 @@ async function projectProfile(
   if (!scope.isManager && !membership)
     return json({ error: "このプロジェクトへのアクセス権がありません。" }, 403);
   if (request.method === "GET") {
-    const profile = await env.REPORTS.prepare(
-      "SELECT introduction,updated_at FROM atlasez_project_profiles WHERE project_id = ? AND email = ?",
-    )
-      .bind(project.id, scope.email)
-      .first<{ introduction: string; updated_at: string }>();
+    const [profile, memberRows] = await Promise.all([
+      env.REPORTS.prepare(
+        "SELECT introduction,updated_at FROM atlasez_project_profiles WHERE project_id = ? AND email = ?",
+      )
+        .bind(project.id, scope.email)
+        .first<{ introduction: string; updated_at: string }>(),
+      env.REPORTS.prepare(
+        `SELECT pm.email,pm.role,
+          COALESCE(NULLIF(TRIM(mp.display_name), ''), '') AS display_name,
+          COALESCE(mp.university, '') AS university,
+          COALESCE(mp.year, '') AS year,
+          COALESCE(mp.avatar_url, '') AS avatar_url,
+          COALESCE(mp.updated_at, '') AS avatar_updated_at,
+          COALESCE(pp.introduction, '') AS introduction,
+          COALESCE(pp.updated_at, '') AS introduction_updated_at
+         FROM atlasez_project_memberships pm
+         LEFT JOIN editorial_member_profiles mp ON lower(mp.email) = lower(pm.email)
+         LEFT JOIN atlasez_project_profiles pp ON pp.project_id = pm.project_id AND lower(pp.email) = lower(pm.email)
+         WHERE pm.project_id = ?
+         ORDER BY CASE WHEN trim(mp.display_name) = '' THEN 1 ELSE 0 END, mp.display_name COLLATE NOCASE, pm.email COLLATE NOCASE`,
+      )
+        .bind(project.id)
+        .all<{
+          email: string;
+          role: string;
+          display_name: string;
+          university: string;
+          year: string;
+          avatar_url: string;
+          avatar_updated_at: string;
+          introduction: string;
+          introduction_updated_at: string;
+        }>(),
+    ]);
     return json({
       project: { slug: project.slug, name: project.name },
       introduction: profile?.introduction ?? "",
       updatedAt: profile?.updated_at ?? null,
+      members: (memberRows.results ?? []).map((member) => ({
+        displayName: memberDisplayName(member.display_name, member.email),
+        role: member.role === "manager" ? "manager" : "member",
+        university: member.university?.trim() ?? "",
+        year: member.year?.trim() ?? "",
+        avatarUrl: member.avatar_url
+          ? memberAvatarEndpoint(member.email, member.avatar_updated_at)
+          : "",
+        introduction: member.introduction?.trim() ?? "",
+        updatedAt: member.introduction_updated_at || null,
+      })),
     });
   }
   if (request.method !== "PUT")
@@ -2810,39 +3178,68 @@ async function projectOperations(
     return json({ error: "このプロジェクトへのアクセス権がありません。" }, 403);
 
   if (request.method === "GET") {
-    const [todos, events, participants, members] = await Promise.all([
-      env.REPORTS.prepare(
-        "SELECT id,project_id,title,details,status,assignee_email,created_by,created_at,updated_at,due_at,due_timezone,reminder_at,reminder_repeat FROM editorial_tasks WHERE project_id=? AND status != 'done' ORDER BY updated_at DESC LIMIT 200",
-      )
-        .bind(project.id)
-        .all(),
-      env.REPORTS.prepare(
-        "SELECT id,title,details,starts_at,ends_at,timezone,created_at FROM editorial_events WHERE subject=? ORDER BY starts_at ASC LIMIT 100",
-      )
-        .bind(`project:${project.slug}`)
-        .all<{
-          id: string;
-          title: string;
-          details: string;
-          starts_at: string;
-          ends_at: string | null;
-          timezone: string;
-          created_at: string;
-        }>(),
-      env.REPORTS.prepare(
-        "SELECT a.event_id,a.email,a.availability,COALESCE(NULLIF(TRIM(p.display_name),''),'') AS display_name FROM editorial_event_availability a LEFT JOIN editorial_member_profiles p ON p.email=a.email WHERE a.event_id IN (SELECT id FROM editorial_events WHERE subject=?)",
-      )
-        .bind(`project:${project.slug}`)
-        .all<{
-          event_id: string;
-          email: string;
-          availability: string;
-          display_name: string;
-        }>(),
-      env.REPORTS.prepare(
-        "SELECT DISTINCT p.email,COALESCE(NULLIF(TRIM(m.display_name),''),'') AS display_name FROM report_admin_permissions p LEFT JOIN editorial_member_profiles m ON m.email=p.email ORDER BY display_name,p.email",
-      ).all<{ email: string; display_name: string }>(),
-    ]);
+    const [todos, events, participants, members, progress, reminders] =
+      await Promise.all([
+        env.REPORTS.prepare(
+          "SELECT id,project_id,title,details,status,assignee_email,created_by,created_at,updated_at,due_at,due_timezone,reminder_at,reminder_repeat,reminder_email FROM editorial_tasks WHERE project_id=? AND status != 'done' ORDER BY updated_at DESC LIMIT 200",
+        )
+          .bind(project.id)
+          .all<{ id: string; [key: string]: unknown }>(),
+        env.REPORTS.prepare(
+          "SELECT id,title,details,starts_at,ends_at,timezone,created_at FROM editorial_events WHERE subject=? ORDER BY starts_at ASC LIMIT 100",
+        )
+          .bind(`project:${project.slug}`)
+          .all<{
+            id: string;
+            title: string;
+            details: string;
+            starts_at: string;
+            ends_at: string | null;
+            timezone: string;
+            created_at: string;
+          }>(),
+        env.REPORTS.prepare(
+          "SELECT a.event_id,a.email,a.availability,COALESCE(NULLIF(TRIM(p.display_name),''),'') AS display_name FROM editorial_event_availability a LEFT JOIN editorial_member_profiles p ON p.email=a.email WHERE a.event_id IN (SELECT id FROM editorial_events WHERE subject=?)",
+        )
+          .bind(`project:${project.slug}`)
+          .all<{
+            event_id: string;
+            email: string;
+            availability: string;
+            display_name: string;
+          }>(),
+        env.REPORTS.prepare(
+          "SELECT DISTINCT p.email,COALESCE(NULLIF(TRIM(m.display_name),''),'') AS display_name FROM atlasez_project_memberships pm JOIN report_admin_permissions p ON lower(p.email)=lower(pm.email) LEFT JOIN editorial_member_profiles m ON lower(m.email)=lower(p.email) WHERE pm.project_id=? ORDER BY display_name,p.email",
+        )
+          .bind(project.id)
+          .all<{ email: string; display_name: string }>(),
+        env.REPORTS.prepare(
+          "SELECT id,email,body,details,created_at FROM editorial_progress_reports WHERE subject=? ORDER BY created_at DESC LIMIT 50",
+        )
+          .bind(`project:${project.slug}`)
+          .all<{
+            id: string;
+            email: string;
+            body: string;
+            details: string;
+            created_at: string;
+          }>(),
+        env.REPORTS.prepare(
+          "SELECT r.task_id,r.remind_at,r.timezone,r.label,r.relative_kind,r.relative_amount,r.relative_unit,r.relative_start,t.reminder_repeat AS task_reminder_repeat FROM editorial_task_reminders r JOIN editorial_tasks t ON t.id=r.task_id WHERE t.project_id=? AND t.status != 'done' ORDER BY r.remind_at ASC",
+        )
+          .bind(project.id)
+          .all<{
+            task_id: string;
+            remind_at: string;
+            timezone: string;
+            label: string;
+            relative_kind: "absolute" | "before" | "due_day_hourly";
+            relative_amount: number | null;
+            relative_unit: "days" | "hours" | null;
+            relative_start: string | null;
+            task_reminder_repeat: string | null;
+          }>(),
+      ]);
     const normalizedParticipants = (participants.results ?? []).map((row) => ({
       ...row,
       display_name: memberDisplayName(row.display_name, row.email),
@@ -2863,11 +3260,22 @@ async function projectOperations(
       list.push(row);
       byEvent.set(row.event_id, list);
     }
+    const remindersByTask = new Map<string, typeof reminders.results>();
+    for (const reminder of reminders.results ?? []) {
+      remindersByTask.set(reminder.task_id, [
+        ...(remindersByTask.get(reminder.task_id) ?? []),
+        reminder,
+      ]);
+    }
     return json({
       scope: { email: scope.email, isManager: scope.isManager },
       project,
       members: normalizedMembers,
-      todos: todos.results ?? [],
+      todos: (todos.results ?? []).map((todo) => ({
+        ...todo,
+        reminders: remindersByTask.get(todo.id) ?? [],
+      })),
+      progress: progress.results ?? [],
       events: (events.results ?? []).map((event) => {
         const rows = byEvent.get(event.id) ?? [];
         return {
@@ -2895,6 +3303,24 @@ async function projectOperations(
   }
   const type = text(payload.type, 20);
   const now = new Date().toISOString();
+  if (type === "progress") {
+    const body = text(payload.body, MAX_OPERATION_TEXT_LENGTH);
+    if (!body) return json({ error: "進捗内容を入力してください。" }, 400);
+    await env.REPORTS.prepare(
+      "INSERT INTO editorial_progress_reports (id,email,subject,document_id,body,details,created_at) VALUES (?,?,?,?,?,?,?)",
+    )
+      .bind(
+        crypto.randomUUID(),
+        scope.email,
+        `project:${project.slug}`,
+        null,
+        body,
+        text(payload.details, MAX_OPERATION_TEXT_LENGTH),
+        now,
+      )
+      .run();
+    return json({ ok: true });
+  }
   if (type === "todo") {
     const title = text(payload.title, 200);
     if (!title) return json({ error: "タスク名を入力してください。" }, 400);
@@ -2908,6 +3334,24 @@ async function projectOperations(
     const dueTimezone = text(payload.dueTimezone, 80) || "Asia/Tokyo";
     const reminderAt = text(payload.reminderAt, 32);
     const reminderRepeat = text(payload.reminderRepeat, 12) || "none";
+    const reminderEmail = text(payload.reminderEmail, 254).toLowerCase();
+    const reminderPayload = Array.isArray(payload.reminders)
+      ? payload.reminders
+      : [];
+    const reminderRows = reminderInputRows(reminderPayload, dueAt, dueTimezone);
+    if (reminderRows.error) return json({ error: reminderRows.error }, 400);
+    const reminders = reminderRows.rows ?? [];
+    if (reminders.length === 0 && reminderAt)
+      reminders.push({
+        remindAt: reminderAt,
+        timezone: dueTimezone,
+        label: reminderRepeat === "none" ? "リマインダー" : reminderRepeat,
+        repeat: reminderRepeat,
+        relativeKind: "absolute",
+        relativeAmount: null,
+        relativeUnit: null,
+        relativeStart: null,
+      });
     if (dueAt && !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(dueAt))
       return json({ error: "期限はカレンダーから指定してください。" }, 400);
     if (dueAt && !validTimeZone(dueTimezone))
@@ -2922,39 +3366,89 @@ async function projectOperations(
         { error: "リマインダーのタイムゾーンを確認してください。" },
         400,
       );
+    if (reminderEmail && !EMAIL_PATTERN.test(reminderEmail))
+      return json({ error: "通知先メールアドレスを確認してください。" }, 400);
+    for (const reminder of reminders) {
+      if (
+        !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(reminder.remindAt) ||
+        !validTimeZone(reminder.timezone) ||
+        !new Set(["none", "once", "daily", "weekly", "monthly"]).has(
+          reminder.repeat,
+        )
+      )
+        return json(
+          { error: "リマインダー日時またはタイムゾーンを確認してください。" },
+          400,
+        );
+    }
     if (
       !new Set(["none", "once", "daily", "weekly", "monthly"]).has(
         reminderRepeat,
       )
     )
       return json({ error: "リマインダーの繰り返しを確認してください。" }, 400);
+    const taskId = crypto.randomUUID();
+    const singleRepeatingReminder =
+      reminders.length === 1 && reminders[0].repeat !== "none";
     await env.REPORTS.prepare(
-      "INSERT INTO editorial_tasks (id,project_id,subject,assignee_email,title,details,status,due_at,due_timezone,reminder_at,reminder_repeat,created_by,created_at,updated_at) VALUES (?,?,NULL,?,?,?,'open',?,?,?,?,?,?,?)",
+      "INSERT INTO editorial_tasks (id,project_id,subject,assignee_email,title,details,status,due_at,due_timezone,reminder_at,reminder_repeat,reminder_email,created_by,created_at,updated_at) VALUES (?,?,NULL,?,?,?,'open',?,?,?,?,?,?,?,?)",
     )
       .bind(
-        crypto.randomUUID(),
+        taskId,
         project.id,
         assignee,
         title,
         text(payload.details, MAX_OPERATION_TEXT_LENGTH),
         dueAt || null,
         dueTimezone,
-        reminderAt || null,
-        reminderRepeat,
+        reminders.length > 0 ? null : reminderAt || null,
+        singleRepeatingReminder
+          ? reminders[0].repeat
+          : reminders.length > 0
+            ? "none"
+            : reminderRepeat,
+        reminderEmail || null,
         scope.email,
         now,
         now,
       )
       .run();
+    if (reminders.length > 0)
+      await env.REPORTS.batch(
+        reminders.map((reminder) =>
+          env.REPORTS.prepare(
+            "INSERT INTO editorial_task_reminders (id,task_id,remind_at,timezone,label,relative_kind,relative_amount,relative_unit,relative_start,created_at) VALUES (?,?,?,?,?,?,?,?,?,?)",
+          ).bind(
+            crypto.randomUUID(),
+            taskId,
+            reminder.remindAt,
+            reminder.timezone,
+            reminder.label,
+            reminder.relativeKind,
+            reminder.relativeAmount,
+            reminder.relativeUnit,
+            reminder.relativeStart,
+            now,
+          ),
+        ),
+      );
     return json({ ok: true });
   }
   if (type === "event") {
     if (!scope.isManager)
       return json({ error: "日程の作成は運営内運営のみ行えます。" }, 403);
     const title = text(payload.title, 200),
-      startsAt = text(payload.startsAt, 40);
+      startsAt = text(payload.startsAt, 40),
+      endsAt = text(payload.endsAt, 40);
     if (!title || !startsAt)
       return json({ error: "催し名と日時を入力してください。" }, 400);
+    if (
+      !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(startsAt) ||
+      (endsAt && !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(endsAt))
+    )
+      return json({ error: "開始・終了日時を確認してください。" }, 400);
+    if (endsAt && endsAt <= startsAt)
+      return json({ error: "終了日時は開始日時より後にしてください。" }, 400);
     const timezone = text(payload.timezone, 80) || "Asia/Tokyo";
     if (!validTimeZone(timezone))
       return json({ error: "タイムゾーンを確認してください。" }, 400);
@@ -2967,7 +3461,7 @@ async function projectOperations(
         title,
         text(payload.details, MAX_OPERATION_TEXT_LENGTH),
         startsAt,
-        text(payload.endsAt, 40) || null,
+        endsAt || null,
         timezone,
         scope.email,
         now,
@@ -2989,11 +3483,33 @@ async function updateProjectTodo(
   if (!isSameOrigin(request))
     return json({ error: "許可されていない送信元です。" }, 403);
   const todo = await env.REPORTS.prepare(
-    "SELECT t.id,t.assignee_email,t.created_by FROM editorial_tasks t JOIN atlasez_projects p ON p.id=t.project_id WHERE t.id=? AND p.slug=?",
+    "SELECT t.id,t.project_id,t.assignee_email,t.created_by,t.due_at,t.due_timezone,t.reminder_at,t.reminder_repeat,t.reminder_email FROM editorial_tasks t JOIN atlasez_projects p ON p.id=t.project_id WHERE t.id=? AND p.slug=?",
   )
     .bind(todoId, slug)
-    .first<{ id: string; assignee_email: string | null; created_by: string }>();
+    .first<{
+      id: string;
+      project_id: string;
+      assignee_email: string | null;
+      created_by: string;
+      due_at: string | null;
+      due_timezone: string;
+      reminder_at: string | null;
+      reminder_repeat: string | null;
+      reminder_email: string | null;
+    }>();
   if (!todo) return json({ error: "タスクが見つかりません。" }, 404);
+  if (!scope.isManager) {
+    const membership = await env.REPORTS.prepare(
+      "SELECT 1 AS found FROM atlasez_project_memberships WHERE project_id=? AND email=?",
+    )
+      .bind(todo.project_id, scope.email)
+      .first<{ found: number }>();
+    if (!membership)
+      return json(
+        { error: "このプロジェクトへのアクセス権がありません。" },
+        403,
+      );
+  }
   if (
     !scope.isManager &&
     todo.assignee_email !== scope.email &&
@@ -3002,15 +3518,128 @@ async function updateProjectTodo(
     return json({ error: "このタスクを更新する権限がありません。" }, 403);
   const payload = (await request.json().catch(() => null)) as {
     status?: unknown;
+    reminderAction?: unknown;
+    reminders?: unknown;
+    reminderEmail?: unknown;
   } | null;
-  const status = text(payload?.status, 20);
-  if (!new Set(["open", "doing", "done"]).has(status))
+  const status =
+    payload?.status === undefined ? null : text(payload.status, 20);
+  const reminderAction = text(payload?.reminderAction, 30);
+  if (status !== null && !new Set(["open", "doing", "done"]).has(status))
     return json({ error: "状態を確認してください。" }, 400);
-  await env.REPORTS.prepare(
-    "UPDATE editorial_tasks SET status=?,updated_at=? WHERE id=?",
-  )
-    .bind(status, new Date().toISOString(), todoId)
-    .run();
+  if (reminderAction && reminderAction !== "replace")
+    return json({ error: "リマインダーの更新方法を確認してください。" }, 400);
+  if (status === null && !reminderAction)
+    return json({ error: "更新内容を指定してください。" }, 400);
+  const now = new Date().toISOString();
+  if (reminderAction === "replace") {
+    const reminderEmail = text(payload?.reminderEmail, 254).toLowerCase();
+    if (reminderEmail && !EMAIL_PATTERN.test(reminderEmail))
+      return json({ error: "通知先メールアドレスを確認してください。" }, 400);
+    const reminderRows = reminderInputRows(
+      Array.isArray(payload?.reminders) ? payload.reminders : [],
+      todo.due_at ?? "",
+      todo.due_timezone || "Asia/Tokyo",
+    );
+    if (reminderRows.error) return json({ error: reminderRows.error }, 400);
+    const reminders = reminderRows.rows ?? [];
+    const singleRepeatingReminder =
+      reminders.length === 1 && reminders[0].repeat !== "none";
+    const existing = await env.REPORTS.prepare(
+      "SELECT id,remind_at,timezone,label,relative_kind,relative_amount,relative_unit,relative_start FROM editorial_task_reminders WHERE task_id=?",
+    )
+      .bind(todoId)
+      .all<{
+        id: string;
+        remind_at: string;
+        timezone: string;
+        label: string;
+        relative_kind: string;
+        relative_amount: number | null;
+        relative_unit: string | null;
+        relative_start: string | null;
+      }>();
+    const existingByKey = new Map<string, string[]>();
+    const reminderKey = (reminder: {
+      remindAt: string;
+      timezone: string;
+      relativeKind: string;
+      relativeAmount: number | null;
+      relativeUnit: string | null;
+      relativeStart: string | null;
+    }) =>
+      `${reminder.relativeKind}|${reminder.relativeAmount ?? ""}|${reminder.relativeUnit ?? ""}|${reminder.relativeStart ?? ""}|${reminder.remindAt}|${reminder.timezone}`;
+    for (const row of existing.results ?? []) {
+      const key = reminderKey({
+        remindAt: row.remind_at,
+        timezone: row.timezone,
+        relativeKind: row.relative_kind,
+        relativeAmount: row.relative_amount,
+        relativeUnit: row.relative_unit,
+        relativeStart: row.relative_start,
+      });
+      existingByKey.set(key, [...(existingByKey.get(key) ?? []), row.id]);
+    }
+    const keptIds = new Set<string>();
+    const newReminders = reminders.filter((reminder) => {
+      const key = reminderKey(reminder);
+      const existingId = existingByKey.get(key)?.shift();
+      if (existingId) {
+        keptIds.add(existingId);
+        return false;
+      }
+      return true;
+    });
+    const statements = (existing.results ?? [])
+      .filter((row) => !keptIds.has(row.id))
+      .map((row) =>
+        env.REPORTS.prepare(
+          "DELETE FROM editorial_task_reminders WHERE id=?",
+        ).bind(row.id),
+      );
+    if (status !== null)
+      statements.push(
+        env.REPORTS.prepare(
+          "UPDATE editorial_tasks SET status=?,updated_at=? WHERE id=?",
+        ).bind(status, now, todoId),
+      );
+    statements.push(
+      env.REPORTS.prepare(
+        "UPDATE editorial_tasks SET reminder_at=?,reminder_repeat=?,reminder_email=?,updated_at=? WHERE id=?",
+      ).bind(
+        null,
+        singleRepeatingReminder ? reminders[0].repeat : "none",
+        reminderEmail || null,
+        now,
+        todoId,
+      ),
+    );
+    statements.push(
+      ...newReminders.map((reminder) =>
+        env.REPORTS.prepare(
+          "INSERT INTO editorial_task_reminders (id,task_id,remind_at,timezone,label,relative_kind,relative_amount,relative_unit,relative_start,created_at) VALUES (?,?,?,?,?,?,?,?,?,?)",
+        ).bind(
+          crypto.randomUUID(),
+          todoId,
+          reminder.remindAt,
+          reminder.timezone,
+          reminder.label,
+          reminder.relativeKind,
+          reminder.relativeAmount,
+          reminder.relativeUnit,
+          reminder.relativeStart,
+          now,
+        ),
+      ),
+    );
+    await env.REPORTS.batch(statements);
+  } else if (status !== null) {
+    await env.REPORTS.prepare(
+      "UPDATE editorial_tasks SET status=?,updated_at=? WHERE id=?",
+    )
+      .bind(status, now, todoId)
+      .run();
+  }
   return json({ ok: true });
 }
 
@@ -3124,7 +3753,7 @@ async function listApplications(request: Request, env: Env): Promise<Response> {
   if (isResponse(scope)) return scope;
   const rows = await env.REPORTS.prepare(
     `SELECT a.id,a.name,a.email,a.family_name,a.given_name,a.middle_name,a.family_name_kana,a.given_name_kana,a.form_language,a.interests,a.message,a.status,a.created_at,a.updated_at,a.affiliation_type,a.institution,a.grade,a.country,a.timezone,
-      a.desired_subjects,a.article_ideas,a.availability_note,a.provisioning_status,a.provisioning_error,a.provisioned_at,a.accepted_by,
+      a.desired_subjects,a.article_ideas,a.availability_note,a.birth_date,a.residence_prefecture,a.residence_city,a.current_organizations,a.student_council_experience,a.student_council_role,a.discovery_source,a.participation_reasons,a.desired_roles,a.interview_availability,a.questions,a.strengths,a.problem_awareness,a.project_ideas,a.desired_projects,a.provisioning_status,a.provisioning_error,a.provisioned_at,a.accepted_by,
       COALESCE(d.discord_user_id, '') AS verified_discord_user_id
      FROM atlasez_member_applications a
      LEFT JOIN atlasez_member_discord_accounts d ON d.email = a.email
@@ -3133,6 +3762,7 @@ async function listApplications(request: Request, env: Env): Promise<Response> {
   return json({
     applications: rows.results,
     subjectLabels: APPLICATION_SUBJECT_LABELS,
+    projectLabels: APPLICATION_PROJECT_LABELS,
   });
 }
 
@@ -3335,50 +3965,125 @@ async function operationsOverview(
     ? ""
     : ` WHERE subject = '*' OR subject IN (${scope.subjects.map(() => "?").join(",")})`;
   const memberValues: unknown[] = scope.allSubjects ? [] : scope.subjects;
-  const [tasks, events, progress, members, availability] = await Promise.all([
-    env.REPORTS.prepare(
-      `SELECT id, project_id, subject, assignee_email, title, details, status, due_at, due_timezone, reminder_at, reminder_repeat, created_by, created_at, updated_at FROM editorial_tasks${where} ORDER BY status = 'done', CASE WHEN due_at IS NULL OR due_at = '' THEN 1 ELSE 0 END, due_at ASC, updated_at DESC LIMIT 200`,
-    )
-      .bind(...values)
-      .all(),
-    env.REPORTS.prepare(
-      `SELECT id, subject, title, details, starts_at, ends_at, timezone, created_by, created_at FROM editorial_events ORDER BY starts_at ASC LIMIT 60`,
-    ).all<{
-      id: string;
-      subject: string | null;
-      title: string;
-      details: string;
-      starts_at: string;
-      ends_at: string | null;
-      timezone: string;
-      created_by: string;
-      created_at: string;
-    }>(),
-    env.REPORTS.prepare(
-      "SELECT id,email,subject,document_id,body,created_at FROM editorial_progress_reports WHERE email = ? ORDER BY created_at DESC LIMIT 30",
-    )
-      .bind(scope.email)
-      .all(),
-    env.REPORTS.prepare(
-      `SELECT DISTINCT p.email, COALESCE(NULLIF(TRIM(profile.display_name), ''), '') AS display_name FROM report_admin_permissions p LEFT JOIN editorial_member_profiles profile ON profile.email = p.email${memberWhere.replaceAll("subject", "p.subject")} ORDER BY display_name, p.email`,
-    )
-      .bind(...memberValues)
-      .all<{ email: string; display_name: string }>(),
-    env.REPORTS.prepare(
-      "SELECT a.event_id, a.email, a.availability, CASE WHEN p.display_name IS NULL OR trim(p.display_name) = '' OR lower(trim(p.display_name)) = lower(a.email) THEN '' ELSE trim(p.display_name) END AS display_name FROM editorial_event_availability a LEFT JOIN editorial_member_profiles p ON p.email = a.email",
-    ).all<{
-      event_id: string;
-      email: string;
-      availability: string;
-      display_name: string;
-    }>(),
-  ]);
+  // /api/admin/operations is the Atlas board. Project-specific events are
+  // served by /api/admin/projects/:slug/operations and must not leak here.
+  const eventFilters = [
+    "(e.subject IS NULL OR e.subject NOT LIKE 'project:%')",
+  ];
+  const eventValues: unknown[] = [];
+  if (!scope.allSubjects) {
+    if (!scope.subjects.length) eventFilters.push("1 = 0");
+    else {
+      eventFilters.push(
+        `(e.subject IS NULL OR e.subject IN (${scope.subjects.map(() => "?").join(",")}))`,
+      );
+      eventValues.push(...scope.subjects);
+    }
+  }
+  const eventWhere = eventFilters.join(" AND ");
+  const [tasks, events, progress, members, availability, unavailability] =
+    await Promise.all([
+      env.REPORTS.prepare(
+        `SELECT id, project_id, subject, assignee_email, title, details, status, due_at, due_timezone, reminder_at, reminder_repeat, reminder_email, created_by, created_at, updated_at FROM editorial_tasks${where} ORDER BY status = 'done', CASE WHEN due_at IS NULL OR due_at = '' THEN 1 ELSE 0 END, due_at ASC, updated_at DESC LIMIT 200`,
+      )
+        .bind(...values)
+        .all(),
+      env.REPORTS.prepare(
+        `SELECT e.id, e.subject, e.title, e.details, e.starts_at, e.ends_at, e.timezone, e.created_by, e.created_at
+       FROM editorial_events e WHERE ${eventWhere} ORDER BY e.starts_at ASC LIMIT 60`,
+      )
+        .bind(...eventValues)
+        .all<{
+          id: string;
+          subject: string | null;
+          title: string;
+          details: string;
+          starts_at: string;
+          ends_at: string | null;
+          timezone: string;
+          created_by: string;
+          created_at: string;
+        }>(),
+      env.REPORTS.prepare(
+        "SELECT id,email,subject,document_id,body,details,created_at FROM editorial_progress_reports WHERE email = ? ORDER BY created_at DESC LIMIT 30",
+      )
+        .bind(scope.email)
+        .all(),
+      env.REPORTS.prepare(
+        `SELECT DISTINCT p.email, COALESCE(NULLIF(TRIM(profile.display_name), ''), '') AS display_name FROM report_admin_permissions p LEFT JOIN editorial_member_profiles profile ON profile.email = p.email${memberWhere.replaceAll("subject", "p.subject")} ORDER BY display_name, p.email`,
+      )
+        .bind(...memberValues)
+        .all<{ email: string; display_name: string }>(),
+      env.REPORTS.prepare(
+        `SELECT a.event_id, a.email, a.availability, CASE WHEN p.display_name IS NULL OR trim(p.display_name) = '' OR lower(trim(p.display_name)) = lower(a.email) THEN '' ELSE trim(p.display_name) END AS display_name
+       FROM editorial_event_availability a
+       LEFT JOIN editorial_member_profiles p ON p.email = a.email
+       WHERE a.event_id IN (SELECT e.id FROM editorial_events e WHERE ${eventWhere})`,
+      )
+        .bind(...eventValues)
+        .all<{
+          event_id: string;
+          email: string;
+          availability: string;
+          display_name: string;
+        }>(),
+      env.REPORTS.prepare(
+        "SELECT id,starts_at,ends_at,timezone,label,created_at FROM editorial_member_unavailability WHERE email=? ORDER BY starts_at ASC LIMIT 100",
+      )
+        .bind(scope.email)
+        .all<{
+          id: string;
+          starts_at: string;
+          ends_at: string;
+          timezone: string;
+          label: string;
+          created_at: string;
+        }>(),
+    ]);
   const taskRows = (tasks.results ?? []) as Array<{
     id: string;
     assignee_email?: string | null;
     created_by?: string;
   }>;
   const taskIds = taskRows.map((task) => task.id);
+  const taskReminderRows = taskIds.length
+    ? await env.REPORTS.prepare(
+        `SELECT id,task_id,remind_at,timezone,label,notified_at,relative_kind,relative_amount,relative_unit,relative_start FROM editorial_task_reminders WHERE task_id IN (${taskIds.map(() => "?").join(",")}) ORDER BY remind_at ASC`,
+      )
+        .bind(...taskIds)
+        .all<{
+          id: string;
+          task_id: string;
+          remind_at: string;
+          timezone: string;
+          label: string;
+          notified_at: string | null;
+          relative_kind: "absolute" | "before" | "due_day_hourly";
+          relative_amount: number | null;
+          relative_unit: "days" | "hours" | null;
+          relative_start: string | null;
+        }>()
+    : {
+        results: [] as {
+          id: string;
+          task_id: string;
+          remind_at: string;
+          timezone: string;
+          label: string;
+          notified_at: string | null;
+          relative_kind: "absolute" | "before" | "due_day_hourly";
+          relative_amount: number | null;
+          relative_unit: "days" | "hours" | null;
+          relative_start: string | null;
+        }[],
+      };
+  const remindersByTask = new Map<string, typeof taskReminderRows.results>();
+  for (const reminder of taskReminderRows.results ?? []) {
+    remindersByTask.set(reminder.task_id, [
+      ...(remindersByTask.get(reminder.task_id) ?? []),
+      reminder,
+    ]);
+  }
   const taskFeedbackRows = taskIds.length
     ? await env.REPORTS.prepare(
         `SELECT task_id,email,status,updated_at FROM editorial_task_feedback WHERE task_id IN (${taskIds.map(() => "?").join(",")}) ORDER BY updated_at ASC`,
@@ -3453,6 +4158,7 @@ async function operationsOverview(
     },
     tasks: taskRows.map((task) => ({
       ...task,
+      reminders: remindersByTask.get(task.id) ?? [],
       feedback: taskFeedbackById.get(task.id) ?? [],
       viewerFeedbackStatus:
         (taskFeedbackRows.results ?? []).find(
@@ -3490,8 +4196,15 @@ async function operationsOverview(
         ),
       };
     }),
+    tasksTruncated: (tasks.results ?? []).length >= 200,
+    eventsTruncated: (events.results ?? []).length >= 60,
     progress: progress.results,
     members: memberRows,
+    unavailability: unavailability.results ?? [],
+    reminderEmailDelivery: {
+      configured: Boolean(env.RESEND_API_KEY),
+      senderConfigured: Boolean(env.EMAIL_FROM),
+    },
   });
 }
 
@@ -3516,9 +4229,10 @@ async function createOperation(
     return json({ error: "この分野を指定する権限がありません。" }, 403);
   if (type === "progress") {
     const body = text(payload.body, MAX_OPERATION_TEXT_LENGTH);
+    const details = text(payload.details, MAX_OPERATION_TEXT_LENGTH);
     if (!body) return json({ error: "進捗内容を入力してください。" }, 400);
     await env.REPORTS.prepare(
-      "INSERT INTO editorial_progress_reports (id,email,subject,document_id,body,created_at) VALUES (?,?,?,?,?,?)",
+      "INSERT INTO editorial_progress_reports (id,email,subject,document_id,body,details,created_at) VALUES (?,?,?,?,?,?,?)",
     )
       .bind(
         crypto.randomUUID(),
@@ -3526,10 +4240,11 @@ async function createOperation(
         subject,
         text(payload.documentId, 64) || null,
         body,
+        details,
         now,
       )
       .run();
-    await notifyProgressToDiscord(env, subject, body);
+    await notifyProgressToDiscord(env, subject, body, details);
     return json({
       ok: true,
       discordNotified: Boolean(
@@ -3550,6 +4265,24 @@ async function createOperation(
     const dueTimezone = text(payload.dueTimezone, 80) || "Asia/Tokyo";
     const reminderAt = text(payload.reminderAt, 32);
     const reminderRepeat = text(payload.reminderRepeat, 12) || "none";
+    const reminderEmail = text(payload.reminderEmail, 254).toLowerCase();
+    const reminderPayload = Array.isArray(payload.reminders)
+      ? payload.reminders
+      : [];
+    const reminderRows = reminderInputRows(reminderPayload, dueAt, dueTimezone);
+    if (reminderRows.error) return json({ error: reminderRows.error }, 400);
+    const reminders = reminderRows.rows ?? [];
+    if (reminders.length === 0 && reminderAt)
+      reminders.push({
+        remindAt: reminderAt,
+        timezone: dueTimezone,
+        label: reminderRepeat === "none" ? "リマインダー" : reminderRepeat,
+        repeat: reminderRepeat,
+        relativeKind: "absolute",
+        relativeAmount: null,
+        relativeUnit: null,
+        relativeStart: null,
+      });
     if (dueAt && !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(dueAt))
       return json({ error: "期限はカレンダーから指定してください。" }, 400);
     if (dueAt && !validTimeZone(dueTimezone))
@@ -3564,37 +4297,86 @@ async function createOperation(
         { error: "リマインダーのタイムゾーンを確認してください。" },
         400,
       );
+    for (const reminder of reminders) {
+      if (
+        !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(reminder.remindAt) ||
+        !validTimeZone(reminder.timezone) ||
+        !new Set(["none", "once", "daily", "weekly", "monthly"]).has(
+          reminder.repeat,
+        )
+      )
+        return json(
+          { error: "リマインダー日時またはタイムゾーンを確認してください。" },
+          400,
+        );
+    }
     if (
       !new Set(["none", "once", "daily", "weekly", "monthly"]).has(
         reminderRepeat,
       )
     )
       return json({ error: "リマインダーの繰り返しを確認してください。" }, 400);
+    const taskId = crypto.randomUUID();
+    const singleRepeatingReminder =
+      reminders.length === 1 && reminders[0].repeat !== "none";
     await env.REPORTS.prepare(
-      "INSERT INTO editorial_tasks (id,project_id,subject,assignee_email,title,details,status,due_at,due_timezone,reminder_at,reminder_repeat,created_by,created_at,updated_at) VALUES (?,'atlas',?,?,?,?, 'open',?,?,?,?,?,?,?)",
+      "INSERT INTO editorial_tasks (id,project_id,subject,assignee_email,title,details,status,due_at,due_timezone,reminder_at,reminder_repeat,reminder_email,created_by,created_at,updated_at) VALUES (?,'atlas',?,?,?,?, 'open',?,?,?,?,?,?,?,?)",
     )
       .bind(
-        crypto.randomUUID(),
+        taskId,
         subject,
         assignee,
         title,
         text(payload.details, MAX_OPERATION_TEXT_LENGTH),
         dueAt || null,
         dueTimezone,
-        reminderAt || null,
-        reminderRepeat,
+        reminders.length > 0 ? null : reminderAt || null,
+        singleRepeatingReminder
+          ? reminders[0].repeat
+          : reminders.length > 0
+            ? "none"
+            : reminderRepeat,
+        reminderEmail || null,
         scope.email,
         now,
         now,
       )
       .run();
+    if (reminders.length > 0) {
+      await env.REPORTS.batch(
+        reminders.map((reminder) =>
+          env.REPORTS.prepare(
+            "INSERT INTO editorial_task_reminders (id,task_id,remind_at,timezone,label,relative_kind,relative_amount,relative_unit,relative_start,created_at) VALUES (?,?,?,?,?,?,?,?,?,?)",
+          ).bind(
+            crypto.randomUUID(),
+            taskId,
+            reminder.remindAt,
+            reminder.timezone,
+            reminder.label,
+            reminder.relativeKind,
+            reminder.relativeAmount,
+            reminder.relativeUnit,
+            reminder.relativeStart,
+            now,
+          ),
+        ),
+      );
+    }
     return json({ ok: true });
   }
   const title = text(payload.title, 200);
   const startsAt = text(payload.startsAt, 40),
+    endsAt = text(payload.endsAt, 40),
     timezone = text(payload.timezone, 80) || "Asia/Tokyo";
   if (!title || !startsAt)
     return json({ error: "催し名と日時を入力してください。" }, 400);
+  if (
+    !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(startsAt) ||
+    (endsAt && !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(endsAt))
+  )
+    return json({ error: "開始・終了日時を確認してください。" }, 400);
+  if (endsAt && endsAt <= startsAt)
+    return json({ error: "終了日時は開始日時より後にしてください。" }, 400);
   if (!scope.isManager)
     return json({ error: "日程の作成は運営内運営のみ行えます。" }, 403);
   await env.REPORTS.prepare(
@@ -3606,7 +4388,7 @@ async function createOperation(
       title,
       text(payload.details, MAX_OPERATION_TEXT_LENGTH),
       startsAt,
-      text(payload.endsAt, 40) || null,
+      endsAt || null,
       timezone,
       scope.email,
       now,
@@ -3624,7 +4406,14 @@ async function updateTask(
   if (isResponse(scope)) return scope;
   if (!isSameOrigin(request))
     return json({ error: "この送信元からは受け付けられません。" }, 403);
-  let payload: { status?: unknown; feedbackAction?: unknown };
+  let payload: {
+    status?: unknown;
+    feedbackAction?: unknown;
+    reminderAction?: unknown;
+    reminders?: unknown;
+    reminderRepeat?: unknown;
+    reminderEmail?: unknown;
+  };
   try {
     payload = (await request.json()) as typeof payload;
   } catch {
@@ -3636,6 +4425,10 @@ async function updateTask(
     payload.feedbackAction === undefined
       ? null
       : text(payload.feedbackAction, 30);
+  const reminderAction =
+    payload.reminderAction === undefined
+      ? null
+      : text(payload.reminderAction, 30);
   if (requestedStatus !== null && !taskStatus.has(requestedStatus))
     return json({ error: "状態を確認してください。" }, 400);
   if (
@@ -3648,8 +4441,10 @@ async function updateTask(
     ]).has(feedbackAction)
   )
     return json({ error: "確認状態を確認してください。" }, 400);
+  if (reminderAction && reminderAction !== "replace")
+    return json({ error: "リマインダーの更新方法を確認してください。" }, 400);
   const task = await env.REPORTS.prepare(
-    "SELECT project_id,subject,assignee_email,created_by FROM editorial_tasks WHERE id=?",
+    "SELECT project_id,subject,assignee_email,created_by,due_at,due_timezone,reminder_email FROM editorial_tasks WHERE id=?",
   )
     .bind(taskId)
     .first<{
@@ -3657,6 +4452,9 @@ async function updateTask(
       subject: string | null;
       assignee_email: string | null;
       created_by: string;
+      due_at: string | null;
+      due_timezone: string;
+      reminder_email: string | null;
     }>();
   if (!task) return json({ error: "タスクが見つかりません。" }, 404);
   if (task.project_id !== "atlas")
@@ -3670,16 +4468,82 @@ async function updateTask(
     task.created_by === scope.email;
   const canFeedbackTask =
     scope.allSubjects || !task.subject || scope.subjects.includes(task.subject);
-  if (feedbackAction ? !canFeedbackTask : !canEditTask)
-    return json(
-      {
-        error: feedbackAction
-          ? "この分野の確認権限がありません。"
-          : "このタスクを更新する権限がありません。",
-      },
-      403,
-    );
+  const hasFeedbackAction = payload.feedbackAction !== undefined;
+  const hasTaskMutation = requestedStatus !== null || reminderAction !== null;
+  if (hasFeedbackAction && !canFeedbackTask)
+    return json({ error: "この分野の確認権限がありません。" }, 403);
+  if (hasTaskMutation && !canEditTask)
+    return json({ error: "このタスクを更新する権限がありません。" }, 403);
+  if (!hasFeedbackAction && !hasTaskMutation)
+    return json({ error: "更新内容を指定してください。" }, 400);
   const now = new Date().toISOString();
+  if (reminderAction === "replace") {
+    const repeat = text(payload.reminderRepeat, 12) || "none";
+    const allowedRepeats = new Set([
+      "none",
+      "once",
+      "daily",
+      "weekly",
+      "monthly",
+    ]);
+    if (!allowedRepeats.has(repeat))
+      return json({ error: "リマインダーの繰り返しを確認してください。" }, 400);
+    const reminderPayload = Array.isArray(payload.reminders)
+      ? payload.reminders
+      : [];
+    const reminderEmail = text(payload.reminderEmail, 254).toLowerCase();
+    if (reminderEmail && !EMAIL_PATTERN.test(reminderEmail))
+      return json({ error: "通知先メールアドレスを確認してください。" }, 400);
+    const reminderRows = reminderInputRows(
+      reminderPayload,
+      task.due_at ?? "",
+      task.due_timezone || "Asia/Tokyo",
+    );
+    if (reminderRows.error) return json({ error: reminderRows.error }, 400);
+    const reminders = reminderRows.rows ?? [];
+    for (const reminder of reminders) {
+      if (
+        !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(reminder.remindAt) ||
+        !validTimeZone(reminder.timezone)
+      )
+        return json(
+          { error: "リマインダー日時またはタイムゾーンを確認してください。" },
+          400,
+        );
+    }
+    const singleRepeatingReminder = reminders.length === 1 && repeat !== "none";
+    await env.REPORTS.batch([
+      env.REPORTS.prepare(
+        "DELETE FROM editorial_task_reminders WHERE task_id=?",
+      ).bind(taskId),
+      env.REPORTS.prepare(
+        "UPDATE editorial_tasks SET reminder_at=?,reminder_repeat=?,reminder_email=?,updated_at=? WHERE id=?",
+      ).bind(
+        null,
+        singleRepeatingReminder ? repeat : "none",
+        reminderEmail || null,
+        now,
+        taskId,
+      ),
+      ...reminders.map((reminder) =>
+        env.REPORTS.prepare(
+          "INSERT INTO editorial_task_reminders (id,task_id,remind_at,timezone,label,relative_kind,relative_amount,relative_unit,relative_start,created_at) VALUES (?,?,?,?,?,?,?,?,?,?)",
+        ).bind(
+          crypto.randomUUID(),
+          taskId,
+          reminder.remindAt,
+          reminder.timezone,
+          reminder.label,
+          reminder.relativeKind,
+          reminder.relativeAmount,
+          reminder.relativeUnit,
+          reminder.relativeStart,
+          now,
+        ),
+      ),
+    ]);
+    return json({ ok: true });
+  }
   if (feedbackAction) {
     if (feedbackAction === "acknowledge" || feedbackAction === "unreflected")
       await env.REPORTS.prepare(
@@ -3764,6 +4628,36 @@ async function updateEventAvailability(
   const availability = text(payload.availability, 20);
   if (!availabilityStatus.has(availability))
     return json({ error: "参加可否を確認してください。" }, 400);
+  const event = await env.REPORTS.prepare(
+    "SELECT subject FROM editorial_events WHERE id=?",
+  )
+    .bind(eventId)
+    .first<{ subject: string | null }>();
+  if (!event) return json({ error: "日程が見つかりません。" }, 404);
+  const projectSlug = event.subject
+    ?.match(/^project:([a-z0-9-]+)$/i)?.[1]
+    ?.toLowerCase();
+  if (projectSlug) {
+    const project = await env.REPORTS.prepare(
+      `SELECT a.id,
+              EXISTS(SELECT 1 FROM atlasez_project_memberships m
+                     WHERE m.project_id=a.id AND lower(m.email)=?) AS member
+       FROM atlasez_projects a WHERE lower(a.slug)=?`,
+    )
+      .bind(scope.email.toLowerCase(), projectSlug)
+      .first<{ id: string; member: number }>();
+    if (!project || (!scope.isManager && !project.member))
+      return json(
+        { error: "このプロジェクトへのアクセス権がありません。" },
+        403,
+      );
+  } else if (
+    !scope.isManager &&
+    event.subject !== null &&
+    !scope.subjects.includes(event.subject)
+  ) {
+    return json({ error: "この日程を更新する権限がありません。" }, 403);
+  }
   await env.REPORTS.prepare(
     `INSERT INTO editorial_event_availability (event_id,email,availability,note,updated_at) VALUES (?,?,?,?,?) ON CONFLICT(event_id,email) DO UPDATE SET availability=excluded.availability,note=excluded.note,updated_at=excluded.updated_at`,
   )
@@ -3774,6 +4668,64 @@ async function updateEventAvailability(
       text(payload.note, 1_000),
       new Date().toISOString(),
     )
+    .run();
+  return json({ ok: true });
+}
+
+async function createMemberUnavailability(
+  request: Request,
+  env: Env,
+): Promise<Response> {
+  const scope = await getAdminScope(request, env);
+  if (isResponse(scope)) return scope;
+  if (!isSameOrigin(request))
+    return json({ error: "この送信元からは受け付けません。" }, 403);
+  const payload = (await request.json().catch(() => null)) as Record<
+    string,
+    unknown
+  > | null;
+  const startsAt = text(payload?.startsAt, 32);
+  const endsAt = text(payload?.endsAt, 32);
+  const timezone = text(payload?.timezone, 80) || "Asia/Tokyo";
+  const label = text(payload?.label, 200);
+  if (
+    !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(startsAt) ||
+    !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(endsAt)
+  )
+    return json({ error: "開始・終了日時を指定してください。" }, 400);
+  if (endsAt <= startsAt)
+    return json({ error: "終了日時は開始日時より後にしてください。" }, 400);
+  if (!validTimeZone(timezone))
+    return json({ error: "タイムゾーンを確認してください。" }, 400);
+  await env.REPORTS.prepare(
+    "INSERT INTO editorial_member_unavailability (id,email,starts_at,ends_at,timezone,label,created_at) VALUES (?,?,?,?,?,?,?)",
+  )
+    .bind(
+      crypto.randomUUID(),
+      scope.email,
+      startsAt,
+      endsAt,
+      timezone,
+      label,
+      new Date().toISOString(),
+    )
+    .run();
+  return json({ ok: true });
+}
+
+async function deleteMemberUnavailability(
+  request: Request,
+  env: Env,
+  id: string,
+): Promise<Response> {
+  const scope = await getAdminScope(request, env);
+  if (isResponse(scope)) return scope;
+  if (!isSameOrigin(request))
+    return json({ error: "この送信元からは受け付けません。" }, 403);
+  await env.REPORTS.prepare(
+    "DELETE FROM editorial_member_unavailability WHERE id=? AND email=?",
+  )
+    .bind(id, scope.email)
     .run();
   return json({ ok: true });
 }
@@ -3837,6 +4789,21 @@ async function submitMemberApplication(
     desiredSubjects?: unknown;
     articleIdeas?: unknown;
     availabilityNote?: unknown;
+    birthDate?: unknown;
+    residencePrefecture?: unknown;
+    residenceCity?: unknown;
+    currentOrganizations?: unknown;
+    studentCouncilExperience?: unknown;
+    studentCouncilRole?: unknown;
+    discoverySource?: unknown;
+    participationReasons?: unknown;
+    desiredRoles?: unknown;
+    interviewAvailability?: unknown;
+    questions?: unknown;
+    strengths?: unknown;
+    problemAwareness?: unknown;
+    projectIdeas?: unknown;
+    desiredProjects?: unknown;
   };
   try {
     payload = (await request.json()) as typeof payload;
@@ -3871,7 +4838,45 @@ async function submitMemberApplication(
   const country = normalizedText(payload.country, 100),
     timezone = normalizedText(payload.timezone, 80),
     articleIdeas = text(payload.articleIdeas, 3_000),
-    availabilityNote = text(payload.availabilityNote, 1_000);
+    availabilityNote = text(payload.availabilityNote, 1_000),
+    birthDate = text(payload.birthDate, 20),
+    residencePrefecture = normalizedText(payload.residencePrefecture, 80),
+    residenceCity = normalizedText(payload.residenceCity, 120),
+    currentOrganizations = text(payload.currentOrganizations, 2_000),
+    studentCouncilExperience = normalizedText(
+      payload.studentCouncilExperience,
+      40,
+    ),
+    studentCouncilRole = normalizedText(payload.studentCouncilRole, 160),
+    interviewAvailability = text(payload.interviewAvailability, 2_000),
+    questions = text(payload.questions, 3_000),
+    strengths = text(payload.strengths, 5_000),
+    problemAwareness = text(payload.problemAwareness, 5_000),
+    projectIdeas = text(payload.projectIdeas, 5_000);
+  const normalizedList = (value: unknown, maximum = 2_000) =>
+    Array.isArray(value)
+      ? [
+          ...new Set(
+            value.map((item) => normalizedText(item, 160)).filter(Boolean),
+          ),
+        ]
+          .slice(0, 32)
+          .join(",")
+      : normalizedText(value, maximum);
+  const discoverySource = normalizedList(payload.discoverySource),
+    participationReasons = normalizedList(payload.participationReasons),
+    desiredRoles = normalizedList(payload.desiredRoles),
+    desiredProjects = (
+      Array.isArray(payload.desiredProjects)
+        ? [
+            ...new Set(
+              payload.desiredProjects
+                .map((item) => text(item, 80))
+                .filter((item) => APPLICATION_PROJECT_LABELS[item]),
+            ),
+          ]
+        : []
+    ).join(",");
   const desiredSubjectSlugs = [
     ...new Set(
       Array.isArray(payload.desiredSubjects)
@@ -3892,6 +4897,7 @@ async function submitMemberApplication(
     !country ||
     !timezone ||
     !articleIdeas ||
+    !studentCouncilExperience ||
     !desiredSubjectSlugs.length
   )
     return json(
@@ -3979,7 +4985,7 @@ async function submitMemberApplication(
     );
   const now = new Date().toISOString();
   await env.REPORTS.prepare(
-    "INSERT INTO atlasez_member_applications (id,name,email,family_name,given_name,middle_name,family_name_kana,given_name_kana,form_language,interests,message,status,created_at,updated_at,affiliation_type,institution,grade,country,timezone,desired_subjects,article_ideas,discord_user_id,availability_note) VALUES (?,?,?,?,?,?,?,?,?,?,?,'new',?,?,?,?,?,?,?,?,?,'',?)",
+    "INSERT INTO atlasez_member_applications (id,name,email,family_name,given_name,middle_name,family_name_kana,given_name_kana,form_language,interests,message,status,created_at,updated_at,affiliation_type,institution,grade,country,timezone,desired_subjects,article_ideas,discord_user_id,availability_note,birth_date,residence_prefecture,residence_city,current_organizations,student_council_experience,student_council_role,discovery_source,participation_reasons,desired_roles,interview_availability,questions,strengths,problem_awareness,project_ideas,desired_projects) VALUES (?,?,?,?,?,?,?,?,?,?,?,'new',?,?,?,?,?,?,?,?,?,'',?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
   )
     .bind(
       crypto.randomUUID(),
@@ -4003,6 +5009,21 @@ async function submitMemberApplication(
       desiredSubjectSlugs.join(","),
       articleIdeas,
       availabilityNote,
+      birthDate,
+      residencePrefecture,
+      residenceCity,
+      currentOrganizations,
+      studentCouncilExperience,
+      studentCouncilRole,
+      discoverySource,
+      participationReasons,
+      desiredRoles,
+      interviewAvailability,
+      questions,
+      strengths,
+      problemAwareness,
+      projectIdeas,
+      desiredProjects,
     )
     .run();
   // 応募本文はD1と通知先メールへ保存し、Discordには応募が届いた事実だけを送る。
@@ -4022,6 +5043,157 @@ async function submitMemberApplication(
     },
     201,
   );
+}
+
+/**
+ * Due reminders are also delivered by email when the existing Resend
+ * configuration is available. In-app notifications remain available even
+ * when email is not configured. Delivery is tracked per recipient so one
+ * member cannot consume another member's reminder.
+ */
+async function dispatchDueTaskReminders(env: Env) {
+  if (!env.RESEND_API_KEY) return;
+  const rows = await env.REPORTS.prepare(
+    `SELECT r.id AS reminder_id,t.title,t.details,t.due_at,t.due_timezone,
+            r.remind_at,r.timezone,r.label,
+            CASE WHEN (SELECT COUNT(*) FROM editorial_task_reminders rr WHERE rr.task_id=r.task_id)=1
+                 THEN COALESCE(t.reminder_repeat,'none') ELSE 'none' END AS repeat,
+            NULLIF(TRIM(t.reminder_email),'') AS recipient_email,
+            r.relative_kind,r.created_at
+     FROM editorial_task_reminders r
+     JOIN editorial_tasks t ON t.id=r.task_id
+     WHERE t.status != 'done'
+       AND NULLIF(TRIM(t.reminder_email),'') IS NOT NULL
+     ORDER BY r.remind_at ASC LIMIT 2000`,
+  ).all<{
+    reminder_id: string;
+    title: string;
+    details: string | null;
+    due_at: string | null;
+    due_timezone: string;
+    remind_at: string;
+    timezone: string;
+    label: string;
+    repeat: string;
+    recipient_email: string | null;
+    relative_kind: "absolute" | "before" | "due_day_hourly";
+    created_at: string;
+  }>();
+  const due = (rows.results ?? []).filter((row) => {
+    const reminderEpoch = wallTimeToEpoch(
+      row.remind_at,
+      row.timezone || row.due_timezone,
+    );
+    const createdEpoch = Date.parse(row.created_at);
+    const wasPastAtCreation =
+      row.relative_kind !== "absolute" &&
+      Number.isFinite(createdEpoch) &&
+      Number.isFinite(reminderEpoch) &&
+      reminderEpoch <= createdEpoch;
+    return (
+      EMAIL_PATTERN.test(row.recipient_email ?? "") &&
+      !wasPastAtCreation &&
+      reminderEpoch <= Date.now()
+    );
+  });
+  const adminOperationsUrl = `${(env.ADMIN_PUBLIC_ORIGIN ?? "").replace(/\/+$/u, "")}/admin/operations/`;
+  for (const row of due) {
+    const claimValue = `__pending__:${Date.now()}`;
+    const existing = await env.REPORTS.prepare(
+      "SELECT sent_at FROM editorial_task_reminder_deliveries WHERE reminder_id=? AND recipient_email=?",
+    )
+      .bind(row.reminder_id, row.recipient_email)
+      .first<{ sent_at: string }>();
+    if (existing) {
+      const pendingAt = existing.sent_at.startsWith("__pending__:")
+        ? Number(existing.sent_at.slice("__pending__:".length))
+        : Number.NaN;
+      if (
+        !Number.isFinite(pendingAt) ||
+        Date.now() - pendingAt < 10 * 60 * 1_000
+      )
+        continue;
+      const reclaimed = (await env.REPORTS.prepare(
+        "UPDATE editorial_task_reminder_deliveries SET sent_at=? WHERE reminder_id=? AND recipient_email=? AND sent_at=?",
+      )
+        .bind(
+          claimValue,
+          row.reminder_id,
+          row.recipient_email,
+          existing.sent_at,
+        )
+        .run()) as unknown as { meta?: { changes?: number } };
+      if (!reclaimed.meta?.changes) continue;
+    } else {
+      const claimed = (await env.REPORTS.prepare(
+        "INSERT OR IGNORE INTO editorial_task_reminder_deliveries (reminder_id,recipient_email,sent_at) VALUES (?,?,?)",
+      )
+        .bind(row.reminder_id, row.recipient_email, claimValue)
+        .run()) as unknown as { meta?: { changes?: number } };
+      if (!claimed.meta?.changes) continue;
+    }
+    const dueLabel = row.due_at
+      ? `${row.due_at.replace("T", " ")} (${row.due_timezone})`
+      : "期限未設定";
+    const detail = row.details?.trim() ? `\n\n${row.details.trim()}` : "";
+    try {
+      const response = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${env.RESEND_API_KEY}`,
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          from: env.EMAIL_FROM ?? "Atlasez運営 <onboarding@resend.dev>",
+          to: [row.recipient_email ?? ""],
+          subject: `ToDoリマインダー：${row.title}`,
+          text: `AtlasezのToDoリマインダーです。\n\n${row.title}\nリマインダー：${row.label || "設定した日時"}\n期限：${dueLabel}${detail}\n\n運営サイトで確認する：${adminOperationsUrl}`,
+          html: `<h2>ToDoリマインダー</h2><p><b>${emailSafe(row.title)}</b></p><p>リマインダー：${emailSafe(row.label || "設定した日時")}<br>期限：${emailSafe(dueLabel)}</p>${detail ? `<pre>${emailSafe(detail.trim())}</pre>` : ""}${adminOperationsUrl ? `<p><a href="${emailSafe(adminOperationsUrl)}">運営サイトで確認する</a></p>` : ""}`,
+        }),
+      });
+      if (!response.ok) {
+        await env.REPORTS.prepare(
+          "DELETE FROM editorial_task_reminder_deliveries WHERE reminder_id=? AND recipient_email=? AND sent_at=?",
+        )
+          .bind(row.reminder_id, row.recipient_email, claimValue)
+          .run();
+        continue;
+      }
+      const nextReminder = nextReminderWallTime(
+        row.remind_at,
+        row.repeat,
+        row.timezone || row.due_timezone,
+      );
+      if (nextReminder) {
+        await env.REPORTS.batch([
+          env.REPORTS.prepare(
+            "UPDATE editorial_task_reminders SET remind_at=?,notified_at=NULL WHERE id=?",
+          ).bind(nextReminder, row.reminder_id),
+          env.REPORTS.prepare(
+            "DELETE FROM editorial_task_reminder_deliveries WHERE reminder_id=? AND recipient_email=?",
+          ).bind(row.reminder_id, row.recipient_email),
+        ]);
+      } else {
+        await env.REPORTS.prepare(
+          "UPDATE editorial_task_reminder_deliveries SET sent_at=? WHERE reminder_id=? AND recipient_email=? AND sent_at=?",
+        )
+          .bind(
+            new Date().toISOString(),
+            row.reminder_id,
+            row.recipient_email,
+            claimValue,
+          )
+          .run();
+      }
+    } catch {
+      await env.REPORTS.prepare(
+        "DELETE FROM editorial_task_reminder_deliveries WHERE reminder_id=? AND recipient_email=? AND sent_at=?",
+      )
+        .bind(row.reminder_id, row.recipient_email, claimValue)
+        .run();
+      // 次回の定期実行で再試行する。
+    }
+  }
 }
 
 async function purgeExpiredPersonalData(env: Env) {
@@ -4348,6 +5520,14 @@ async function createEditorialDocument(
     );
   if (!canEditSubject(scope, values.subject))
     return json({ error: "この分野の原稿を作成する権限がありません。" }, 403);
+  if (
+    values.reviewerEmail &&
+    !(await reviewerCanReviewSubject(env, values.subject, values.reviewerEmail))
+  )
+    return json(
+      { error: "この分野の権限を持つ査読担当者を選択してください。" },
+      400,
+    );
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
   await env.REPORTS.prepare(
@@ -4377,7 +5557,18 @@ async function createEditorialDocument(
       values.status === "approved" ? now : null,
     )
     .run();
-  return json({ ok: true, id }, 201);
+  if (values.reviewerEmail) {
+    const assignmentError = await saveEditorialReviewAssignment(
+      env,
+      id,
+      values.subject,
+      values.reviewerEmail,
+      scope.email,
+      now,
+    );
+    if (assignmentError) return json({ error: assignmentError }, 400);
+  }
+  return json({ ok: true, id, updatedAt: now }, 201);
 }
 
 async function updateEditorialDocument(
@@ -4398,7 +5589,7 @@ async function updateEditorialDocument(
       400,
     );
   const existing = await env.REPORTS.prepare(
-    "SELECT subject, status, title, summary, concept_id, body, editorial_note, category, locale, slug, latex_engine, published_at FROM editorial_documents WHERE id = ?",
+    "SELECT subject, status, title, summary, concept_id, body, editorial_note, category, locale, slug, latex_engine, published_at, updated_at FROM editorial_documents WHERE id = ?",
   )
     .bind(documentId)
     .first<
@@ -4416,9 +5607,23 @@ async function updateEditorialDocument(
         | "slug"
         | "latex_engine"
         | "published_at"
+        | "updated_at"
       >
     >();
   if (!existing) return json({ error: "原稿が見つかりません。" }, 404);
+  if (
+    values.expectedUpdatedAt &&
+    values.expectedUpdatedAt !== existing.updated_at
+  )
+    return json(
+      {
+        error:
+          "この原稿は別のユーザーによって先に更新されました。最新内容を読み込んでから、変更を確認して保存してください。",
+        conflict: true,
+        currentUpdatedAt: existing.updated_at,
+      },
+      409,
+    );
   const isReviewOnly =
     scope.isManager && !canEditSubject(scope, existing.subject);
   if (
@@ -4460,6 +5665,14 @@ async function updateEditorialDocument(
       },
       403,
     );
+  if (
+    values.reviewerEmail &&
+    !(await reviewerCanReviewSubject(env, values.subject, values.reviewerEmail))
+  )
+    return json(
+      { error: "この分野の権限を持つ査読担当者を選択してください。" },
+      400,
+    );
   if (values.status === "approved" && !scope.isManager)
     return json({ error: "承認済みに変更できるのは運営管理者だけです。" }, 403);
   if (existing.published_at && values.status !== "approved")
@@ -4476,26 +5689,11 @@ async function updateEditorialDocument(
   )
     .bind(documentId)
     .first<EditorialDocument>();
-  if (previous)
-    await env.REPORTS.prepare(
-      "INSERT INTO editorial_document_revisions (id, document_id, title, summary, body, status, saved_by, saved_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-    )
-      .bind(
-        crypto.randomUUID(),
-        documentId,
-        previous.title,
-        previous.summary,
-        previous.body,
-        previous.status,
-        scope.email,
-        now,
-      )
-      .run();
-  await env.REPORTS.prepare(
+  const updateResult = (await env.REPORTS.prepare(
     `UPDATE editorial_documents SET source_article_id = ?, subject = ?, category = ?, locale = ?,
       slug = ?, title = ?, summary = ?, concept_id = ?, body = ?, editorial_note = ?, latex_engine = ?, status = ?, updated_by = ?,
       updated_at = ?, reviewed_at = CASE WHEN ? = 'approved' THEN COALESCE(reviewed_at, ?) ELSE NULL END
-     WHERE id = ?`,
+     WHERE id = ?${values.expectedUpdatedAt ? " AND updated_at = ?" : ""}`,
   )
     .bind(
       values.sourceArticleId,
@@ -4515,15 +5713,45 @@ async function updateEditorialDocument(
       values.status,
       now,
       documentId,
+      ...(values.expectedUpdatedAt ? [values.expectedUpdatedAt] : []),
     )
-    .run();
-  if (values.status !== "in-review")
+    .run()) as unknown as { meta?: { changes?: number } };
+  if (values.expectedUpdatedAt && !updateResult.meta?.changes)
+    return json(
+      {
+        error:
+          "この原稿は別のユーザーによって先に更新されました。最新内容を読み込んでから、変更を確認して保存してください。",
+        conflict: true,
+      },
+      409,
+    );
+  if (previous)
     await env.REPORTS.prepare(
-      "DELETE FROM editorial_review_assignments WHERE document_id = ?",
+      "INSERT INTO editorial_document_revisions (id, document_id, title, summary, body, status, saved_by, saved_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
     )
-      .bind(documentId)
+      .bind(
+        crypto.randomUUID(),
+        documentId,
+        previous.title,
+        previous.summary,
+        previous.body,
+        previous.status,
+        scope.email,
+        now,
+      )
       .run();
-  return json({ ok: true });
+  if (values.reviewerEmail !== null) {
+    const assignmentError = await saveEditorialReviewAssignment(
+      env,
+      documentId,
+      values.subject,
+      values.reviewerEmail,
+      scope.email,
+      now,
+    );
+    if (assignmentError) return json({ error: assignmentError }, 400);
+  }
+  return json({ ok: true, updatedAt: now });
 }
 
 async function listEditorialRevisions(
@@ -4952,7 +6180,7 @@ async function storeArticleBackup(
 async function syncPublishedArticleBackups(env: Env) {
   const token = env.GITHUB_PUBLISH_TOKEN;
   if (!token) return { synced: 0, skipped: true };
-  const repository = env.GITHUB_REPOSITORY ?? "mitukx/Atlasez01";
+  const repository = env.GITHUB_REPOSITORY ?? "Atlasez/Atlasez01";
   const headers = {
     accept: "application/vnd.github+json",
     authorization: `Bearer ${token}`,
@@ -5013,7 +6241,7 @@ async function syncEditorialPublicationStatus(env: Env) {
   const token = env.GITHUB_PUBLISH_TOKEN;
   if (!token)
     throw new Error("GitHub公開連携が未設定のため、公開状態を同期できません。");
-  const repository = env.GITHUB_REPOSITORY ?? "mitukx/Atlasez01";
+  const repository = env.GITHUB_REPOSITORY ?? "Atlasez/Atlasez01";
   const headers = {
     accept: "application/vnd.github+json",
     authorization: `Bearer ${token}`,
@@ -5141,7 +6369,7 @@ async function writeEditorialDocumentToGitHub(
   publicationStatus: "published" | "draft",
   message: string,
 ): Promise<{ commitUrl: string | null; body: string } | Response> {
-  const repository = env.GITHUB_REPOSITORY ?? "mitukx/Atlasez01";
+  const repository = env.GITHUB_REPOSITORY ?? "Atlasez/Atlasez01";
   const token = env.GITHUB_PUBLISH_TOKEN;
   if (!token)
     return json(
@@ -5297,43 +6525,55 @@ async function unpublishEditorialDocument(
 const googleOAuthConfigured = (env: Env) =>
   Boolean(env.GOOGLE_OAUTH_CLIENT_ID && env.GOOGLE_OAUTH_CLIENT_SECRET);
 
-const adminReturnPath = (value: string | null) =>
-  value === "/admin/workspace" ||
-  value === "/admin/workspace/" ||
-  value === "/admin/portal" ||
-  value === "/admin/portal/" ||
-  value === "/admin/applications" ||
-  value === "/admin/applications/" ||
-  value === "/admin/articles" ||
-  value === "/admin/articles/" ||
-  value === "/admin/operations" ||
-  value === "/admin/operations/" ||
-  value === "/admin/review" ||
-  value === "/admin/review/" ||
-  value === "/admin/reports" ||
-  value === "/admin/reports/" ||
-  value === "/admin/materials" ||
-  value === "/admin/materials/" ||
-  value === "/admin/editor" ||
-  value === "/admin/editor/" ||
-  value === "/admin/guide" ||
-  value === "/admin/guide/" ||
-  value === "/admin/introductions" ||
-  value === "/admin/introductions/" ||
-  value === "/admin/projects/atlas" ||
-  value === "/admin/projects/atlas/" ||
-  value === "/admin/projects/atlas/workspace" ||
-  value === "/admin/projects/atlas/workspace/" ||
-  value === "/admin/projects/seminar-platform" ||
-  value === "/admin/projects/seminar-platform/" ||
-  value === "/admin/projects/seminar-platform/workspace" ||
-  value === "/admin/projects/seminar-platform/workspace/" ||
-  value === "/admin/projects/secretariat" ||
-  value === "/admin/projects/secretariat/" ||
-  value === "/admin/projects/secretariat/workspace" ||
-  value === "/admin/projects/secretariat/workspace/"
-    ? value
-    : "/admin/reports";
+const adminReturnPath = (value: string | null) => {
+  const editorReturnPath =
+    value &&
+    /^\/admin\/editor\/(?:\?document=[0-9a-f-]{36}|\?new=1)$/i.test(value)
+      ? value
+      : null;
+  if (editorReturnPath) return editorReturnPath;
+  const allowedPaths = new Set([
+    "/admin/workspace",
+    "/admin/workspace/",
+    "/admin/portal",
+    "/admin/portal/",
+    "/admin/applications",
+    "/admin/applications/",
+    "/admin/articles",
+    "/admin/articles/",
+    "/admin/articles?workflow=review",
+    "/admin/articles/?workflow=review",
+    "/admin/operations",
+    "/admin/operations/",
+    "/admin/reports",
+    "/admin/reports/",
+    "/admin/events",
+    "/admin/events/",
+    "/admin/editor",
+    "/admin/editor/",
+    "/admin/guide",
+    "/admin/guide/",
+    "/admin/introductions",
+    "/admin/introductions/",
+    "/admin/permissions",
+    "/admin/permissions/",
+    "/admin/atlas",
+    "/admin/atlas/",
+    "/admin/projects/atlas",
+    "/admin/projects/atlas/",
+    "/admin/projects/atlas/workspace",
+    "/admin/projects/atlas/workspace/",
+    "/admin/projects/seminar-platform",
+    "/admin/projects/seminar-platform/",
+    "/admin/projects/seminar-platform/workspace",
+    "/admin/projects/seminar-platform/workspace/",
+    "/admin/projects/secretariat",
+    "/admin/projects/secretariat/",
+    "/admin/projects/secretariat/workspace",
+    "/admin/projects/secretariat/workspace/",
+  ]);
+  return value && allowedPaths.has(value) ? value : "/admin/reports";
+};
 
 function adminPublicOrigin(request: Request, env: Env) {
   return (env.ADMIN_PUBLIC_ORIGIN ?? new URL(request.url).origin).replace(
@@ -5357,6 +6597,17 @@ type GoogleDriveFile = {
 };
 
 type GoogleDriveImportFile = GoogleDriveFile & { path: string };
+type MaterialImportEntry = {
+  id: string;
+  drive_file_id: string;
+  parent_path: string;
+  title: string;
+  mime_type: string;
+  size_bytes: number;
+  modified_at: string | null;
+  source_url: string | null;
+  can_download: number;
+};
 
 const GOOGLE_DRIVE_FOLDER_MIME = "application/vnd.google-apps.folder";
 const MATERIAL_AUTO_IMPORT_MAX_BYTES = 9 * 1024 * 1024 * 1024;
@@ -5391,7 +6642,8 @@ async function listGoogleDriveFolder(
     const endpoint = new URL("https://www.googleapis.com/drive/v3/files");
     endpoint.search = new URLSearchParams({
       q: `'${folderId.replace(/'/g, "\\'")}' in parents and trashed = false`,
-      fields: "nextPageToken,files(id,name,mimeType,size,modifiedTime,webViewLink,capabilities(canDownload))",
+      fields:
+        "nextPageToken,files(id,name,mimeType,size,modifiedTime,webViewLink,capabilities(canDownload))",
       pageSize: "1000",
       orderBy: "folder,name_natural",
       supportsAllDrives: "true",
@@ -5402,7 +6654,9 @@ async function listGoogleDriveFolder(
       headers: { authorization: `Bearer ${accessToken}` },
     });
     if (!response.ok) {
-      errors.push(`フォルダ ${path || "共有資料"} を読み込めませんでした（${response.status}）。`);
+      errors.push(
+        `フォルダ ${path || "共有資料"} を読み込めませんでした（${response.status}）。`,
+      );
       return { files, errors };
     }
     const payload = (await response.json()) as {
@@ -5412,7 +6666,13 @@ async function listGoogleDriveFolder(
     for (const file of payload.files ?? []) {
       const itemPath = path ? `${path}/${file.name}` : file.name;
       if (file.mimeType === GOOGLE_DRIVE_FOLDER_MIME) {
-        await listGoogleDriveFolder(accessToken, file.id, itemPath, files, errors);
+        await listGoogleDriveFolder(
+          accessToken,
+          file.id,
+          itemPath,
+          files,
+          errors,
+        );
       } else {
         files.push({ ...file, path: itemPath });
       }
@@ -5446,14 +6706,36 @@ async function recordMaterialItem(
     await env.REPORTS.prepare(
       "UPDATE material_items SET parent_path = ?, title = ?, mime_type = ?, size_bytes = ?, storage_key = ?, source_url = ?, status = 'ready', updated_at = ? WHERE id = ?",
     )
-      .bind(values.path, values.title, values.mimeType, values.size, values.storageKey, values.sourceUrl, values.now, existing.id)
+      .bind(
+        values.path,
+        values.title,
+        values.mimeType,
+        values.size,
+        values.storageKey,
+        values.sourceUrl,
+        values.now,
+        existing.id,
+      )
       .run();
     return;
   }
   await env.REPORTS.prepare(
     "INSERT INTO material_items (id, collection_id, parent_path, title, mime_type, size_bytes, storage_key, source_drive_id, source_url, status, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'ready', ?, ?, ?)",
   )
-    .bind(crypto.randomUUID(), values.collectionId, values.path, values.title, values.mimeType, values.size, values.storageKey, values.sourceDriveId, values.sourceUrl, values.createdBy, values.now, values.now)
+    .bind(
+      crypto.randomUUID(),
+      values.collectionId,
+      values.path,
+      values.title,
+      values.mimeType,
+      values.size,
+      values.storageKey,
+      values.sourceDriveId,
+      values.sourceUrl,
+      values.createdBy,
+      values.now,
+      values.now,
+    )
     .run();
 }
 
@@ -5470,14 +6752,27 @@ async function startGoogleDriveMaterialImport(
   const collection = await env.REPORTS.prepare(
     "SELECT id FROM material_collections WHERE id = 'drive-shared-materials' AND source_folder_id IS NOT NULL",
   ).first<{ id: string }>();
-  if (!collection) return json({ error: "試験移行コレクションが見つかりません。" }, 404);
+  if (!collection)
+    return json({ error: "試験移行コレクションが見つかりません。" }, 404);
+  const pendingRunId =
+    new URL(request.url).searchParams.get("run")?.trim() ?? "";
+  if (pendingRunId) {
+    const run = await env.REPORTS.prepare(
+      "SELECT id FROM material_import_runs WHERE id = ? AND collection_id = ? AND status IN ('planning', 'importing', 'needs-review')",
+    )
+      .bind(pendingRunId, collection.id)
+      .first<{ id: string }>();
+    if (!run)
+      return json({ error: "再開できる資料移行が見つかりません。" }, 404);
+  }
   const state = `${crypto.randomUUID()}${crypto.randomUUID()}`;
   const authorization = new URL("https://accounts.google.com/o/oauth2/v2/auth");
   authorization.search = new URLSearchParams({
     client_id: env.GOOGLE_OAUTH_CLIENT_ID ?? "",
     redirect_uri: googleCallbackUrl(request, env),
     response_type: "code",
-    scope: "openid email profile https://www.googleapis.com/auth/drive.readonly",
+    scope:
+      "openid email profile https://www.googleapis.com/auth/drive.readonly",
     state,
     prompt: "consent select_account",
     access_type: "online",
@@ -5488,7 +6783,12 @@ async function startGoogleDriveMaterialImport(
     "set-cookie",
     cookie(
       GOOGLE_DRIVE_IMPORT_STATE_COOKIE,
-      JSON.stringify({ state, collectionId: collection.id, email: scope.email }),
+      JSON.stringify({
+        state,
+        collectionId: collection.id,
+        email: scope.email,
+        runId: pendingRunId || undefined,
+      }),
       10 * 60,
       "/auth",
     ),
@@ -5505,20 +6805,40 @@ async function completeGoogleDriveMaterialImport(
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code") ?? "";
   const state = requestUrl.searchParams.get("state") ?? "";
-  let saved: { state?: string; collectionId?: string; email?: string } = {};
+  let saved: {
+    state?: string;
+    collectionId?: string;
+    email?: string;
+    runId?: string;
+  } = {};
   try {
-    saved = JSON.parse(cookieValue(request, GOOGLE_DRIVE_IMPORT_STATE_COOKIE)) as typeof saved;
+    saved = JSON.parse(
+      cookieValue(request, GOOGLE_DRIVE_IMPORT_STATE_COOKIE),
+    ) as typeof saved;
   } catch {
     // 期限切れ・不正Cookieは拒否する。
   }
-  if (!code || !state || state !== saved.state || !saved.collectionId || !saved.email)
-    return json({ error: "Google Drive移行の確認期限が切れました。もう一度開始してください。" }, 400);
+  if (
+    !code ||
+    !state ||
+    state !== saved.state ||
+    !saved.collectionId ||
+    !saved.email
+  )
+    return json(
+      {
+        error:
+          "Google Drive移行の確認期限が切れました。もう一度開始してください。",
+      },
+      400,
+    );
   const permission = await env.REPORTS.prepare(
     "SELECT 1 AS allowed FROM report_admin_permissions WHERE email = ? AND subject = '*'",
   )
     .bind(saved.email)
     .first<{ allowed: number }>();
-  if (!permission) return json({ error: "資料移行は全分野管理者のみ実行できます。" }, 403);
+  if (!permission)
+    return json({ error: "資料移行は全分野管理者のみ実行できます。" }, 403);
   let accessToken = "";
   try {
     const response = await fetch("https://oauth2.googleapis.com/token", {
@@ -5533,11 +6853,13 @@ async function completeGoogleDriveMaterialImport(
       }),
     });
     if (!response.ok) throw new Error("token exchange failed");
-    accessToken = ((await response.json()) as { access_token?: string }).access_token ?? "";
+    accessToken =
+      ((await response.json()) as { access_token?: string }).access_token ?? "";
   } catch {
     return json({ error: "Google Driveの認証を完了できませんでした。" }, 502);
   }
-  if (!accessToken) return json({ error: "Google Driveの認証を完了できませんでした。" }, 502);
+  if (!accessToken)
+    return json({ error: "Google Driveの認証を完了できませんでした。" }, 502);
   const collection = await env.REPORTS.prepare(
     "SELECT id, source_folder_id FROM material_collections WHERE id = ?",
   )
@@ -5546,82 +6868,202 @@ async function completeGoogleDriveMaterialImport(
   if (!collection?.source_folder_id)
     return json({ error: "移行元フォルダが見つかりません。" }, 404);
   const now = new Date().toISOString();
-  const runId = crypto.randomUUID();
-  const inventory = await listGoogleDriveFolder(accessToken, collection.source_folder_id);
-  const estimatedBytes = inventory.files.reduce(
-    (total, file) => total + Math.max(0, Number(file.size ?? 0) || 0),
-    0,
-  );
-  await env.REPORTS.prepare(
-    "INSERT INTO material_import_runs (id, collection_id, source_folder_id, status, file_count, total_bytes, error_summary, requested_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-  )
-    .bind(runId, collection.id, collection.source_folder_id, estimatedBytes > MATERIAL_AUTO_IMPORT_MAX_BYTES ? "needs-review" : "planning", inventory.files.length, estimatedBytes, inventory.errors.join("\n").slice(0, 4000), saved.email, now)
-    .run();
-  if (estimatedBytes > MATERIAL_AUTO_IMPORT_MAX_BYTES) {
-    const headers = new Headers({ location: `/admin/materials/?import=${encodeURIComponent(runId)}&status=needs-review` });
-    headers.append("set-cookie", cookie(GOOGLE_DRIVE_IMPORT_STATE_COOKIE, "", 0, "/auth"));
+  let runId = saved.runId ?? "";
+  if (!runId) {
+    const inventory = await listGoogleDriveFolder(
+      accessToken,
+      collection.source_folder_id,
+    );
+    const estimatedBytes = inventory.files.reduce(
+      (total, file) => total + Math.max(0, Number(file.size ?? 0) || 0),
+      0,
+    );
+    runId = crypto.randomUUID();
+    await env.REPORTS.prepare(
+      "INSERT INTO material_import_runs (id, collection_id, source_folder_id, status, file_count, total_bytes, error_summary, requested_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    )
+      .bind(
+        runId,
+        collection.id,
+        collection.source_folder_id,
+        estimatedBytes > MATERIAL_AUTO_IMPORT_MAX_BYTES
+          ? "needs-review"
+          : "planning",
+        inventory.files.length,
+        estimatedBytes,
+        inventory.errors.join("\n").slice(0, 4000),
+        saved.email,
+        now,
+      )
+      .run();
+    if (
+      estimatedBytes <= MATERIAL_AUTO_IMPORT_MAX_BYTES &&
+      inventory.files.length
+    ) {
+      await env.REPORTS.batch(
+        inventory.files.map((file) =>
+          env.REPORTS.prepare(
+            "INSERT INTO material_import_entries (id, run_id, drive_file_id, parent_path, title, mime_type, size_bytes, modified_at, source_url, can_download, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          ).bind(
+            crypto.randomUUID(),
+            runId,
+            file.id,
+            file.path,
+            file.name,
+            file.mimeType,
+            Math.max(0, Number(file.size ?? 0) || 0),
+            file.modifiedTime ?? null,
+            file.webViewLink ?? null,
+            file.capabilities?.canDownload === false ? 0 : 1,
+            now,
+            now,
+          ),
+        ),
+      );
+    }
+    const headers = new Headers({ location: "/admin/atlas/" });
+    headers.append(
+      "set-cookie",
+      cookie(GOOGLE_DRIVE_IMPORT_STATE_COOKIE, "", 0, "/auth"),
+    );
     return new Response(null, { status: 302, headers });
   }
+  const run = await env.REPORTS.prepare(
+    "SELECT id, status FROM material_import_runs WHERE id = ? AND collection_id = ?",
+  )
+    .bind(runId, collection.id)
+    .first<{ id: string; status: string }>();
+  if (!run) return json({ error: "資料移行の記録が見つかりません。" }, 404);
   await env.REPORTS.prepare(
     "UPDATE material_import_runs SET status = 'importing' WHERE id = ?",
-  ).bind(runId).run();
+  )
+    .bind(runId)
+    .run();
+  const entries = await env.REPORTS.prepare(
+    "SELECT id, drive_file_id, parent_path, title, mime_type, size_bytes, modified_at, source_url, can_download FROM material_import_entries WHERE run_id = ? AND status = 'pending' ORDER BY created_at ASC LIMIT 8",
+  )
+    .bind(runId)
+    .all<MaterialImportEntry>();
   let importedCount = 0;
   let importedBytes = 0;
-  const failures = [...inventory.errors];
-  for (const file of inventory.files) {
-    if (file.capabilities?.canDownload === false) {
-      failures.push(`${file.path} はダウンロードが許可されていません。`);
+  const failures: string[] = [];
+  for (const file of entries.results ?? []) {
+    if (!file.can_download) {
+      failures.push(`${file.parent_path} はダウンロードが許可されていません。`);
+      await env.REPORTS.prepare(
+        "UPDATE material_import_entries SET status = 'skipped', error_message = ?, updated_at = ? WHERE id = ?",
+      )
+        .bind("ダウンロードが許可されていません。", now, file.id)
+        .run();
       continue;
     }
-    const exported = googleWorkspaceExport(file.mimeType);
-    if (file.mimeType.startsWith("application/vnd.google-apps.") && !exported) {
-      failures.push(`${file.path} はこの形式では自動移行できません。`);
+    const exported = googleWorkspaceExport(file.mime_type);
+    if (
+      file.mime_type.startsWith("application/vnd.google-apps.") &&
+      !exported
+    ) {
+      failures.push(`${file.parent_path} はこの形式では自動移行できません。`);
+      await env.REPORTS.prepare(
+        "UPDATE material_import_entries SET status = 'skipped', error_message = ?, updated_at = ? WHERE id = ?",
+      )
+        .bind("この形式では自動移行できません。", now, file.id)
+        .run();
       continue;
     }
     const sourceUrl = exported
-      ? `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(file.id)}/export?mimeType=${encodeURIComponent(exported.mimeType)}`
-      : `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(file.id)}?alt=media&supportsAllDrives=true`;
+      ? `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(file.drive_file_id)}/export?mimeType=${encodeURIComponent(exported.mimeType)}`
+      : `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(file.drive_file_id)}?alt=media&supportsAllDrives=true`;
     try {
-      const source = await fetch(sourceUrl, { headers: { authorization: `Bearer ${accessToken}` } });
-      if (!source.ok || !source.body) throw new Error(`取得エラー ${source.status}`);
-      const displayName = exported && !file.name.toLowerCase().endsWith(exported.suffix)
-        ? `${file.name}${exported.suffix}`
-        : file.name;
-      const storageKey = `materials/${collection.id}/${file.id}/${materialObjectName(displayName)}`;
-      const contentType = exported?.mimeType || source.headers.get("content-type")?.split(";")[0] || file.mimeType;
-      const size = Math.max(0, Number(source.headers.get("content-length") ?? file.size ?? 0) || 0);
-      await env.MATERIALS.put(storageKey, source.body, { httpMetadata: { contentType } });
+      const source = await fetch(sourceUrl, {
+        headers: { authorization: `Bearer ${accessToken}` },
+      });
+      if (!source.ok || !source.body)
+        throw new Error(`取得エラー ${source.status}`);
+      const displayName =
+        exported && !file.title.toLowerCase().endsWith(exported.suffix)
+          ? `${file.title}${exported.suffix}`
+          : file.title;
+      const storageKey = `materials/${collection.id}/${file.drive_file_id}/${materialObjectName(displayName)}`;
+      const contentType =
+        exported?.mimeType ||
+        source.headers.get("content-type")?.split(";")[0] ||
+        file.mime_type;
+      const body = await source.arrayBuffer();
+      const size = body.byteLength;
+      await env.MATERIALS.put(storageKey, body, {
+        httpMetadata: { contentType },
+      });
       await recordMaterialItem(env, {
         collectionId: collection.id,
-        sourceDriveId: file.id,
-        path: file.path,
+        sourceDriveId: file.drive_file_id,
+        path: file.parent_path,
         title: displayName,
         mimeType: contentType,
         size,
         storageKey,
-        sourceUrl: file.webViewLink ?? `https://drive.google.com/open?id=${encodeURIComponent(file.id)}`,
+        sourceUrl:
+          file.source_url ??
+          `https://drive.google.com/open?id=${encodeURIComponent(file.drive_file_id)}`,
         createdBy: saved.email,
         now,
       });
+      await env.REPORTS.prepare(
+        "UPDATE material_import_entries SET status = 'imported', error_message = '', updated_at = ? WHERE id = ?",
+      )
+        .bind(now, file.id)
+        .run();
       importedCount += 1;
       importedBytes += size;
     } catch (error) {
-      failures.push(`${file.path}: ${error instanceof Error ? error.message : "取得に失敗しました。"}`);
+      const message =
+        error instanceof Error ? error.message : "取得に失敗しました。";
+      failures.push(`${file.parent_path}: ${message}`);
+      await env.REPORTS.prepare(
+        "UPDATE material_import_entries SET status = 'failed', error_message = ?, updated_at = ? WHERE id = ?",
+      )
+        .bind(message.slice(0, 1000), now, file.id)
+        .run();
     }
   }
-  const finalStatus = failures.length ? "needs-review" : "completed";
+  const progress = await env.REPORTS.prepare(
+    "SELECT SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) AS pending, SUM(CASE WHEN status = 'imported' THEN 1 ELSE 0 END) AS imported, SUM(CASE WHEN status IN ('failed', 'skipped') THEN 1 ELSE 0 END) AS issues, SUM(CASE WHEN status = 'imported' THEN size_bytes ELSE 0 END) AS imported_bytes FROM material_import_entries WHERE run_id = ?",
+  )
+    .bind(runId)
+    .first<{
+      pending: number | null;
+      imported: number | null;
+      issues: number | null;
+      imported_bytes: number | null;
+    }>();
+  const pending = Number(progress?.pending ?? 0);
+  const finalStatus =
+    pending > 0
+      ? "planning"
+      : Number(progress?.issues ?? 0) || failures.length
+        ? "needs-review"
+        : "completed";
   await env.REPORTS.prepare(
     "UPDATE material_import_runs SET status = ?, imported_count = ?, imported_bytes = ?, error_summary = ?, completed_at = ? WHERE id = ?",
   )
-    .bind(finalStatus, importedCount, importedBytes, failures.join("\n").slice(0, 4000), new Date().toISOString(), runId)
+    .bind(
+      finalStatus,
+      Number(progress?.imported ?? importedCount),
+      Number(progress?.imported_bytes ?? importedBytes),
+      failures.join("\n").slice(0, 4000),
+      pending ? null : new Date().toISOString(),
+      runId,
+    )
     .run();
   await env.REPORTS.prepare(
     "UPDATE material_collections SET imported_at = ?, updated_at = ? WHERE id = ?",
   )
     .bind(new Date().toISOString(), new Date().toISOString(), collection.id)
     .run();
-  const headers = new Headers({ location: `/admin/materials/?import=${encodeURIComponent(runId)}&status=${encodeURIComponent(finalStatus)}` });
-  headers.append("set-cookie", cookie(GOOGLE_DRIVE_IMPORT_STATE_COOKIE, "", 0, "/auth"));
+  const headers = new Headers({ location: "/admin/atlas/" });
+  headers.append(
+    "set-cookie",
+    cookie(GOOGLE_DRIVE_IMPORT_STATE_COOKIE, "", 0, "/auth"),
+  );
   return new Response(null, { status: 302, headers });
 }
 
@@ -5652,6 +7094,12 @@ async function startGoogleLogin(request: Request, env: Env): Promise<Response> {
       10 * 60,
       "/auth/google",
     ),
+  );
+  // 以前の資料移行で残ったCookieが通常ログインのコールバックを
+  // 誤って資料移行として扱わせないよう、開始時に必ず無効化する。
+  headers.append(
+    "set-cookie",
+    cookie(GOOGLE_DRIVE_IMPORT_STATE_COOKIE, "", 0, "/auth"),
   );
   return new Response(null, { status: 302, headers });
 }
@@ -5759,10 +7207,15 @@ async function completeGoogleLogin(
     "set-cookie",
     cookie(GOOGLE_STATE_COOKIE, "", 0, "/auth/google"),
   );
+  headers.append(
+    "set-cookie",
+    cookie(GOOGLE_DRIVE_IMPORT_STATE_COOKIE, "", 0, "/auth"),
+  );
   return new Response(null, { status: 302, headers });
 }
 
 async function logoutAdmin(request: Request, env: Env): Promise<Response> {
+  if (!isSameOrigin(request)) return new Response("Forbidden", { status: 403 });
   if (googleOAuthEnabled(env)) {
     const token = cookieValue(request, ADMIN_SESSION_COOKIE);
     if (token)
@@ -5807,8 +7260,6 @@ async function adminNotifications(
 ): Promise<Response> {
   const scope = await getAdminScope(request, env);
   if (isResponse(scope)) return scope;
-  if (!scope.isManager && !scope.subjects.length)
-    return json({ notifications: [] });
   const viewerProfile = await env.REPORTS.prepare(
     "SELECT display_name FROM editorial_member_profiles WHERE email = ?",
   )
@@ -5819,70 +7270,185 @@ async function adminNotifications(
     scope.email,
   );
   const mentionPattern = mentionName.replace(/[\\%_]/g, "\\$&");
-  const [commentRows, approvedRows, publishedRows, reviewRows, reminderRows] =
-    await Promise.all([
-      env.REPORTS.prepare(
-        "SELECT c.id, c.body, c.parent_comment_id, c.created_at, d.id AS document_id, d.title FROM editorial_comments c JOIN editorial_documents d ON d.id = c.document_id WHERE d.created_by = ? AND c.created_by != ? ORDER BY c.created_at DESC LIMIT 12",
+  await ensurePortalProjectSchema(env);
+  const projectRows = scope.isManager
+    ? await env.REPORTS.prepare(
+        "SELECT id,slug,name FROM atlasez_projects ORDER BY name",
+      ).all<{ id: string; slug: string; name: string }>()
+    : await env.REPORTS.prepare(
+        "SELECT p.id,p.slug,p.name FROM atlasez_projects p JOIN atlasez_project_memberships m ON m.project_id=p.id WHERE m.email=? ORDER BY p.name",
       )
-        .bind(scope.email, scope.email)
-        .all<{
+        .bind(scope.email)
+        .all<{ id: string; slug: string; name: string }>();
+  const atlasProject = projectRows.results.find(
+    (project) => project.slug === "atlas",
+  ) ?? { id: "atlas", slug: "atlas", name: "アトラス学習サイト" };
+  // A reminder without an explicit recipient is personal to the task's
+  // assignee/creator. With an explicit address, only that address receives the
+  // in-app reminder as well as the email reminder.
+  const ownReminderRecipientFilter = `
+           AND (
+             lower(trim(t.reminder_email)) = lower(?)
+             OR (
+               NULLIF(trim(t.reminder_email), '') IS NULL
+               AND (lower(trim(t.assignee_email)) = lower(?) OR lower(trim(t.created_by)) = lower(?))
+             )
+           )`;
+  const [
+    commentRows,
+    approvedRows,
+    publishedRows,
+    reviewRows,
+    reminderRows,
+    taskRows,
+    projectEventRows,
+    projectProgressRows,
+  ] = await Promise.all([
+    env.REPORTS.prepare(
+      "SELECT c.id, c.body, c.parent_comment_id, c.created_at, d.id AS document_id, d.title FROM editorial_comments c JOIN editorial_documents d ON d.id = c.document_id WHERE d.created_by = ? AND c.created_by != ? ORDER BY c.created_at DESC LIMIT 12",
+    )
+      .bind(scope.email, scope.email)
+      .all<{
+        id: string;
+        body: string;
+        parent_comment_id: string | null;
+        created_at: string;
+        document_id: string;
+        title: string;
+      }>(),
+    env.REPORTS.prepare(
+      "SELECT id, title, updated_at FROM editorial_documents WHERE created_by = ? AND status = 'approved' AND published_at IS NULL ORDER BY updated_at DESC LIMIT 12",
+    )
+      .bind(scope.email)
+      .all<{ id: string; title: string; updated_at: string }>(),
+    env.REPORTS.prepare(
+      "SELECT id, title, published_at FROM editorial_documents WHERE created_by = ? AND published_at IS NOT NULL ORDER BY published_at DESC LIMIT 12",
+    )
+      .bind(scope.email)
+      .all<{ id: string; title: string; published_at: string }>(),
+    scope.isManager
+      ? env.REPORTS.prepare(
+          "SELECT d.id, d.subject, d.title, d.updated_by, COALESCE(NULLIF(TRIM(p.display_name), ''), d.updated_by) AS requester_display_name, d.updated_at FROM editorial_documents d LEFT JOIN editorial_member_profiles p ON lower(p.email) = lower(d.updated_by) WHERE d.status = 'in-review' ORDER BY d.updated_at ASC LIMIT 30",
+        ).all<{
           id: string;
-          body: string;
-          parent_comment_id: string | null;
-          created_at: string;
-          document_id: string;
+          subject: string;
           title: string;
-        }>(),
-      env.REPORTS.prepare(
-        "SELECT id, title, updated_at FROM editorial_documents WHERE created_by = ? AND status = 'approved' AND published_at IS NULL ORDER BY updated_at DESC LIMIT 12",
-      )
-        .bind(scope.email)
-        .all<{ id: string; title: string; updated_at: string }>(),
-      env.REPORTS.prepare(
-        "SELECT id, title, published_at FROM editorial_documents WHERE created_by = ? AND published_at IS NOT NULL ORDER BY published_at DESC LIMIT 12",
-      )
-        .bind(scope.email)
-        .all<{ id: string; title: string; published_at: string }>(),
-      scope.isManager
-        ? env.REPORTS.prepare(
-            "SELECT d.id, d.subject, d.title, d.updated_by, COALESCE(NULLIF(TRIM(p.display_name), ''), d.updated_by) AS requester_display_name, d.updated_at FROM editorial_documents d LEFT JOIN editorial_member_profiles p ON lower(p.email) = lower(d.updated_by) WHERE d.status = 'in-review' ORDER BY d.updated_at ASC LIMIT 30",
-          ).all<{
+          updated_by: string;
+          requester_display_name: string;
+          updated_at: string;
+        }>()
+      : Promise.resolve({
+          results: [] as {
             id: string;
             subject: string;
             title: string;
             updated_by: string;
             requester_display_name: string;
             updated_at: string;
-          }>()
-        : Promise.resolve({
-            results: [] as {
-              id: string;
-              subject: string;
-              title: string;
-              updated_by: string;
-              requester_display_name: string;
-              updated_at: string;
-            }[],
-          }),
-      env.REPORTS.prepare(
-        "SELECT id, title, reminder_at, reminder_repeat, due_timezone, assignee_email, created_by FROM editorial_tasks WHERE project_id = 'atlas' AND status != 'done' AND reminder_at IS NOT NULL AND reminder_at <= ? AND (assignee_email = ? OR created_by = ?) ORDER BY reminder_at DESC LIMIT 20",
-      )
-        .bind(new Date().toISOString().slice(0, 16), scope.email, scope.email)
-        .all<{
-          id: string;
-          title: string;
-          reminder_at: string;
-          reminder_repeat: string;
-          due_timezone: string;
-          assignee_email: string | null;
-          created_by: string;
-        }>(),
-    ]);
+          }[],
+        }),
+    env.REPORTS.prepare(
+      `SELECT t.id,t.project_id,t.title,t.reminder_at,t.reminder_repeat,t.due_timezone,t.assignee_email,t.created_by,p.slug AS project_slug,p.name AS project_name
+         FROM editorial_tasks t JOIN atlasez_projects p ON p.id=t.project_id
+         WHERE t.status != 'done' AND t.reminder_at IS NOT NULL
+           AND NOT EXISTS (SELECT 1 FROM editorial_task_reminders r WHERE r.task_id = t.id)
+           ${ownReminderRecipientFilter}
+         ORDER BY t.reminder_at ASC LIMIT 200`,
+    )
+      .bind(scope.email, scope.email, scope.email)
+      .all<{
+        id: string;
+        project_id: string;
+        project_slug: string;
+        project_name: string;
+        title: string;
+        reminder_at: string;
+        reminder_repeat: string;
+        due_timezone: string;
+        assignee_email: string | null;
+        created_by: string;
+      }>(),
+    env.REPORTS.prepare(
+      `SELECT t.id,t.project_id,t.title,t.details,t.status,t.due_at,t.due_timezone,t.assignee_email,t.created_by,t.updated_at,
+                p.slug AS project_slug,p.name AS project_name
+         FROM editorial_tasks t JOIN atlasez_projects p ON p.id=t.project_id
+         WHERE t.status != 'done'
+           AND (t.assignee_email = ? OR t.created_by = ? OR ? = 1 OR t.project_id IN (SELECT project_id FROM atlasez_project_memberships WHERE email = ?))
+         ORDER BY t.updated_at DESC LIMIT 200`,
+    )
+      .bind(scope.email, scope.email, scope.isManager ? 1 : 0, scope.email)
+      .all<{
+        id: string;
+        project_id: string;
+        project_slug: string;
+        project_name: string;
+        title: string;
+        details: string | null;
+        status: string;
+        due_at: string | null;
+        due_timezone: string;
+        assignee_email: string | null;
+        created_by: string;
+        updated_at: string;
+      }>(),
+    env.REPORTS.prepare(
+      `SELECT e.id,e.title,e.details,e.starts_at,e.created_by,e.created_at,p.id AS project_id,p.slug AS project_slug,p.name AS project_name
+         FROM editorial_events e JOIN atlasez_projects p ON e.subject = ('project:' || p.slug)
+         WHERE ( ? = 1 OR p.id IN (SELECT project_id FROM atlasez_project_memberships WHERE email = ?) )
+         ORDER BY e.created_at DESC LIMIT 100`,
+    )
+      .bind(scope.isManager ? 1 : 0, scope.email)
+      .all<{
+        id: string;
+        title: string;
+        details: string;
+        starts_at: string;
+        created_by: string;
+        created_at: string;
+        project_id: string;
+        project_slug: string;
+        project_name: string;
+      }>(),
+    env.REPORTS.prepare(
+      `SELECT r.id,r.body,r.details,r.email,r.created_at,p.id AS project_id,p.slug AS project_slug,p.name AS project_name
+         FROM editorial_progress_reports r JOIN atlasez_projects p ON r.subject = ('project:' || p.slug)
+         WHERE r.email != ? AND ( ? = 1 OR p.id IN (SELECT project_id FROM atlasez_project_memberships WHERE email = ?) )
+         ORDER BY r.created_at DESC LIMIT 100`,
+    )
+      .bind(scope.email, scope.isManager ? 1 : 0, scope.email)
+      .all<{
+        id: string;
+        body: string;
+        details: string;
+        email: string;
+        created_at: string;
+        project_id: string;
+        project_slug: string;
+        project_name: string;
+      }>(),
+  ]);
+  const dueReminderRows = (reminderRows.results ?? []).filter(
+    (item) =>
+      wallTimeToEpoch(item.reminder_at, item.due_timezone) <= Date.now(),
+  );
   const mentionRows = mentionName
     ? await env.REPORTS.prepare(
-        "SELECT c.id, c.body, c.created_at, d.id AS document_id, d.title FROM editorial_comments c JOIN editorial_documents d ON d.id = c.document_id WHERE c.body LIKE ? ESCAPE '\\' AND c.created_by != ? ORDER BY c.created_at DESC LIMIT 12",
+        `SELECT c.id, c.body, c.created_at, d.id AS document_id, d.title
+         FROM editorial_comments c JOIN editorial_documents d ON d.id = c.document_id
+         WHERE c.body LIKE ? ESCAPE '\\' AND c.created_by != ?${
+           scope.isManager
+             ? ""
+             : scope.subjects.length
+               ? ` AND d.subject IN (${scope.subjects.map(() => "?").join(",")})`
+               : " AND 1 = 0"
+         }
+         ORDER BY c.created_at DESC LIMIT 12`,
       )
-        .bind(`%@${mentionPattern}%`, scope.email)
+        .bind(
+          `%@${mentionPattern}%`,
+          scope.email,
+          ...(scope.isManager ? [] : scope.subjects),
+        )
         .all<{
           id: string;
           body: string;
@@ -5899,10 +7465,49 @@ async function adminNotifications(
           title: string;
         }[],
       };
-  const notifications = [
+  const taskReminderRuleRows = await env.REPORTS.prepare(
+    `SELECT r.id AS reminder_id,t.id,t.project_id,t.title,r.remind_at AS reminder_at,r.timezone AS due_timezone,r.label,r.relative_kind,r.created_at,p.slug AS project_slug,p.name AS project_name
+     FROM editorial_task_reminders r JOIN editorial_tasks t ON t.id=r.task_id JOIN atlasez_projects p ON p.id=t.project_id
+     WHERE t.status != 'done'
+       ${ownReminderRecipientFilter}
+     ORDER BY r.remind_at ASC LIMIT 200`,
+  )
+    .bind(scope.email, scope.email, scope.email)
+    .all<{
+      reminder_id: string;
+      id: string;
+      project_id: string;
+      project_slug: string;
+      project_name: string;
+      title: string;
+      reminder_at: string;
+      due_timezone: string;
+      label: string;
+      relative_kind: "absolute" | "before" | "due_day_hourly";
+      created_at: string;
+    }>();
+  const dueTaskReminderRuleRows = (taskReminderRuleRows.results ?? []).filter(
+    (item) => {
+      const reminderEpoch = wallTimeToEpoch(
+        item.reminder_at,
+        item.due_timezone,
+      );
+      const createdEpoch = Date.parse(item.created_at);
+      const wasPastAtCreation =
+        item.relative_kind !== "absolute" &&
+        Number.isFinite(createdEpoch) &&
+        Number.isFinite(reminderEpoch) &&
+        reminderEpoch <= createdEpoch;
+      return !wasPastAtCreation && reminderEpoch <= Date.now();
+    },
+  );
+  const notificationCandidates = [
     ...(commentRows.results ?? []).map((item) => ({
       id: `comment-${item.id}`,
       kind: "comment",
+      projectId: atlasProject.id,
+      projectSlug: atlasProject.slug,
+      projectName: atlasProject.name,
       title: `${item.parent_comment_id ? "コメントに返信" : "記事に新しいコメント"}：${item.title}`,
       detail: item.body.slice(0, 90),
       href: `/admin/editor/?document=${encodeURIComponent(item.document_id)}`,
@@ -5911,6 +7516,9 @@ async function adminNotifications(
     ...(approvedRows.results ?? []).map((item) => ({
       id: `approved-${item.id}`,
       kind: "approved",
+      projectId: atlasProject.id,
+      projectSlug: atlasProject.slug,
+      projectName: atlasProject.name,
       title: `査読完了：${item.title}`,
       detail: "公開前の原稿を確認してください。",
       href: `/admin/editor/?document=${encodeURIComponent(item.id)}`,
@@ -5919,6 +7527,9 @@ async function adminNotifications(
     ...(publishedRows.results ?? []).map((item) => ({
       id: `published-${item.id}`,
       kind: "published",
+      projectId: atlasProject.id,
+      projectSlug: atlasProject.slug,
+      projectName: atlasProject.name,
       title: `記事が公開されました：${item.title}`,
       detail: "学習サイトへの反映を確認できます。",
       href: `/admin/editor/?document=${encodeURIComponent(item.id)}`,
@@ -5927,14 +7538,20 @@ async function adminNotifications(
     ...(mentionRows.results ?? []).map((item) => ({
       id: `mention-${item.id}`,
       kind: "mention",
+      projectId: atlasProject.id,
+      projectSlug: atlasProject.slug,
+      projectName: atlasProject.name,
       title: `コメントでメンションされました：${item.title}`,
       detail: item.body.slice(0, 90),
       href: `/admin/editor/?document=${encodeURIComponent(item.document_id)}`,
       updatedAt: item.created_at,
     })),
-    ...(reminderRows.results ?? []).map((item) => ({
+    ...dueReminderRows.map((item) => ({
       id: `task-reminder-${item.id}-${item.reminder_at}`,
       kind: "task",
+      projectId: item.project_id,
+      projectSlug: item.project_slug,
+      projectName: item.project_name,
       title: `ToDoのリマインダー：${item.title}`,
       detail:
         item.reminder_repeat === "none"
@@ -5943,34 +7560,237 @@ async function adminNotifications(
       href: "/admin/operations/",
       updatedAt: item.reminder_at,
     })),
+    ...dueTaskReminderRuleRows.map((item) => ({
+      id: `task-reminder-rule-${item.reminder_id}-${item.reminder_at}`,
+      kind: "task",
+      projectId: item.project_id,
+      projectSlug: item.project_slug,
+      projectName: item.project_name,
+      title: `ToDoのリマインダー：${item.title}`,
+      detail: item.label || "設定した日時になりました。",
+      href: "/admin/operations/",
+      updatedAt: item.reminder_at,
+    })),
+    ...(taskRows.results ?? []).map((item) => ({
+      id: `task-${item.id}`,
+      kind: "task",
+      projectId: item.project_id,
+      projectSlug: item.project_slug,
+      projectName: item.project_name,
+      title: `ToDo：${item.title}`,
+      detail:
+        item.assignee_email === scope.email
+          ? "自分が担当する未完了タスクです。"
+          : item.created_by === scope.email
+            ? "自分が依頼した未完了タスクです。"
+            : "参加プロジェクトの未完了タスクです。",
+      href: "/admin/operations/",
+      updatedAt: item.updated_at,
+    })),
+    ...(projectEventRows.results ?? []).map((item) => ({
+      id: `event-${item.id}`,
+      kind: "event",
+      projectId: item.project_id,
+      projectSlug: item.project_slug,
+      projectName: item.project_name,
+      title: `日程：${item.title}`,
+      detail: item.details || "プロジェクトの日程が追加されました。",
+      href:
+        item.project_slug === "atlas"
+          ? "/admin/operations/"
+          : `/admin/projects/${encodeURIComponent(item.project_slug)}/`,
+      updatedAt: item.created_at,
+    })),
+    ...(projectProgressRows.results ?? []).map((item) => ({
+      id: `progress-${item.id}`,
+      kind: "progress",
+      projectId: item.project_id,
+      projectSlug: item.project_slug,
+      projectName: item.project_name,
+      title: "進捗報告",
+      detail: item.details || item.body.slice(0, 90),
+      href:
+        item.project_slug === "atlas"
+          ? "/admin/operations/"
+          : `/admin/projects/${encodeURIComponent(item.project_slug)}/`,
+      updatedAt: item.created_at,
+    })),
     ...(scope.isManager
       ? (reviewRows.results ?? []).map((item) => ({
           id: `review-${item.id}`,
           kind: "review",
+          projectId: atlasProject.id,
+          projectSlug: atlasProject.slug,
+          projectName: atlasProject.name,
           title: `査読依頼：${item.title}`,
           detail: `担当分野：${item.subject} ／ 依頼者：${item.requester_display_name}`,
           href: `/admin/editor/?document=${encodeURIComponent(item.id)}`,
           updatedAt: item.updated_at,
         }))
       : []),
-  ]
+  ];
+  // 同じコメントが「自分の原稿へのコメント」と「メンション」の両方に
+  // 該当する場合がある。メンションの方が具体的な通知なので優先し、
+  // コメントID単位で1件にまとめる。統合前のIDは既読状態の引き継ぎに使う。
+  const notificationKindLabels: Record<string, string> = {
+    comment: "コメント",
+    mention: "メンション",
+    review: "査読依頼",
+    approved: "査読完了",
+    published: "公開",
+    task: "ToDo",
+    event: "日程",
+    progress: "進捗",
+  };
+  type NotificationCandidate = (typeof notificationCandidates)[number] & {
+    notificationIds: string[];
+    notificationKinds: string[];
+    notificationDetails: string[];
+  };
+  const notificationByKey = new Map<string, NotificationCandidate>();
+  for (const rawItem of notificationCandidates) {
+    const item: NotificationCandidate = {
+      ...rawItem,
+      notificationIds: [rawItem.id],
+      notificationKinds: [rawItem.kind],
+      notificationDetails: [
+        (notificationKindLabels[rawItem.kind] ?? "記事") +
+          ": " +
+          rawItem.detail,
+      ],
+    };
+    const taskIdMatch =
+      rawItem.kind === "task"
+        ? rawItem.id.match(/^task(?:-reminder(?:-rule)?)?-([0-9a-f-]{36})/i)
+        : null;
+    const key = taskIdMatch
+      ? `task:${rawItem.projectId}:${taskIdMatch[1]}`
+      : item.id.replace(/^mention-/, "comment-");
+    const existing = notificationByKey.get(key);
+    if (!existing) {
+      notificationByKey.set(key, item);
+    } else if (item.kind === "mention") {
+      notificationByKey.set(key, {
+        ...item,
+        notificationIds: [
+          ...new Set([...existing.notificationIds, ...item.notificationIds]),
+        ],
+        notificationKinds: [
+          ...new Set([
+            ...existing.notificationKinds,
+            ...item.notificationKinds,
+          ]),
+        ],
+        notificationDetails: [
+          ...new Set([
+            ...existing.notificationDetails,
+            ...item.notificationDetails,
+          ]),
+        ],
+      });
+    } else {
+      notificationByKey.set(key, {
+        ...existing,
+        notificationIds: [
+          ...new Set([...existing.notificationIds, ...item.notificationIds]),
+        ],
+        notificationKinds: [
+          ...new Set([
+            ...existing.notificationKinds,
+            ...item.notificationKinds,
+          ]),
+        ],
+        notificationDetails: [
+          ...new Set([
+            ...existing.notificationDetails,
+            ...item.notificationDetails,
+          ]),
+        ],
+      });
+    }
+  }
+  // 記事編集画面では、同じ記事に複数のコメント・メンション・査読依頼が
+  // あると同じ記事名が何行も並んでしまう。別イベントの内容は詳細に残し、
+  // 記事単位で1行にまとめる。
+  const documentNotifications: NotificationCandidate[] = [];
+  for (const item of notificationByKey.values()) {
+    const documentKey = item.href.startsWith("/admin/editor/?document=")
+      ? item.title
+          .replace(/^[^：]+：/, "")
+          .trim()
+          .toLocaleLowerCase()
+      : null;
+    const existingIndex = documentKey
+      ? documentNotifications.findIndex(
+          (candidate) =>
+            candidate.href.startsWith("/admin/editor/?document=") &&
+            candidate.title
+              .replace(/^[^：]+：/, "")
+              .trim()
+              .toLocaleLowerCase() === documentKey,
+        )
+      : -1;
+    const existing =
+      existingIndex >= 0 ? documentNotifications[existingIndex] : undefined;
+    if (!existing) {
+      documentNotifications.push(item);
+      continue;
+    }
+    const articleTitle = item.title.replace(/^[^：]+：/, "");
+    const notificationKinds = [
+      ...new Set([...existing.notificationKinds, ...item.notificationKinds]),
+    ];
+    const notificationDetails = [
+      ...new Set([
+        ...existing.notificationDetails,
+        ...item.notificationDetails,
+      ]),
+    ];
+    const notificationLabels = notificationKinds.map(
+      (kind) => notificationKindLabels[kind] ?? "記事",
+    );
+    const latestItem =
+      existing.updatedAt.localeCompare(item.updatedAt) >= 0 ? existing : item;
+    documentNotifications[existingIndex] = {
+      ...existing,
+      href: latestItem.href,
+      kind: notificationKinds.length === 1 ? notificationKinds[0] : "combined",
+      title: notificationLabels.join("・") + "：" + articleTitle,
+      detail: notificationDetails.join(" ／ "),
+      updatedAt: latestItem.updatedAt,
+      notificationIds: [
+        ...new Set([...existing.notificationIds, ...item.notificationIds]),
+      ],
+      notificationKinds,
+      notificationDetails,
+    };
+  }
+  const notifications = documentNotifications
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
     .slice(0, 20);
-  const readIds = notifications.length
+  const allNotificationIds = notifications.flatMap(
+    (item) => item.notificationIds,
+  );
+  const readIds = allNotificationIds.length
     ? await env.REPORTS.prepare(
-        `SELECT notification_id FROM admin_notification_reads WHERE email = ? AND notification_id IN (${notifications.map(() => "?").join(",")})`,
+        `SELECT notification_id FROM admin_notification_reads WHERE email = ? AND notification_id IN (${allNotificationIds.map(() => "?").join(",")})`,
       )
-        .bind(scope.email, ...notifications.map((item) => item.id))
+        .bind(scope.email, ...allNotificationIds)
         .all<{ notification_id: string }>()
     : { results: [] as { notification_id: string }[] };
   const read = new Set(
     (readIds.results ?? []).map((item) => item.notification_id),
   );
   return json({
-    notifications: notifications.map((item) => ({
-      ...item,
-      read: read.has(item.id),
-    })),
+    notifications: notifications.map((item) => {
+      const { notificationKinds, notificationDetails, ...publicItem } = item;
+      void notificationKinds;
+      void notificationDetails;
+      return {
+        ...publicItem,
+        read: item.notificationIds.every((id) => read.has(id)),
+      };
+    }),
   });
 }
 
@@ -5988,28 +7808,30 @@ async function markAdminNotificationsRead(
   const ids = Array.isArray(payload?.ids)
     ? [
         ...new Set(
-          payload!.ids
-            .filter(
-              (id): id is string =>
-                typeof id === "string" &&
-                /^(comment|approved|published|review)-[a-zA-Z0-9-]{8,}$/.test(
-                  id,
-                ),
-            )
-            .slice(0, 32),
+          payload!.ids.filter(
+            (id): id is string =>
+              typeof id === "string" &&
+              /^(comment|approved|published|review|mention|task|task-reminder|task-reminder-rule|event|progress)-[a-zA-Z0-9:._+\-]{8,}$/.test(
+                id,
+              ),
+          ),
         ),
       ]
     : [];
   if (!ids.length)
     return json({ error: "既読にする通知を選択してください。" }, 400);
   const now = new Date().toISOString();
-  await env.REPORTS.batch(
-    ids.map((id) =>
-      env.REPORTS.prepare(
-        "INSERT INTO admin_notification_reads (email, notification_id, read_at) VALUES (?, ?, ?) ON CONFLICT(email, notification_id) DO UPDATE SET read_at = excluded.read_at",
-      ).bind(scope.email, id, now),
-    ),
-  );
+  for (let offset = 0; offset < ids.length; offset += 32) {
+    await env.REPORTS.batch(
+      ids
+        .slice(offset, offset + 32)
+        .map((id) =>
+          env.REPORTS.prepare(
+            "INSERT INTO admin_notification_reads (email, notification_id, read_at) VALUES (?, ?, ?) ON CONFLICT(email, notification_id) DO UPDATE SET read_at = excluded.read_at",
+          ).bind(scope.email, id, now),
+        ),
+    );
+  }
   return json({ ok: true });
 }
 
@@ -6022,19 +7844,31 @@ export default {
       return Response.redirect(`${url.origin}/admin/portal/`, 302);
     if (url.pathname === "/auth/google/login" && request.method === "GET")
       return startGoogleLogin(request, env);
-    if (url.pathname === "/auth/google-drive/import" && request.method === "GET")
+    if (
+      url.pathname === "/auth/google-drive/import" &&
+      request.method === "GET"
+    )
       return startGoogleDriveMaterialImport(request, env);
     if (url.pathname === "/auth/google/callback" && request.method === "GET") {
+      // 資料移行Cookieが残っていても、クエリのstateが一致する場合だけ
+      // 資料移行として扱う。通常ログインを古いCookieで誤振り分けしない。
+      let driveStateMatches = false;
       const driveState = cookieValue(request, GOOGLE_DRIVE_IMPORT_STATE_COOKIE);
-      return driveState
+      if (driveState) {
+        try {
+          const saved = JSON.parse(driveState) as { state?: string };
+          driveStateMatches = Boolean(
+            saved.state && saved.state === url.searchParams.get("state"),
+          );
+        } catch {
+          // 期限切れ・壊れたCookieは通常ログインとして続行する。
+        }
+      }
+      return driveStateMatches
         ? completeGoogleDriveMaterialImport(request, env)
         : completeGoogleLogin(request, env);
     }
-    // ナビゲーションからの直接アクセス（GET）でもログアウトできるようにする。
-    if (
-      url.pathname === "/auth/logout" &&
-      (request.method === "POST" || request.method === "GET")
-    )
+    if (url.pathname === "/auth/logout" && request.method === "POST")
       return logoutAdmin(request, env);
     if (
       url.pathname === "/api/public/application-config" &&
@@ -6198,6 +8032,16 @@ export default {
       request.method === "POST"
     )
       return createOperation(request, env, "event");
+    if (
+      url.pathname === "/api/admin/operations/unavailability" &&
+      request.method === "POST"
+    )
+      return createMemberUnavailability(request, env);
+    const unavailabilityMatch = url.pathname.match(
+      /^\/api\/admin\/operations\/unavailability\/([0-9a-f-]{36})$/i,
+    );
+    if (unavailabilityMatch && request.method === "DELETE")
+      return deleteMemberUnavailability(request, env, unavailabilityMatch[1]);
     const taskMatch = url.pathname.match(
       /^\/api\/admin\/operations\/tasks\/([0-9a-f-]{36})$/i,
     );
@@ -6304,13 +8148,16 @@ export default {
       return request.method === "PATCH"
         ? updateArticleReport(request, env, match[1])
         : json({ error: "PATCHのみ利用できます。" }, 405);
+    if (url.pathname === "/admin/review" || url.pathname === "/admin/review/")
+      return Response.redirect(
+        new URL("/admin/articles/?workflow=review", request.url).toString(),
+        302,
+      );
     if (
       url.pathname === "/apply" ||
       url.pathname === "/apply/" ||
       url.pathname === "/admin/reports" ||
       url.pathname === "/admin/reports/" ||
-      url.pathname === "/admin/materials" ||
-      url.pathname === "/admin/materials/" ||
       url.pathname === "/admin/permissions" ||
       url.pathname === "/admin/permissions/" ||
       url.pathname === "/admin/editor" ||
@@ -6327,8 +8174,8 @@ export default {
       url.pathname === "/admin/articles/" ||
       url.pathname === "/admin/operations" ||
       url.pathname === "/admin/operations/" ||
-      url.pathname === "/admin/review" ||
-      url.pathname === "/admin/review/" ||
+      url.pathname === "/admin/events" ||
+      url.pathname === "/admin/events/" ||
       url.pathname === "/admin/guide" ||
       url.pathname === "/admin/guide/" ||
       url.pathname === "/admin/introductions" ||
@@ -6354,7 +8201,7 @@ export default {
           return new Response(null, {
             status: 302,
             headers: {
-              location: `/auth/google/login?returnTo=${encodeURIComponent(url.pathname)}`,
+              location: `/auth/google/login?returnTo=${encodeURIComponent(adminReturnPath(`${url.pathname}${url.search}`))}`,
             },
           });
       }
@@ -6363,8 +8210,6 @@ export default {
         "/admin/permissions/",
         "/admin/applications",
         "/admin/applications/",
-        "/admin/review",
-        "/admin/review/",
       ]);
       if (managerPages.has(url.pathname)) {
         const managerScope = await getGlobalAdminScope(request, env);
@@ -6393,6 +8238,7 @@ export default {
       Promise.all([
         syncPublishedArticleBackups(env),
         syncEditorialPublicationStatus(env),
+        dispatchDueTaskReminders(env),
         purgeExpiredPersonalData(env),
       ]),
     );

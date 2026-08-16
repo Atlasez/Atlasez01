@@ -127,12 +127,35 @@ const languages = JSON.stringify(UI_LANGUAGES);
     }
   }
 
-  translateTo(currentLang());
+  /**
+   * Atlas の記事ルートと表示言語を一致させる。
+   * 中国語・韓国語など、まだ記事ルートを公開していないUI言語は
+   * 従来どおり画面文言だけを切り替える。
+   */
+  function syncAtlasRoute(lang: string): void {
+    const match = location.pathname.match(/^(.*\/atlas\/)(ja|en)(\/|$)/);
+    if (!match || (lang !== "ja" && lang !== "en") || match[2] === lang) return;
+    // 個別記事は翻訳記事の有無をサーバー側で判定する既存の切替を使う。
+    // 未翻訳の日本語記事を存在しない /en/ 記事へ飛ばさない。
+    const routeSegments = location.pathname.slice(match[0].length).split("/").filter(Boolean);
+    if (routeSegments.length > 2) return;
+    const nextPath = `${match[1]}${lang}${match[3]}${location.pathname.slice(match[0].length)}`;
+    const next = `${nextPath}${location.search}${location.hash}`;
+    if (next !== `${location.pathname}${location.search}${location.hash}`) {
+      window.location.replace(next);
+    }
+  }
+
+  const initialLang = currentLang();
+  translateTo(initialLang);
+  syncAtlasRoute(initialLang);
 
   // 表示設定で言語を変えたときに掛け直す
-  window.addEventListener("atlasez-lang-change", () =>
-    translateTo(currentLang()),
-  );
+  window.addEventListener("atlasez-lang-change", () => {
+    const lang = currentLang();
+    translateTo(lang);
+    syncAtlasRoute(lang);
+  });
   // ダーク表示などの切り替えでラベルが書き換わった後にも掛け直す
   window.addEventListener("atlasez-theme-change", () =>
     translateTo(currentLang()),

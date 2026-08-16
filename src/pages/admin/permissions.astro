@@ -1,12 +1,14 @@
 ---
 import AdminLayout from "../../layouts/AdminLayout.astro";
 import AdminNav from "../../components/AdminNav.astro";
+import AdminErrorActions from "../../components/AdminErrorActions.astro";
 import { getCollection } from "astro:content";
 const subjects = (await getCollection("subjects")).sort((a,b)=>a.data.order-b.data.order);
 ---
 <AdminLayout title="運営者・担当分野管理" description="運営内運営専用の参加者管理">
-  <main class="member-admin" data-member-admin>
+  <main id="admin-main" class="member-admin" data-member-admin>
     <AdminNav current="permissions" />
+    <AdminErrorActions />
     <header class="member-admin__header">
       <h1>運営者・担当分野管理</h1>
       <span>参加者の権限・所属・学年・分野を管理します。メールアドレスは全分野管理者のみに表示されます。</span>
@@ -137,13 +139,14 @@ const subjects = (await getCollection("subjects")).sort((a,b)=>a.data.order-b.da
       if (sync) {
         sync.disabled = true; sync.textContent = "保存・同期中…";
         const interests = Array.from(card.querySelector<HTMLSelectElement>("[data-interests]")!.selectedOptions).map(option => option.value);
+        let attributesSaved = false;
         try {
           const attributes = await fetch("/api/admin/member-attributes", {method:"PUT",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({email,university:card.querySelector<HTMLSelectElement>("[data-university]")!.value,year:card.querySelector<HTMLSelectElement>("[data-year]")!.value,interests})});
-          const attributeResult = await attributes.json().catch(() => ({})); if (!attributes.ok) throw new Error(attributeResult.error ?? "登録情報を保存できませんでした。");
+          const attributeResult = await attributes.json().catch(() => ({})); if (!attributes.ok) throw new Error(attributeResult.error ?? "登録情報を保存できませんでした。"); attributesSaved = true;
           const response = await fetch("/api/admin/discord-member-roles", {method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({email})});
           const result = await response.json().catch(() => ({})); if (!response.ok) throw new Error(result.error ?? "Discordロールを同期できませんでした。");
           message.value = `登録情報を保存し、Discordロールを同期しました（${result.roleCount ?? 0}件）。`; await load();
-        } catch (error) { message.value = error instanceof Error ? error.message : "保存・同期できませんでした。"; }
+        } catch (error) { message.value = attributesSaved ? "登録情報は保存されましたが、Discordロールの同期に失敗しました。もう一度同期してください。" : (error instanceof Error ? error.message : "保存・同期できませんでした。"); }
         finally { sync.disabled = false; sync.textContent = "変更を保存してDiscordロールを同期"; }
         return;
       }

@@ -3,11 +3,11 @@
 /**
  * 公開するロケール。
  *
- * 英語版は翻訳が 4 記事しかなく、日本語版との差が大きすぎたため一旦取り下げた。
- * 再開するときはここに "en" を戻し、`src/content/articles/eng/` に記事を置けば
- * ルーティング・言語切替・hreflang はそのまま動く（UI 文言は下の ui.en に残置）。
+ * 英語記事が未移植のページでも、英語UIと英語URLを先に利用できるようにする。
+ * 記事が存在しない分野では目次・学習地図を表示し、記事本文は日本語版へ戻す導線を
+ * 用意する。翻訳記事が追加されたときは content 側の locale が自動的に優先される。
  */
-export const LOCALES = ["ja"] as const;
+export const LOCALES = ["ja", "en"] as const;
 export type Locale = (typeof LOCALES)[number];
 
 /**

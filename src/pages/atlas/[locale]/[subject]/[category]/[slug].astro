@@ -51,6 +51,32 @@ const related = relatedArticles(entry, map, byConcept);
 const next = nextArticles(entry, map, byConcept, sameLocale);
 const translations = translationArticles(entry, all);
 
+// 本文中の旧Google Sites由来の参照（`[記事タイトル:命題 7]`）を、
+// 同じ言語の公開記事へのリンクへ戻すための最小マップ。本文全体ではなく、
+// 実際に参照されているタイトルだけを埋め込むので、ページサイズも抑える。
+const articleReferenceMap = Object.fromEntries(
+  [...((entry.body ?? "").matchAll(/\[([^\]:]+):\s*(?:定義|命題|定理|補題|系|例)\s*\d+\]/gu) ?? [])]
+    .map((match) => match[1]?.trim())
+    .filter((title): title is string => Boolean(title))
+    .flatMap((title) => {
+      const target = all.find(
+        (article) =>
+          article.data.locale === locale && article.data.title === title,
+      );
+      return target
+        ? [[
+            title,
+            articlePath(
+              target.data.locale,
+              target.data.subject,
+              target.data.category,
+              target.data.slug,
+            ),
+          ] as const]
+        : [];
+    }),
+);
+
 const subjects = await getPublishedSubjects();
 const subject = subjects.find((s) => s.data.slug === entry.data.subject);
 const category = subject?.data.categories.find(
@@ -81,7 +107,10 @@ if (typeof entry.body === "string") {
     if (inFence) continue;
     const match = line.match(/^(#{1,3})\s+(.+?)\s*#*\s*$/u);
     if (match?.[1] && match[2]) {
-      rawHeadingEntries.push({ depth: match[1].length, text: match[2].trim() });
+      rawHeadingEntries.push({
+        depth: match[1].length,
+        text: match[2].trim().replace(/\s+\{#[A-Za-z][\w:-]*\}\s*$/u, ""),
+      });
     }
   }
 }
@@ -136,6 +165,7 @@ const unwrapMathCommands = (value: string): string => {
 };
 const tocLabel = (text: string) =>
   text
+    .replace(/\s+\{#[A-Za-z][\w:-]*\}\s*$/u, "")
     .replace(/\$([^$]+)\$/gu, (_math, value: string) => unwrapMathCommands(value))
     .replace(/[*_`]/gu, "")
     .replace(/\s+/gu, " ")
@@ -376,7 +406,7 @@ const structuredData = {
             aria-expanded="false"
             hidden
           >
-            証明を展開
+            ▶ 証明を展開
           </button>
         )
       }
@@ -386,8 +416,10 @@ const structuredData = {
           "article-body",
           "reading",
           entry.data.subject === "mathematics" && "math-article",
+          entry.data.subject === "kanji" && "kanji-article",
         ]}
         data-subject={entry.data.subject}
+        data-article-reference-map={JSON.stringify(articleReferenceMap)}
       >
         <Content />
       </div>
@@ -814,6 +846,63 @@ const structuredData = {
   .article-body :global(ol) {
     margin-block: 0.7em;
   }
+  /* 漢字記事は一字と読みを表で引けるよう、本文とは別の視線誘導を用意する。 */
+  .article-body.kanji-article {
+    line-height: 1.9;
+  }
+  .article-body.kanji-article :global(h2) {
+    background: color-mix(in srgb, var(--accent-primary) 8%, var(--background-primary));
+    border-bottom: 0;
+    border-left: 4px solid var(--accent-primary);
+    border-radius: 0 .35rem .35rem 0;
+    margin-top: var(--space-5);
+    padding: .55rem .75rem;
+  }
+  .article-body.kanji-article :global(h3) {
+    border-bottom: 1px solid var(--border-default);
+    color: var(--accent-primary);
+    font-size: calc(1rem * var(--text-scale));
+    margin-top: var(--space-4);
+    padding-bottom: .25rem;
+  }
+  .article-body.kanji-article :global(table) {
+    border: 1px solid var(--border-default);
+    border-radius: .35rem;
+    display: table;
+    margin: 1rem 0 1.4rem;
+    overflow: hidden;
+  }
+  .article-body.kanji-article :global(th),
+  .article-body.kanji-article :global(td) {
+    border-bottom: 1px solid var(--border-default);
+    padding: .55rem .7rem;
+    vertical-align: middle;
+  }
+  .article-body.kanji-article :global(th) {
+    background: var(--accent-subtle);
+    color: var(--text-primary);
+    font-size: .78em;
+    letter-spacing: .04em;
+    white-space: nowrap;
+  }
+  .article-body.kanji-article :global(td:first-child) {
+    color: var(--text-primary);
+    font-family: "Hiragino Mincho ProN", "Yu Mincho", serif;
+    font-size: 1.35em;
+    font-weight: 700;
+    text-align: center;
+    width: 5rem;
+  }
+  .article-body.kanji-article :global(tr:last-child td) {
+    border-bottom: 0;
+  }
+  @media (max-width: 767px) {
+    .article-body.kanji-article :global(table) {
+      display: block;
+      max-width: 100%;
+      overflow-x: auto;
+    }
+  }
   /* 数学本文だけに記事用の組版ルールを限定する。サイト共通の
      リスト・カード用スタイルが定義枠へ漏れないよう、math-article を
      境界クラスとして使う。 */
@@ -863,8 +952,8 @@ const structuredData = {
   .article-body :global(.example),
   .article-body :global(.math-theorem) {
     background: color-mix(in srgb, #e0c375 12%, var(--background-primary));
-    border: 1px solid color-mix(in srgb, #e0c375 42%, var(--border-default));
-    border-left: 3px solid #d0a53b;
+    border: 1px solid #e0c375;
+    border-left-width: 3px;
     border-radius: 0 0.55rem 0.55rem 0.55rem;
     box-shadow: 0 2px 5px rgb(0 0 0 / 4%);
     margin-block: 2.8rem 1.15rem;
@@ -900,7 +989,7 @@ const structuredData = {
     /* 見出し下端を枠本文の上端に揃える（元CSSの行高・paddingに合わせた値）。 */
     /* 現行本文の枠線(1px)・内側余白(1.1rem)とタイトルの
        行高/上下paddingを合算し、下端を枠の上端へぴったり揃える。 */
-    margin: -52.4px 0 0 -23px;
+    margin: -51.4px 0 0 -23px;
     line-height: 1.5;
     padding: 4px 14px;
     border: 3px solid;
@@ -978,6 +1067,7 @@ const structuredData = {
     line-height: 1.25;
     text-align: center;
     white-space: nowrap;
+    gap: 0.45rem;
   }
   .proof-toggle:hover { background: var(--accent-hover); }
   .proof-toggle:focus-visible { outline-offset: 3px; }
@@ -1047,7 +1137,9 @@ const structuredData = {
   .article-body :global(.supp-details[open] .supp-details-summary::after) { content: "−"; }
   .article-body :global(.supp-details-inner) { border: 1px solid var(--border-default); border-top: 0; border-radius: 0 0 0.45rem 0.45rem; padding: 0.8rem 1rem; }
   .article-body :global(.rem) { background: color-mix(in srgb, var(--background-secondary) 75%, transparent); border: 1px solid var(--border-default); border-left: 4px solid var(--border-strong); border-radius: 0.35rem; color: var(--text-secondary); margin-block: 1.2rem; padding: 0.7rem 0.9rem; }
-  .article-body :global(details.folding) { border: 1px solid var(--border-default); border-radius: 0.45rem; margin-block: 1rem; overflow: hidden; }
+  /* folding の外枠は証明本文の左ガイド線と二重になるため持たせない。
+     .proof-details-inner.folding-content の左borderは別ルールで維持する。 */
+  .article-body :global(details.folding) { border-radius: 0.45rem; margin-block: 1rem; overflow: hidden; }
   .article-body :global(details.folding > summary) { background: var(--background-secondary); cursor: pointer; list-style: none; padding: 0.55rem 0.8rem 0.55rem 2rem; position: relative; }
   .article-body :global(details.folding > summary::-webkit-details-marker) { display: none; }
   .article-body :global(details.folding > summary::before) { border-bottom: 2px solid var(--text-secondary); border-right: 2px solid var(--text-secondary); content: ""; height: 0.45rem; left: 0.8rem; position: absolute; top: 0.75rem; transform: rotate(45deg); transition: transform .15s ease; width: 0.45rem; }
@@ -1234,7 +1326,7 @@ const structuredData = {
     /* スマホでは本文の流れに置き、スクロールに追従させる。 */
     .proof-toggle {
       position: static;
-      display: block;
+      display: flex;
       width: fit-content;
       margin: 0.75rem 0 1rem auto;
     }
@@ -1712,6 +1804,10 @@ const structuredData = {
         if (node.closest("details.folding,details.supp-details")) return;
         legacyDetails(node);
       });
+      const normalizeTheoremLabel = (value: string) => {
+        const trimmed = value.trim().replace(/[.．。:：]+$/u, "");
+        return trimmed ? `${trimmed}.` : trimmed;
+      };
       const addTheoremLabel = (wrapper: HTMLElement) => {
         const paragraph = wrapper.querySelector<HTMLElement>(":scope > p");
         if (!paragraph || paragraph.querySelector(":scope > .thmtitle")) return;
@@ -1721,7 +1817,7 @@ const structuredData = {
           if (/^(定義|命題|定理|補題|系|例)/u.test(label)) {
             const title = document.createElement("span");
             title.className = "thmtitle";
-            title.textContent = label;
+            title.textContent = normalizeTheoremLabel(label);
             firstElement.replaceWith(title);
             return;
           }
@@ -1734,7 +1830,7 @@ const structuredData = {
         const rest = (firstText.textContent ?? "").slice(label.length);
         const title = document.createElement("span");
         title.className = "thmtitle";
-        title.textContent = label.trim();
+        title.textContent = normalizeTheoremLabel(label);
         firstText.parentNode?.insertBefore(title, firstText);
         firstText.textContent = rest;
       };
@@ -1816,7 +1912,7 @@ const structuredData = {
         proofToggle.addEventListener("click", () => {
           const expand = proofs.some((proof) => !proof.open);
           proofs.forEach((proof) => { proof.open = expand; });
-          proofToggle.textContent = expand ? "証明を閉じる" : "証明を展開";
+          proofToggle.textContent = expand ? "▼ 証明を閉じる" : "▶ 証明を展開";
           proofToggle.setAttribute("aria-expanded", String(expand));
         });
       }
@@ -1877,6 +1973,61 @@ const structuredData = {
         }
         subList.append(item);
       });
+
+      // 旧Google Sitesの記事は `[記事タイトル:命題 7]` のような参照を
+      // Markdownリンク相当として使っていた。Markdownの通常リンクでない
+      // ため、そのままだと角括弧を含むテキストになり、遷移できない。
+      // 数式SVG・既存リンク・コード中は触らず、公開記事の参照だけをリンク化する。
+      const referenceMap = (() => {
+        try {
+          const parsed = JSON.parse(mathBody.dataset.articleReferenceMap ?? "{}");
+          return parsed && typeof parsed === "object"
+            ? parsed as Record<string, string>
+            : {};
+        } catch {
+          return {};
+        }
+      })();
+      if (Object.keys(referenceMap).length > 0) {
+        const referencePattern = /\[([^\]\n]+)\]/gu;
+        const walker = document.createTreeWalker(mathBody, NodeFilter.SHOW_TEXT);
+        const textNodes: Text[] = [];
+        let current = walker.nextNode();
+        while (current) {
+          textNodes.push(current as Text);
+          current = walker.nextNode();
+        }
+        textNodes.forEach((node) => {
+          const parent = node.parentElement;
+          if (!parent || parent.closest("a,code,pre,script,style,mjx-container,.thmtitle")) return;
+          const value = node.nodeValue ?? "";
+          let changed = false;
+          let cursor = 0;
+          const fragment = document.createDocumentFragment();
+          referencePattern.lastIndex = 0;
+          let match: RegExpExecArray | null;
+          while ((match = referencePattern.exec(value))) {
+            const reference = match[1]?.trim() ?? "";
+            const parts = reference.match(
+              /^(.+?)\s*:\s*(?:定義|命題|定理|補題|系|例)\s*(\d+)\s*$/u,
+            );
+            const href = parts?.[1] ? referenceMap[parts[1]] : undefined;
+            if (!parts || !href) continue;
+            fragment.append(value.slice(cursor, match.index));
+            const link = document.createElement("a");
+            link.className = "article-reference";
+            link.href = `${href}#math-block-${parts[2]}`;
+            link.dataset.articleReference = reference;
+            link.textContent = reference;
+            fragment.append(link);
+            cursor = match.index + match[0].length;
+            changed = true;
+          }
+          if (!changed) return;
+          fragment.append(value.slice(cursor));
+          node.parentNode?.replaceChild(fragment, node);
+        });
+      }
     }
   }
 </script>

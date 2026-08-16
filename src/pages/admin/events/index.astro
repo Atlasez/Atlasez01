@@ -1,0 +1,128 @@
+---
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+import AdminNav from "../../../components/AdminNav.astro";
+import AdminBreadcrumb from "../../../components/AdminBreadcrumb.astro";
+import AdminErrorActions from "../../../components/AdminErrorActions.astro";
+---
+
+<AdminLayout title="同時作業会・日程一覧" description="運営内の同時作業会と日程を確認します。">
+  <main id="admin-main" class="events-page" data-events-page>
+    <AdminNav current="events" />
+    <AdminErrorActions />
+    <AdminBreadcrumb items={[{ label: "運営ホーム", href: "/admin/atlas/" }, { label: "同時作業会・日程一覧" }]} />
+    <header class="page-heading">
+      <div>
+        <p class="eyebrow">ATLASEZ / OPERATIONS</p>
+        <h1>同時作業会・日程一覧 <span class="prototype-badge">連携はプロトタイプ</span></h1>
+        <p>開催場所、日時、案内、参加状況をまとめて確認できます。</p>
+      </div>
+      <a class="back-link" data-event-manage-link href="/admin/operations/#events" hidden>権限を確認しています…</a>
+    </header>
+    <output class="status" data-events-status aria-live="polite">読み込んでいます…</output>
+    <form class="event-create-form" data-event-create-form hidden>
+      <h2><span class="prototype-badge">プロトタイプ</span> 日程を追加</h2>
+      <div class="event-create-grid">
+        <label>催し名<input required name="title" maxlength="200" placeholder="例：第1回ゼミ・同時作業会" /></label>
+        <label>開始日時<input required name="startsAt" type="datetime-local" /></label>
+        <label>終了日時（任意）<input name="endsAt" type="datetime-local" /></label>
+        <label>タイムゾーン<select name="timezone"><option value="Asia/Tokyo">日本（東京）</option><option value="UTC">協定世界時（UTC）</option></select></label>
+        <label class="event-create-details">案内・開催場所（任意）<textarea name="details" maxlength="4000" rows="2" placeholder="開催場所、URL、持ち物など"></textarea></label>
+      </div>
+      <button type="submit">日程を追加</button>
+      <output data-event-create-feedback aria-live="polite"></output>
+    </form>
+    <div class="event-filters" aria-label="日程の絞り込み">
+      <label>検索<input type="search" data-event-search placeholder="名称・案内を検索" /></label>
+      <label>表示<select data-event-scope><option value="upcoming">今後の日程</option><option value="all">すべて</option><option value="past">過去の日程</option></select></label>
+    </div>
+    <section class="event-list" data-event-list aria-live="polite"><p class="empty loading-state">日程を読み込んでいます…</p></section>
+  </main>
+</AdminLayout>
+
+<style is:global>
+  .events-page{box-sizing:border-box;margin:0 auto;max-width:1120px;padding:0 1.25rem 4rem}.page-heading{align-items:end;border-bottom:1px solid var(--border-default);display:flex;gap:1rem;justify-content:space-between;padding:2.3rem 0 1.35rem}.eyebrow{color:var(--accent-primary);font-size:.72rem;font-weight:800;letter-spacing:.1em;margin:0 0 .35rem}.page-heading h1{font-size:clamp(1.8rem,4vw,2.6rem);letter-spacing:-.03em;margin:0}.page-heading p:last-child{color:var(--text-secondary);line-height:1.6;margin:.45rem 0 0}.back-link{color:var(--accent-primary);font-size:.8rem;font-weight:800;white-space:nowrap}.status{color:var(--text-secondary);display:block;font-size:.78rem;min-height:1.5rem;padding:.8rem .1rem .1rem}.event-filters{display:flex;flex-wrap:wrap;gap:.65rem;margin-top:.75rem}.event-filters label{color:var(--text-secondary);display:grid;font-size:.72rem;font-weight:800;gap:.2rem;min-width:12rem}.event-filters input,.event-filters select{background:var(--background-primary);border:1px solid var(--border-default);box-sizing:border-box;color:var(--text-primary);font:inherit;padding:.45rem;width:100%}.event-list{display:grid;gap:.75rem;margin:1rem auto 0;max-width:70rem}.event-card{background:var(--background-primary);border:1px solid var(--border-default);border-left:4px solid var(--accent-primary);display:grid;gap:.45rem;min-width:0;padding:1rem}.event-card h2{font-size:1.1rem;margin:0;overflow-wrap:anywhere}.event-meta{color:var(--text-secondary);font-size:.8rem;line-height:1.6}.event-details{border-top:1px solid var(--border-default);margin:.2rem 0 0;padding-top:.55rem;white-space:pre-wrap;overflow-wrap:anywhere}.availability-summary{display:flex;flex-wrap:wrap;gap:.35rem}.availability-summary span{background:var(--background-secondary);border:1px solid var(--border-default);border-radius:999px;color:var(--text-secondary);font-size:.72rem;padding:.2rem .5rem}.empty{border:1px dashed var(--border-default);color:var(--text-secondary);padding:1rem;text-align:center}.loading-state{border-style:solid;opacity:.8}@media(max-width:700px){.events-page{padding:0 .8rem 3rem}.page-heading{align-items:start;display:grid}.page-heading h1{font-size:clamp(1.6rem,8vw,2.2rem)}.back-link{justify-self:start}.event-filters{display:grid}.event-filters label{min-width:0}}
+  .event-create-form{background:var(--background-secondary);border:1px solid var(--border-default);margin:.9rem 0;padding:.9rem}.event-create-form[hidden]{display:none}.event-create-form h2{font-size:1rem;margin:0 0 .7rem}.event-create-grid{display:grid;gap:.55rem;grid-template-columns:minmax(14rem,1.5fr) minmax(12rem,1fr) minmax(12rem,1fr) minmax(11rem,.9fr)}.event-create-form label{color:var(--text-secondary);display:grid;font-size:.75rem;font-weight:800;gap:.2rem}.event-create-form input,.event-create-form select,.event-create-form textarea{background:var(--background-primary);border:1px solid var(--border-default);box-sizing:border-box;color:var(--text-primary);font:inherit;padding:.5rem;width:100%}.event-create-details{grid-column:1 / -1}.event-create-form button{background:var(--accent-primary);border:1px solid var(--accent-primary);color:#fff;cursor:pointer;font:inherit;font-size:.8rem;font-weight:800;margin-top:.65rem;padding:.5rem .7rem}.event-create-form output{color:var(--text-secondary);display:block;font-size:.75rem;margin-top:.4rem}.prototype-badge{background:#fff1c7;border:1px solid #dfbd62;border-radius:999px;color:#6d4c00;display:inline-block;font-size:.62rem;font-weight:900;padding:.15rem .42rem;vertical-align:middle}@media(max-width:900px){.event-create-grid{grid-template-columns:1fr}.event-create-details{grid-column:auto}}
+</style>
+
+<script>
+  type EventItem = { title: string; details?: string | null; starts_at: string; ends_at?: string | null; timezone?: string; availabilityCounts?: Record<string, number> };
+  type EventData = { events?: EventItem[]; scope?: { isManager?: boolean }; error?: string };
+  const initializeEventsPage = () => {
+    const root = document.querySelector<HTMLElement>("[data-events-page]");
+    if (!root || root.dataset.initialized === "true") return;
+    root.dataset.initialized = "true";
+    const list = root.querySelector<HTMLElement>("[data-event-list]")!;
+    const status = root.querySelector<HTMLOutputElement>("[data-events-status]")!;
+    const search = root.querySelector<HTMLInputElement>("[data-event-search]")!;
+    const scope = root.querySelector<HTMLSelectElement>("[data-event-scope]")!;
+    const createForm = root.querySelector<HTMLFormElement>("[data-event-create-form]")!;
+    const createFeedback = root.querySelector<HTMLOutputElement>("[data-event-create-feedback]")!;
+    const manageLink = root.querySelector<HTMLAnchorElement>("[data-event-manage-link]")!;
+    const escapeHtml = (value: unknown) => String(value ?? "").replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character] ?? character);
+    const wallTimeToDate = (value: string, timezone: string) => {
+      const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(value);
+      if (!match) return new Date(value);
+      const wallEpoch = Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]), Number(match[4]), Number(match[5]));
+      let candidate = wallEpoch;
+      for (let pass = 0; pass < 2; pass += 1) {
+        const parts = Object.fromEntries(new Intl.DateTimeFormat("en-CA", { timeZone: timezone, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(new Date(candidate)).filter((part) => part.type !== "literal").map((part) => [part.type, part.value]));
+        const renderedEpoch = Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day), Number(parts.hour), Number(parts.minute));
+        candidate -= renderedEpoch - wallEpoch;
+      }
+      return new Date(candidate);
+    };
+    const formatDate = (value: string, timezone: string) => new Intl.DateTimeFormat("ja-JP", { dateStyle: "full", timeStyle: "short", timeZone: timezone }).format(wallTimeToDate(value, timezone));
+    const load = async () => {
+      const response = await fetch("/api/admin/operations", { credentials: "same-origin", cache: "no-store" });
+      const contentType = response.headers.get("content-type") ?? "";
+      const data = contentType.includes("application/json") ? await response.json() as EventData : null;
+      if (!data) throw new Error("認証状態を確認できません。ページを再読み込みしてログインし直してください。");
+      if (!response.ok) throw new Error(data.error ?? "日程を読み込めませんでした。");
+      const isManager = Boolean(data.scope?.isManager);
+      createForm.hidden = !isManager;
+      manageLink.hidden = false;
+      manageLink.textContent = isManager ? "日程を追加・管理する" : "運営画面で参加可否を確認する";
+      manageLink.setAttribute("aria-label", manageLink.textContent);
+      const now = Date.now();
+      const query = search.value.trim().toLocaleLowerCase();
+      const events = (data.events ?? []).filter((event) => {
+        const timezone = event.timezone || "Asia/Tokyo";
+        const startsAt = wallTimeToDate(event.starts_at, timezone).getTime();
+        const matchesScope = scope.value === "all" || (scope.value === "past" ? startsAt < now : startsAt >= now);
+        const haystack = `${event.title} ${event.details ?? ""}`.toLocaleLowerCase();
+        return matchesScope && (!query || haystack.includes(query));
+      });
+      list.innerHTML = events.length ? events.map((event) => {
+        const timezone = event.timezone || "Asia/Tokyo";
+        const counts = event.availabilityCounts ?? {};
+        return `<article class="event-card"><h2>${escapeHtml(event.title)}</h2><div class="event-meta">${escapeHtml(formatDate(event.starts_at, timezone))}${event.ends_at ? ` 〜 ${escapeHtml(formatDate(event.ends_at, timezone))}` : ""}<br>タイムゾーン：${escapeHtml(timezone)}</div>${event.details ? `<div class="event-details">${escapeHtml(event.details)}</div>` : ""}<div class="availability-summary"><span>参加 ${counts.available ?? 0}</span><span>未定 ${counts.maybe ?? 0}</span><span>不参加 ${counts.unavailable ?? 0}</span></div></article>`;
+      }).join("") : '<p class="empty">登録された同時作業会・日程はありません。</p>';
+      status.textContent = `${events.length}件の日程`;
+    };
+    createForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const button = createForm.querySelector<HTMLButtonElement>("button[type=submit]")!;
+      const formData = new FormData(createForm);
+      button.disabled = true;
+      createFeedback.textContent = "保存中…";
+      try {
+        const response = await fetch("/api/admin/operations/events", { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json" }, body: JSON.stringify({ title: formData.get("title"), startsAt: formData.get("startsAt"), endsAt: formData.get("endsAt"), timezone: formData.get("timezone"), details: formData.get("details") }) });
+        const contentType = response.headers.get("content-type") ?? "";
+        const data = contentType.includes("application/json") ? await response.json() as { error?: string } : null;
+        if (!response.ok || !data) throw new Error(data?.error ?? "日程を追加できませんでした。");
+        createForm.reset();
+        createFeedback.textContent = "日程を追加しました。";
+        await load();
+      } catch (error) {
+        createFeedback.textContent = error instanceof Error ? error.message : "日程を追加できませんでした。";
+      } finally {
+        button.disabled = false;
+      }
+    });
+    search.addEventListener("input", () => { void load().catch((error) => { status.textContent = error instanceof Error ? error.message : "日程を読み込めませんでした。"; }); });
+    scope.addEventListener("change", () => { void load().catch((error) => { status.textContent = error instanceof Error ? error.message : "日程を読み込めませんでした。"; }); });
+    void load().catch((error) => { const message = error instanceof Error ? error.message : "日程を読み込めませんでした。"; status.textContent = message; list.innerHTML = `<p class="empty">${escapeHtml(message)}</p>`; });
+  };
+  document.addEventListener("astro:page-load", initializeEventsPage);
+  initializeEventsPage();
+</script>

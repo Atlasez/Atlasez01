@@ -104,6 +104,7 @@ const summary =
   <div
     class="container subject-home"
     data-subject-layout
+    data-atlas-locale={locale}
     data-view-storage-key={`atlasez-subject-view-v3:${subject.data.slug}`}
   >
     <h1>{subjectName}</h1>
@@ -329,9 +330,21 @@ const summary =
   ];
   const subjectViewKey =
     subjectLayout?.dataset.viewStorageKey ?? "atlasez-subject-view";
+  let mapCategoryKey = new URL(location.href).searchParams.get("category");
+
+  function categoryPath(categoryKey: string, view: string): string {
+    const locale = subjectLayout?.dataset.atlasLocale ?? "ja";
+    const base = location.pathname.split("/atlas/")[0] || "";
+    const path = `${base}/atlas/${locale}/${categoryKey.split("/").map(encodeURIComponent).join("/")}/`;
+    return view === "tiles" ? path : `${path}?view=${encodeURIComponent(view)}`;
+  }
 
   function activateSubjectView(view: string, focus = false): void {
     if (!subjectTabs.some((tab) => tab.dataset.viewTab === view)) view = "tiles";
+    if (mapCategoryKey && view !== "map") {
+      window.location.assign(categoryPath(mapCategoryKey, view));
+      return;
+    }
     for (const tab of subjectTabs) {
       const active = tab.dataset.viewTab === view;
       tab.setAttribute("aria-selected", String(active));
@@ -471,6 +484,7 @@ const summary =
       ".breadcrumb li:nth-child(2) a",
     )?.href;
     if (detail.subject && currentSubject && !currentSubject.includes(`/${detail.subject}/`)) return;
+    mapCategoryKey = detail.categoryKey ?? null;
     syncSubjectMapCategory(detail.categoryKey ?? null);
   });
 
@@ -533,7 +547,10 @@ const summary =
   .view-panel {
     padding-top: var(--space-3);
   }
-  .view-panel + .view-panel:not([hidden]) {
+  .view-panel > :global(.map-section) {
+    margin-top: 0;
+  }
+  .view-panel:not([hidden]) + .view-panel:not([hidden]) {
     margin-top: var(--space-5);
     border-top: 1px dashed var(--border-default);
   }

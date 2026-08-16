@@ -1,11 +1,13 @@
 ---
 import AdminLayout from "../../layouts/AdminLayout.astro";
 import AdminNav from "../../components/AdminNav.astro";
+import AdminErrorActions from "../../components/AdminErrorActions.astro";
 ---
 
 <AdminLayout title="Atlasezメンバー用サイト" description="Atlasezのプロジェクトを横断して確認するホーム">
-  <main class="member-home" data-member-home>
+  <main id="admin-main" class="member-home" data-member-home>
     <AdminNav current="portal" />
+    <AdminErrorActions />
     <header class="home-heading">
       <h1>Home</h1>
       <p>参加しているプロジェクトを選択し、それぞれの活動ページへ移動できます。</p>
@@ -51,6 +53,7 @@ import AdminNav from "../../components/AdminNav.astro";
         const message=error instanceof Error?error.message:'Homeを読み込めませんでした。';
         projectsView.textContent=message;
         todosView.textContent=message;
+        window.dispatchEvent(new CustomEvent('atlasez-admin-error',{detail:{message}}));
       }
     };
     void load();

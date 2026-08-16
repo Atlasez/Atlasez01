@@ -35,7 +35,7 @@
         show({ detail: { message: pending } });
       }
     };
-    const show = (event) => {
+      const show = (event) => {
       setup();
       const message = typeof event?.detail?.message === 'string' && event.detail.message.trim()
         ? event.detail.message.trim()
@@ -44,12 +44,18 @@
         const target = panel.querySelector('[data-admin-error-message]');
         if (target) target.textContent = message;
         panel.hidden = false;
-      });
-    };
-    if (!window.__atlasezAdminErrorActionsReady) {
-      window.__atlasezAdminErrorActionsReady = true;
-      window.addEventListener('atlasez-admin-error', show);
-    }
+        });
+      };
+      const clear = () => {
+        document.querySelectorAll('[data-admin-error-actions]').forEach((panel) => {
+          panel.hidden = true;
+        });
+      };
+      if (!window.__atlasezAdminErrorActionsReady) {
+        window.__atlasezAdminErrorActionsReady = true;
+        window.addEventListener('atlasez-admin-error', show);
+        window.addEventListener('atlasez-admin-error-clear', clear);
+      }
     document.addEventListener('astro:page-load', setup);
     setup();
   })();

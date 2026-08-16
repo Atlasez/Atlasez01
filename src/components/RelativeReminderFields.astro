@@ -1,0 +1,245 @@
+<details class="relative-reminder-settings">
+  <summary>リマインダーを設定する（任意）</summary>
+  <p>期限を基準に「N日前」「N時間前」「当日毎時」で設定できます。メールを入力すると通知ベルに加えてメールでも通知し、空欄なら通知ベルに表示します。</p>
+  <div class="relative-reminder-list" data-relative-reminder-list>
+    <div class="relative-reminder-row" data-relative-reminder-row>
+      <label>種類<select data-relative-reminder-kind><option value="before_days">N日前</option><option value="before_hours">N時間前</option><option value="due_day_hourly">当日毎時</option></select></label>
+      <label data-relative-reminder-amount-label>数量<input data-relative-reminder-amount type="number" min="1" max="8760" placeholder="N" /></label>
+      <label data-relative-reminder-start-label hidden>開始時刻<input data-relative-reminder-start type="time" value="09:00" /></label>
+      <button type="button" class="relative-reminder-remove" data-relative-reminder-remove hidden>削除</button>
+    </div>
+  </div>
+  <button type="button" class="relative-reminder-add" data-relative-reminder-add>リマインダーを追加</button>
+  <label>このToDoの通知先メールアドレス（任意）<input data-relative-reminder-email type="email" maxlength="254" placeholder="通知先メールアドレス" /></label>
+</details>
+
+<style is="global">
+  .relative-reminder-settings{background:color-mix(in srgb,var(--accent-primary),transparent 94%);border:1px solid var(--border-default);display:grid;gap:.55rem;margin:.1rem 0;padding:.7rem}
+  .relative-reminder-settings summary{color:var(--accent-primary);cursor:pointer;font-size:.9rem;font-weight:800}
+  .relative-reminder-settings p{color:var(--text-secondary);font-size:.72rem;line-height:1.5;margin:0}
+  .relative-reminder-settings label{color:var(--text-secondary);display:grid;font-size:.72rem;font-weight:800;gap:.2rem}
+  .relative-reminder-list{display:grid;gap:.45rem}
+  .relative-reminder-row{align-items:end;border-top:1px solid var(--border-default);display:grid;gap:.4rem;grid-template-columns:1.1fr 1fr 1fr auto;padding-top:.45rem}
+  .relative-reminder-row input,.relative-reminder-row select,.relative-reminder-settings>label input{background:var(--background-primary);border:1px solid var(--border-default);box-sizing:border-box;color:var(--text-primary);font:inherit;min-height:2.15rem;padding:.45rem;width:100%}
+  .relative-reminder-add{background:var(--background-secondary);border:1px solid var(--border-default);color:var(--text-primary);cursor:pointer;font:inherit;font-size:.72rem;font-weight:800;justify-self:start;padding:.45rem .6rem}
+  .relative-reminder-remove{background:transparent;border:1px solid var(--border-default);color:var(--text-secondary);cursor:pointer;font:inherit;font-size:.7rem;padding:.45rem .55rem}
+  .relative-reminder-add:hover,.relative-reminder-remove:hover{border-color:var(--accent-primary);color:var(--accent-primary)}
+  .relative-reminder-summary{background:color-mix(in srgb,var(--accent-primary) 8%,transparent);border-left:2px solid var(--accent-primary);color:var(--text-secondary);display:grid;font-size:.72rem;gap:.15rem;line-height:1.45;margin-top:.2rem;padding:.35rem .5rem}
+  .relative-reminder-summary strong{color:var(--text-primary);font-size:.72rem}
+  .relative-reminder-editor{border-top:1px dashed var(--border-default);display:grid;gap:.45rem;margin-top:.35rem;padding-top:.45rem}
+  .relative-reminder-editor summary{color:var(--accent-primary);cursor:pointer;font-size:.72rem;font-weight:800}
+  .relative-reminder-editor-list{display:grid;gap:.4rem}
+  .relative-reminder-editor-row{align-items:end;display:grid;gap:.35rem;grid-template-columns:1fr 1fr 1fr 1fr auto}
+  .relative-reminder-editor-row label,.relative-reminder-editor-email{color:var(--text-secondary);display:grid;font-size:.68rem;font-weight:800;gap:.15rem}
+  .relative-reminder-editor-row input,.relative-reminder-editor-row select,.relative-reminder-editor-email input{background:var(--background-primary);border:1px solid var(--border-default);box-sizing:border-box;color:var(--text-primary);font:inherit;min-height:2rem;padding:.35rem;width:100%}
+  .relative-reminder-save{background:var(--accent-primary);border:1px solid var(--accent-primary);color:#fff;cursor:pointer;font:inherit;font-size:.7rem;font-weight:800;justify-self:start;padding:.45rem .6rem}
+  .relative-reminder-save:disabled{cursor:wait;opacity:.6}
+  .relative-reminder-editor-status{color:var(--text-secondary);font-size:.68rem;min-height:1rem}
+  @media(max-width:680px){.relative-reminder-editor-row{grid-template-columns:1fr 1fr}.relative-reminder-editor-row .relative-reminder-remove{justify-self:start}}
+  @media(max-width:560px){.relative-reminder-row{grid-template-columns:1fr}.relative-reminder-row button{justify-self:start}}
+</style>
+
+<script>
+  (() => {
+    const initializeRelativeReminderFields = () => {
+      document.querySelectorAll<HTMLElement>('[data-relative-reminder-list]').forEach((list) => {
+        if (list.dataset.initialized === 'true') return;
+        list.dataset.initialized = 'true';
+        const form = list.closest<HTMLFormElement>('[data-todo-form]');
+        const page = list.closest<HTMLElement>('[data-seminar-page]') ? 'seminar-platform' : 'secretariat';
+        const rowTemplate = () => '<div class="relative-reminder-row" data-relative-reminder-row><label>種類<select data-relative-reminder-kind><option value="before_days">N日前</option><option value="before_hours">N時間前</option><option value="due_day_hourly">当日毎時</option></select></label><label data-relative-reminder-amount-label>数量<input data-relative-reminder-amount type="number" min="1" max="8760" placeholder="N" /></label><label data-relative-reminder-start-label hidden>開始時刻<input data-relative-reminder-start type="time" value="09:00" /></label><button type="button" class="relative-reminder-remove" data-relative-reminder-remove>削除</button></div>';
+        const syncRow = (row: HTMLElement) => {
+          const kind = row.querySelector<HTMLSelectElement>('[data-relative-reminder-kind]')?.value ?? 'before_days';
+          const amount = row.querySelector<HTMLElement>('[data-relative-reminder-amount-label]');
+          const start = row.querySelector<HTMLElement>('[data-relative-reminder-start-label]');
+          if (amount) amount.hidden = kind === 'due_day_hourly';
+          if (start) start.hidden = kind !== 'due_day_hourly';
+        };
+        list.querySelectorAll<HTMLElement>('[data-relative-reminder-row]').forEach(syncRow);
+        list.addEventListener('change', (event) => { const row = (event.target as HTMLElement).closest<HTMLElement>('[data-relative-reminder-row]'); if (row) syncRow(row); });
+        list.closest('.relative-reminder-settings')?.querySelector<HTMLButtonElement>('[data-relative-reminder-add]')?.addEventListener('click', () => { list.insertAdjacentHTML('beforeend', rowTemplate()); syncRow(list.lastElementChild as HTMLElement); });
+        list.addEventListener('click', (event) => {
+          const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-relative-reminder-remove]');
+          if (!button) return;
+          button.closest('[data-relative-reminder-row]')?.remove();
+          if (!list.querySelector('[data-relative-reminder-row]')) { list.insertAdjacentHTML('beforeend', rowTemplate()); syncRow(list.lastElementChild as HTMLElement); }
+        });
+        form?.addEventListener('submit', async (event) => {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          const submit = form.querySelector<HTMLButtonElement>('[data-submit]');
+          const status = form.closest<HTMLElement>('[data-seminar-page],[data-secretariat]')?.querySelector<HTMLElement>('[data-status]');
+          const reminders = [...list.querySelectorAll<HTMLElement>('[data-relative-reminder-row]')].map((row) => {
+            const kind = row.querySelector<HTMLSelectElement>('[data-relative-reminder-kind]')?.value ?? 'before_days';
+            const amount = Number(row.querySelector<HTMLInputElement>('[data-relative-reminder-amount]')?.value ?? '0');
+            const start = row.querySelector<HTMLInputElement>('[data-relative-reminder-start]')?.value || '09:00';
+            if ((kind === 'before_days' || kind === 'before_hours') && amount > 0) return { kind: 'before', amount, unit: kind === 'before_hours' ? 'hours' : 'days' };
+            if (kind === 'due_day_hourly') return { kind, start };
+            return null;
+          }).filter((item) => item !== null);
+          const read = (selector: string) => form.querySelector<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(selector)?.value ?? '';
+          submit && (submit.disabled = true);
+          try {
+            const response = await fetch(`/api/admin/projects/${page}/operations`, { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ type: 'todo', title: read('[data-todo-title]'), details: read('[data-todo-details]'), assigneeEmail: read('[data-todo-assignee]'), dueAt: read('[data-todo-due]'), dueTimezone: read('[data-todo-timezone]'), reminders, reminderEmail: read('[data-relative-reminder-email]') }) });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(data.error || 'ToDoを追加できませんでした。');
+            if (status) status.textContent = 'ToDoを追加しました。';
+            form.reset();
+            window.location.reload();
+          } catch (error) {
+            const message = error instanceof Error ? error.message : 'ToDoを追加できませんでした。';
+            if (status) status.textContent = message;
+            window.dispatchEvent(new CustomEvent('atlasez-admin-error', { detail: { message } }));
+          } finally { if (submit) submit.disabled = false; }
+        }, true);
+
+        const formatReminder = (reminder: { relative_kind?: string; relative_amount?: number | null; relative_unit?: string | null; relative_start?: string | null; remind_at?: string; timezone?: string; label?: string }) => {
+          if (reminder.relative_kind === 'before') return `${reminder.relative_amount ?? ''}${reminder.relative_unit === 'hours' ? '時間前' : '日前'}`;
+          if (reminder.relative_kind === 'due_day_hourly') return `当日毎時（${reminder.relative_start || '09:00'}から）`;
+          return `旧形式：${reminder.remind_at || reminder.label || '日時指定'}`;
+        };
+        type Reminder = { relative_kind?: string; relative_amount?: number | null; relative_unit?: string | null; relative_start?: string | null; remind_at?: string; timezone?: string; label?: string; repeat?: string | null; task_reminder_repeat?: string | null };
+        type TodoWithReminders = { id: string; reminder_email?: string | null; reminder_at?: string | null; reminder_repeat?: string | null; reminders?: Reminder[] };
+        const normalizeReminders = (todo: TodoWithReminders) => {
+          const source = todo.reminders?.length ? todo.reminders : (todo.reminder_at ? [{ relative_kind: 'absolute', remind_at: todo.reminder_at, repeat: todo.reminder_repeat || 'none', label: todo.reminder_repeat || 'リマインダー' }] : []);
+          const result: Reminder[] = [];
+          const seen = new Set<string>();
+          source.forEach((reminder) => {
+            const key = reminder.relative_kind === 'before'
+              ? `before:${reminder.relative_amount}:${reminder.relative_unit}`
+              : reminder.relative_kind === 'due_day_hourly'
+                ? `hourly:${reminder.relative_start || '09:00'}`
+              : `absolute:${reminder.remind_at}:${reminder.repeat || reminder.task_reminder_repeat || 'none'}`;
+            if (!seen.has(key)) { seen.add(key); result.push(reminder); }
+          });
+          return result;
+        };
+        const createEditorRow = (reminder: Reminder = {}) => {
+          const row = document.createElement('div');
+          row.className = 'relative-reminder-editor-row';
+          row.dataset.editReminderRow = 'true';
+          row.innerHTML = '<label>種類<select data-edit-reminder-kind><option value="before_days">N日前</option><option value="before_hours">N時間前</option><option value="due_day_hourly">当日毎時</option><option value="absolute">旧形式の日時</option></select></label><label data-edit-reminder-amount-label>数量<input data-edit-reminder-amount type="number" min="1" max="8760" placeholder="N"></label><label data-edit-reminder-start-label hidden>開始時刻<input data-edit-reminder-start type="time" value="09:00"></label><label data-edit-reminder-absolute-label hidden>日時<input data-edit-reminder-absolute type="datetime-local"></label><label data-edit-reminder-repeat-label hidden>繰り返し<select data-edit-reminder-repeat><option value="none">1回</option><option value="daily">毎日</option><option value="weekly">毎週</option><option value="monthly">毎月</option></select></label><button type="button" class="relative-reminder-remove" data-edit-reminder-remove>削除</button>';
+          const kind = reminder.relative_kind === 'before'
+            ? reminder.relative_unit === 'hours' ? 'before_hours' : 'before_days'
+            : reminder.relative_kind === 'due_day_hourly' ? 'due_day_hourly' : 'absolute';
+          row.querySelector<HTMLSelectElement>('[data-edit-reminder-kind]')!.value = kind;
+          row.querySelector<HTMLInputElement>('[data-edit-reminder-amount]')!.value = reminder.relative_amount ? String(reminder.relative_amount) : '';
+          row.querySelector<HTMLInputElement>('[data-edit-reminder-start]')!.value = reminder.relative_start || '09:00';
+          row.querySelector<HTMLInputElement>('[data-edit-reminder-absolute]')!.value = reminder.remind_at?.slice(0, 16) || '';
+          const repeat = reminder.repeat || reminder.task_reminder_repeat || 'none';
+          row.querySelector<HTMLSelectElement>('[data-edit-reminder-repeat]')!.value = ['none', 'daily', 'weekly', 'monthly'].includes(repeat) ? repeat : 'none';
+          return row;
+        };
+        const syncEditorRow = (row: HTMLElement) => {
+          const kind = row.querySelector<HTMLSelectElement>('[data-edit-reminder-kind]')?.value ?? 'before_days';
+          const amount = row.querySelector<HTMLElement>('[data-edit-reminder-amount-label]');
+          const start = row.querySelector<HTMLElement>('[data-edit-reminder-start-label]');
+          const absolute = row.querySelector<HTMLElement>('[data-edit-reminder-absolute-label]');
+          const repeat = row.querySelector<HTMLElement>('[data-edit-reminder-repeat-label]');
+          if (amount) amount.hidden = kind === 'due_day_hourly' || kind === 'absolute';
+          if (start) start.hidden = kind !== 'due_day_hourly';
+          if (absolute) absolute.hidden = kind !== 'absolute';
+          if (repeat) repeat.hidden = kind !== 'absolute';
+        };
+        const readEditorReminders = (editorList: HTMLElement) => [...editorList.querySelectorAll<HTMLElement>('[data-edit-reminder-row]')].map((row) => {
+          const kind = row.querySelector<HTMLSelectElement>('[data-edit-reminder-kind]')?.value ?? 'before_days';
+          const amount = Number(row.querySelector<HTMLInputElement>('[data-edit-reminder-amount]')?.value ?? '0');
+          const start = row.querySelector<HTMLInputElement>('[data-edit-reminder-start]')?.value || '09:00';
+          const absolute = row.querySelector<HTMLInputElement>('[data-edit-reminder-absolute]')?.value || '';
+          const repeat = row.querySelector<HTMLSelectElement>('[data-edit-reminder-repeat]')?.value || 'none';
+          if ((kind === 'before_days' || kind === 'before_hours') && amount > 0) return { kind: 'before', amount, unit: kind === 'before_hours' ? 'hours' : 'days' };
+          if (kind === 'due_day_hourly') return { kind, start };
+          if (kind === 'absolute' && absolute) return { kind, remindAt: absolute, repeat };
+          return null;
+        }).filter((item) => item !== null);
+        const createReminderEditor = (todo: TodoWithReminders, card: HTMLElement) => {
+          const details = document.createElement('details');
+          details.className = 'relative-reminder-editor';
+          const editorTitle = document.createElement('summary');
+          editorTitle.textContent = 'リマインダーを追加／編集';
+          details.append(editorTitle);
+          const editorList = document.createElement('div');
+          editorList.className = 'relative-reminder-editor-list';
+          normalizeReminders(todo).forEach((reminder) => editorList.append(createEditorRow(reminder)));
+          details.append(editorList);
+          const add = document.createElement('button');
+          add.type = 'button'; add.className = 'relative-reminder-add'; add.textContent = 'リマインダーを追加';
+          add.addEventListener('click', () => { const row = createEditorRow(); editorList.append(row); syncEditorRow(row); });
+          details.append(add);
+          const emailLabel = document.createElement('label');
+          emailLabel.className = 'relative-reminder-editor-email'; emailLabel.textContent = 'このToDoの通知先メールアドレス（任意）';
+          const email = document.createElement('input');
+          email.type = 'email'; email.maxLength = 254; email.placeholder = '空欄なら通知ベル'; email.value = todo.reminder_email || '';
+          emailLabel.append(email); details.append(emailLabel);
+          const status = document.createElement('span'); status.className = 'relative-reminder-editor-status'; status.setAttribute('aria-live', 'polite'); details.append(status);
+          const save = document.createElement('button');
+          save.type = 'button'; save.className = 'relative-reminder-save'; save.textContent = 'このToDoの設定を保存';
+          save.addEventListener('click', async () => {
+            save.disabled = true; status.textContent = '';
+            try {
+              const response = await fetch(`/api/admin/projects/${page}/operations/todos/${encodeURIComponent(todo.id)}`, { method: 'PATCH', credentials: 'same-origin', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ reminderAction: 'replace', reminders: readEditorReminders(editorList), reminderEmail: email.value }) });
+              const data = await response.json().catch(() => ({}));
+              if (!response.ok) throw new Error(data.error || 'リマインダーを保存できませんでした。');
+              window.location.reload();
+            } catch (error) {
+              const message = error instanceof Error ? error.message : 'リマインダーを保存できませんでした。';
+              status.textContent = message;
+              window.dispatchEvent(new CustomEvent('atlasez-admin-error', { detail: { message } }));
+              save.disabled = false;
+            }
+          });
+          details.append(save);
+          editorList.querySelectorAll<HTMLElement>('[data-edit-reminder-row]').forEach(syncEditorRow);
+          editorList.addEventListener('change', (event) => { const row = (event.target as HTMLElement).closest<HTMLElement>('[data-edit-reminder-row]'); if (row) syncEditorRow(row); });
+          editorList.addEventListener('click', (event) => { const remove = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-edit-reminder-remove]'); if (remove) remove.closest('[data-edit-reminder-row]')?.remove(); });
+          card.append(details);
+        };
+        const refreshReminderSummaries = async () => {
+          const listRoot = list.closest<HTMLElement>('[data-seminar-page],[data-secretariat]');
+          const todoList = listRoot?.querySelector<HTMLElement>('[data-todo-list]');
+          if (!todoList) return;
+          try {
+            const response = await fetch(`/api/admin/projects/${page}/operations`, { credentials: 'same-origin', cache: 'no-store' });
+            if (!response.ok) return;
+            const data = await response.json() as { todos?: TodoWithReminders[] };
+            const todos = new Map((data.todos ?? []).map((todo) => [todo.id, todo]));
+            todoList.querySelectorAll<HTMLElement>('[data-todo-status]').forEach((select) => {
+              const todo = todos.get(select.dataset.todoStatus ?? '');
+              const card = select.closest<HTMLElement>('.item');
+              if (!todo || !card || card.querySelector('.relative-reminder-editor')) return;
+              const reminders = normalizeReminders(todo);
+              if (reminders.length) {
+                const summary = document.createElement('div');
+                summary.className = 'relative-reminder-summary';
+                const title = document.createElement('strong');
+                title.textContent = 'リマインダー';
+                summary.append(title);
+                reminders.slice(0, 12).forEach((reminder) => {
+                  const row = document.createElement('span');
+                  row.textContent = `${formatReminder(reminder)}${reminder.timezone ? `（${reminder.timezone}）` : ''}`;
+                  summary.append(row);
+                });
+                if (reminders.length > 12) {
+                  const more = document.createElement('span');
+                  more.textContent = `ほか${reminders.length - 12}件`;
+                  summary.append(more);
+                }
+                const destination = document.createElement('span');
+                destination.textContent = todo.reminder_email ? `通知先：${todo.reminder_email}` : '通知先：運営サイトの通知ベル';
+                summary.append(destination);
+                card.insertBefore(summary, select);
+              }
+              createReminderEditor(todo, card);
+            });
+          } catch { /* 一覧本体の表示を妨げない */ }
+        };
+        const observer = new MutationObserver(() => { void refreshReminderSummaries(); });
+        const todoList = list.closest<HTMLElement>('[data-seminar-page],[data-secretariat]')?.querySelector<HTMLElement>('[data-todo-list]');
+        if (todoList) observer.observe(todoList, { childList: true, subtree: true });
+        window.setTimeout(() => { void refreshReminderSummaries(); }, 900);
+      });
+    };
+    document.addEventListener('astro:page-load', initializeRelativeReminderFields);
+    initializeRelativeReminderFields();
+  })();
+</script>

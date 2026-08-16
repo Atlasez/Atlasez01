@@ -47,7 +47,6 @@ const currentPath = Astro.url.pathname;
           />
           <span>Atlasez</span>
         </a>
-        <SettingsMenu locale="ja" />
         <nav aria-label="メインナビゲーション" class="org-nav">
           <ul>
             {
@@ -66,6 +65,7 @@ const currentPath = Astro.url.pathname;
             }
           </ul>
         </nav>
+        <div class="org-settings"><SettingsMenu locale="ja" /></div>
       </div>
     </header>
     <main id="main">
@@ -159,6 +159,9 @@ const currentPath = Astro.url.pathname;
     list-style: none;
     margin: 0;
     padding: 0;
+  }
+  .org-settings {
+    margin-left: auto;
   }
   .org-nav a {
     display: inline-flex;

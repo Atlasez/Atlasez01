@@ -2,15 +2,17 @@
 import AdminLayout from "../../layouts/AdminLayout.astro";
 import AdminNav from "../../components/AdminNav.astro";
 import AdminErrorActions from "../../components/AdminErrorActions.astro";
+import AdminBreadcrumb from "../../components/AdminBreadcrumb.astro";
 ---
 
 <AdminLayout
   title="問題報告・閲覧統計"
   description="運営用の記事問題報告と閲覧統計の管理画面"
 >
-  <section class="admin-reports" data-reports-admin>
+  <main id="admin-main" class="admin-reports" data-reports-admin>
     <AdminNav current="reports" />
     <AdminErrorActions />
+    <AdminBreadcrumb items={[{ label: "運営サイト", href: "/admin/portal/" }, { label: "問題報告・閲覧統計" }]} />
     <header class="admin-reports-heading">
       <div>
         <h1>問題報告・閲覧統計</h1>
@@ -58,7 +60,7 @@ import AdminErrorActions from "../../components/AdminErrorActions.astro";
     <p class="report-feedback" data-report-feedback aria-live="polite">読み込み中です…</p>
     <div class="report-list" data-report-list></div>
     </section>
-  </section>
+  </main>
 </AdminLayout>
 
 <style>

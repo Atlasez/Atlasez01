@@ -1079,7 +1079,10 @@ const categoryMetaJson = JSON.stringify(
       const channels = [0, 2, 4].map((index) =>
         Number.parseInt(hex.slice(index, index + 2), 16),
       );
-      return `rgb(${channels.map((value) => Math.round(value * 0.18 + 255 * 0.82)).join(", ")})`;
+      const dark = document.documentElement.dataset.prefBg === "dark";
+      return dark
+        ? `rgb(${channels.map((value) => Math.round(value * 0.42 + 25 * 0.58)).join(", ")})`
+        : `rgb(${channels.map((value) => Math.round(value * 0.18 + 255 * 0.82)).join(", ")})`;
     };
 
     const categoryMeta: { subject: string; slug: string; name: string }[] =
@@ -1448,6 +1451,52 @@ const categoryMetaJson = JSON.stringify(
       maxZoom: 3,
     });
 
+    // Cytoscape は CSS 変数を自動追従しないため、表示設定の背景を切り替えた
+    // ときはノードの塗り・文字・選択色も同時に再計算する。
+    const refreshMapTheme = () => {
+      const current = getComputedStyle(document.documentElement);
+      const readTheme = (name: string, fallback: string) =>
+        current.getPropertyValue(name).trim() || fallback;
+      const nextText = readTheme("--text-primary", "#1c1c1c");
+      const nextMuted = readTheme("--border-strong", "#8d897f");
+      const nextCanvas = readTheme("--background-primary", "#ffffff");
+      const dark = document.documentElement.dataset.prefBg === "dark";
+      const selectedSurface = dark ? "#49331f" : "#fff4e8";
+      const hoverSurface = dark ? "#24445b" : "#e5f3ff";
+      cy.nodes().forEach((node) => {
+        const kind = String(node.data("kind") ?? "");
+        if (kind === "concept" || kind === "category") {
+          node.data("nodeFill", pastelFor(String(node.data("subjectColor") ?? accent)));
+        }
+      });
+      const style = cy.style();
+      style.selector('node[kind = "concept"]').style({ color: nextText });
+      style.selector('node[kind = "category"]').style({ color: nextText });
+      style.selector("node.outside").style({
+        "background-color": nextCanvas,
+        color: nextMuted,
+      });
+      style.selector('node[hasArticle = "no"]').style({
+        "background-color": nextCanvas,
+        color: nextMuted,
+      });
+      style.selector("node.history-read").style({ color: nextText });
+      style.selector("node.history-understood").style({ color: nextText });
+      style.selector("node:selected").style({ "background-color": selectedSurface });
+      style.selector("edge").style({
+        color: nextMuted,
+        "text-background-color": nextCanvas,
+      });
+      style.selector("node.hover-target").style({
+        "background-color": hoverSurface,
+        color: readTheme("--accent-primary", accent),
+      });
+      style.selector("node.route-highlight").style({ "background-color": selectedSurface });
+      style.selector(".route-start").style({ "background-color": hoverSurface });
+      style.update();
+    };
+    window.addEventListener("atlasez-theme-change", refreshMapTheme);
+
     /**
      * 記事ごとの学習記録を概念ノードへ集約する。
      * 1概念に複数の記事がある場合は、最も進んだ記事の状態を採用する。
@@ -1527,9 +1576,9 @@ const categoryMetaJson = JSON.stringify(
      * 地図は独立ページにも埋め込まれるため、親がいなくても安全な
      * CustomEvent にしている。
      */
-    const notifyCategorySelection = (categoryKey: string | null) => {
+    const notifyCategorySelection = (categoryKey: string | null, subjectOverride = "") => {
       const [subject, category] = categoryKey?.split("/") ?? [
-        container.dataset.fixedSubject ?? "",
+        subjectOverride || container.dataset.fixedSubject || "",
         "",
       ];
       window.dispatchEvent(
@@ -1704,7 +1753,7 @@ const categoryMetaJson = JSON.stringify(
     /** 概要: カテゴリの箱を分野ごとに格子に並べる */
     function renderOverview(subject: string): void {
       focused = null;
-      notifyCategorySelection(null);
+      notifyCategorySelection(null, subject);
       hideAll();
       if (backButton) {
         backButton.hidden = true;
@@ -1746,12 +1795,15 @@ const categoryMetaJson = JSON.stringify(
           cursorY + 100 + Math.ceil(keys.length / COLS) * ROW_H + SUBJECT_GAP;
       }
 
-      // 概要ではカテゴリ間の線が交差しすぎて読めなくなるため、
-      // 線はカテゴリを開いた詳細表示でのみ出す。
+      // 概要ではカテゴリ間の線を表示しないが、配置計算ではカテゴリ間の
+      // 関係をばねとして使う。線だけを後で隠し、長距離の引力を残す。
       cy.edges().style("display", "none");
+      const categoryEdges = cy.edges('edge[kind = "category-link"]');
+      categoryEdges.style("display", "element");
       cy.layout({ name: "preset", fit: false }).run();
       const visibleCategories = cy.nodes(':visible[kind = "category"]');
       spreadNodes(visibleCategories);
+      categoryEdges.style("display", "none");
       fitReadable(visibleCategories);
 
       const shown = cy.nodes(':visible[kind = "category"]').length;
