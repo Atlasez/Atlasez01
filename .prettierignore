@@ -6,5 +6,7 @@ package-lock.json
 
 versions/
 
+public/data/
+
 # 記事本文は数式・表・独自記法を含むため自動整形しない
 src/content/articles/

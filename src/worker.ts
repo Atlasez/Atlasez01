@@ -28,6 +28,8 @@ interface Env {
   ASSETS: Fetcher;
   REPORTS: D1Database;
   DISCORD_REPORT_WEBHOOK_URL?: string;
+  /** 報告者ハッシュのソルト。Cloudflare の Secret として登録する。 */
+  REPORT_IP_HASH_SALT?: string;
 }
 
 type ReportPayload = {
@@ -65,6 +67,43 @@ const ALLOWED_REPORT_TYPES = new Set([
   "other",
 ]);
 const ALLOWED_ANALYTICS_EVENTS = new Set(["view", "engaged", "complete"]);
+const ISO639_3_BY_LOCALE: Record<string, string> = {
+  ja: "jpn",
+  en: "eng",
+  jpn: "jpn",
+  eng: "eng",
+  zh: "zho",
+  "zh-Hans": "zho",
+  "zh-Hant": "zho",
+  zho: "zho",
+  ko: "kor",
+  kor: "kor",
+  es: "spa",
+  spa: "spa",
+  fr: "fra",
+  fra: "fra",
+  de: "deu",
+  deu: "deu",
+  pt: "por",
+  por: "por",
+  it: "ita",
+  ita: "ita",
+  ru: "rus",
+  rus: "rus",
+  vi: "vie",
+  vie: "vie",
+  th: "tha",
+  tha: "tha",
+  id: "ind",
+  ind: "ind",
+  hi: "hin",
+  hin: "hin",
+  ar: "ara",
+  ara: "ara",
+};
+
+const normalizeLanguageCode = (value: string): string | null =>
+  ISO639_3_BY_LOCALE[value] ?? null;
 const REPORT_TYPE_LABEL: Record<string, string> = {
   error: "誤り・不具合",
   suggestion: "改善提案",
@@ -131,6 +170,35 @@ async function fingerprint(value: string): Promise<string> {
     .join("");
 }
 
+/**
+ * 報告者の識別子。IPアドレスそのものは保存も送信もせず、短時間の連続送信を
+ * 止めるための一方向ハッシュだけを残す。
+ *
+ * ソルトなしの SHA-256 では、IPv4 は全空間が 2^32 しかないため総当たりで元の
+ * アドレスを復元できてしまい、「IPアドレスは保存しない」と言えなくなる。
+ * Cloudflare の Secret として REPORT_IP_HASH_SALT を必ず登録すること。
+ *
+ * ソルトを変更・新規登録すると既存の reporter_hash とは一致しなくなるため、
+ * その時点で送信回数の集計が一度だけリセットされる（保存済みの報告は残る）。
+ */
+async function reporterFingerprint(
+  env: Env,
+  request: Request,
+): Promise<string> {
+  const salt = env.REPORT_IP_HASH_SALT?.trim();
+  if (!salt) {
+    // 値そのものは出さず、設定漏れだけを運用者に伝える。
+    console.error(
+      "REPORT_IP_HASH_SALT is not configured: reporter hashes are reversible",
+    );
+  }
+  const address =
+    request.headers.get("CF-Connecting-IP") ??
+    request.headers.get("x-forwarded-for") ??
+    "local";
+  return fingerprint(`${salt ?? ""}\n${address}`);
+}
+
 type DiscordReport = {
   articleTitle: string;
   articleUrl: string;
@@ -145,47 +213,47 @@ type DiscordReport = {
  */
 async function notifyDiscord(env: Env, report: DiscordReport): Promise<void> {
   const webhookUrl = env.DISCORD_REPORT_WEBHOOK_URL?.trim();
-  if (!webhookUrl) return;
-  try {
-    const url = new URL(webhookUrl);
-    if (
-      url.protocol !== "https:" ||
-      (url.hostname !== "discord.com" && url.hostname !== "discordapp.com")
-    ) {
-      return;
-    }
-    await fetch(url, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        username: "Atlasez 記事報告",
-        allowed_mentions: { parse: [] },
-        embeds: [
-          {
-            title: "新しい記事報告",
-            url: report.articleUrl,
-            color: 0x176ea6,
-            fields: [
-              { name: "記事", value: report.articleTitle, inline: false },
+  if (webhookUrl) {
+    try {
+      const url = new URL(webhookUrl);
+      if (
+        url.protocol === "https:" &&
+        (url.hostname === "discord.com" || url.hostname === "discordapp.com")
+      ) {
+        await fetch(url, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            username: "Atlasez 記事報告",
+            allowed_mentions: { parse: [] },
+            embeds: [
               {
-                name: "分野",
-                value: `${report.subject} / ${report.category}`,
-                inline: true,
-              },
-              {
-                name: "種類",
-                value:
-                  REPORT_TYPE_LABEL[report.reportType] ?? report.reportType,
-                inline: true,
+                title: "新しい記事報告",
+                url: report.articleUrl,
+                color: 0x176ea6,
+                fields: [
+                  { name: "記事", value: report.articleTitle, inline: false },
+                  {
+                    name: "分野",
+                    value: `${report.subject} / ${report.category}`,
+                    inline: true,
+                  },
+                  {
+                    name: "種類",
+                    value:
+                      REPORT_TYPE_LABEL[report.reportType] ?? report.reportType,
+                    inline: true,
+                  },
+                ],
+                footer: { text: "本文・連絡先は運営用の報告管理画面で確認" },
               },
             ],
-            footer: { text: "本文・連絡先は運営用の報告管理画面で確認" },
-          },
-        ],
-      }),
-    });
-  } catch {
-    // 通知失敗は報告保存に影響させない。Webhook URLもログへ出さない。
+          }),
+        });
+      }
+    } catch {
+      // 通知失敗は報告保存に影響させない。Webhook URLもログへ出さない。
+    }
   }
 }
 
@@ -223,7 +291,7 @@ async function saveArticleReport(
   const reportType = text(payload.reportType, 40);
   const details = text(payload.details, MAX_DETAILS_LENGTH);
   const contact = text(payload.contact, MAX_CONTACT_LENGTH);
-  const locale = text(payload.locale, 16) || "ja";
+  const locale = normalizeLanguageCode(text(payload.locale, 16) || "jpn");
   const openedAt = Number(payload.openedAt);
 
   if (
@@ -232,7 +300,8 @@ async function saveArticleReport(
     !TAXONOMY_SLUG.test(subject) ||
     !TAXONOMY_SLUG.test(category) ||
     !details ||
-    !ALLOWED_REPORT_TYPES.has(reportType)
+    !ALLOWED_REPORT_TYPES.has(reportType) ||
+    !locale
   ) {
     return json({ error: "必須項目を確認してください。" }, 400);
   }
@@ -255,11 +324,7 @@ async function saveArticleReport(
   }
 
   // IPアドレスそのものは保存せず、時間帯ごとの送信回数だけを制限する。
-  const reporterHash = await fingerprint(
-    request.headers.get("CF-Connecting-IP") ??
-      request.headers.get("x-forwarded-for") ??
-      "local",
-  );
+  const reporterHash = await reporterFingerprint(env, request);
   const oneHourAgo = new Date(Date.now() - 60 * 60 * 1_000).toISOString();
   const todayAgo = new Date(Date.now() - 24 * 60 * 60 * 1_000).toISOString();
   const recentHour = await env.REPORTS.prepare(
@@ -363,14 +428,14 @@ async function saveArticleAnalytics(
   const articleTitle = text(payload.articleTitle, 200);
   const subject = text(payload.subject, 80);
   const category = text(payload.category, 80);
-  const locale = text(payload.locale, 16) || "ja";
+  const locale = normalizeLanguageCode(text(payload.locale, 16) || "jpn");
   const event = text(payload.event, 20);
   if (
     !TAXONOMY_SLUG.test(articleId) ||
     !articleTitle ||
     !TAXONOMY_SLUG.test(subject) ||
     !TAXONOMY_SLUG.test(category) ||
-    !/^[a-z]{2}(?:-[A-Z]{2})?$/.test(locale) ||
+    !locale ||
     !ALLOWED_ANALYTICS_EVENTS.has(event)
   ) {
     return json({ error: "統計データを確認してください。" }, 400);

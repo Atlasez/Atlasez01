@@ -57,6 +57,24 @@ test.describe("公式サイト", () => {
     await page.getByRole("link", { name: /ベータ版を公開/ }).click();
     await expect(page.locator("h1")).toContainText("ベータ版");
   });
+
+  test("表示設定を右端に置き、応募導線をGoogleフォームへつなぐ", async ({
+    page,
+  }) => {
+    await page.goto("./");
+    const headerChildren = await page
+      .locator(".org-header-inner > *")
+      .evaluateAll((items) => items.map((item) => item.className));
+    expect(headerChildren.indexOf("org-settings")).toBeGreaterThan(
+      headerChildren.indexOf("org-nav"),
+    );
+    await expect(page.locator(".org-settings")).toBeVisible();
+
+    await page.goto("join/");
+    await expect(
+      page.getByRole("link", { name: "応募フォームを開く（Googleフォーム）" }),
+    ).toHaveAttribute("href", "https://forms.gle/NMXFgxzasbBsf3gX6");
+  });
 });
 
 test.describe("学習サイト", () => {
@@ -74,6 +92,14 @@ test.describe("学習サイト", () => {
       /\/atlas\/ja\/mathematics\//,
     );
     await expect(page.getByText("準備中").first()).toBeVisible();
+  });
+
+  test("漢字記事に専用の見出し・表スタイルが適用される", async ({ page }) => {
+    await page.goto("atlas/ja/kanji/culture/musical-instruments/");
+    await expect(page.locator(".article-body.kanji-article")).toBeVisible();
+    await expect(
+      page.locator(".article-body.kanji-article table").first(),
+    ).toHaveCSS("border-style", "solid");
   });
 
   test("はじめての方へは専用ガイドに移動する", async ({ page }) => {
@@ -120,6 +146,30 @@ test.describe("学習サイト", () => {
     );
   });
 
+  test("学習地図で選んだカテゴリの表示タブへ遷移し、分野地図へ戻れる", async ({
+    page,
+  }) => {
+    await page.goto("atlas/ja/?view=map");
+    await expect(page.locator("[data-map-status]")).toContainText("カテゴリ");
+    await page.evaluate(() => {
+      window.dispatchEvent(
+        new CustomEvent("atlas-map-category-change", {
+          detail: {
+            subject: "mathematics",
+            categoryKey: "mathematics/group-theory",
+          },
+        }),
+      );
+    });
+    await expect(
+      page.getByRole("link", { name: "数学の学習地図を開く" }),
+    ).toHaveAttribute("href", /\/atlas\/ja\/mathematics\/\?view=map$/);
+    await page.getByRole("tab", { name: "リスト表示" }).click();
+    await expect(page).toHaveURL(
+      /\/atlas\/ja\/mathematics\/group-theory\/\?view=list$/,
+    );
+  });
+
   test("総合リストを記事まで段階的に展開できる", async ({ page }) => {
     await page.goto("atlas/ja/?view=list");
     await expect(page.locator(".list-group[open]")).not.toHaveCount(0);
@@ -161,6 +211,7 @@ test.describe("学習サイト", () => {
       .filter({ hasText: "集合族" });
     await expect(planned).toBeVisible();
     await expect(planned).toContainText("準備中");
+    // 本文が無い準備中項目は、公開側から管理サイトへ直接誘導しない。
     await expect(planned.getByRole("link")).toHaveCount(0);
   });
 
@@ -190,7 +241,6 @@ test.describe("学習サイト", () => {
     await page.getByRole("tab", { name: "学習地図" }).click();
     await expect(page.locator("[data-view-panel='map']")).toBeVisible();
     await expect(page.locator("[data-map-subject]")).toHaveValue("mathematics");
-    await expect(page.locator("[data-map-subject] option")).toHaveCount(1);
 
     await page.getByRole("tab", { name: "リスト表示" }).click();
     await expect(page.locator(".toc-category-details[open]")).toHaveCount(0);
@@ -227,6 +277,72 @@ test.describe("学習サイト", () => {
     await expect(
       page.getByRole("button", { name: "報告を送信" }),
     ).toBeVisible();
+  });
+
+  test("数学記事の証明を一括で開閉できる", async ({ page }) => {
+    await page.goto("atlas/ja/mathematics/group-theory/group-definition/");
+    const toggle = page.locator("[data-proof-toggle]");
+    const proofs = page.locator("details.proof-details");
+    const openProofs = page.locator("details.proof-details[open]");
+    await expect(toggle).toBeVisible();
+    await expect(proofs).not.toHaveCount(0);
+    await expect(openProofs).toHaveCount(0);
+    await toggle.click();
+    await expect(openProofs).toHaveCount(await proofs.count());
+    await expect(toggle).toHaveText("▼ 証明を閉じる");
+    await toggle.click();
+    await expect(openProofs).toHaveCount(0);
+    await expect(toggle).toHaveText("▶ 証明を展開");
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.reload();
+    await expect(toggle).toHaveCSS("position", "static");
+  });
+
+  test("数学記事のMathJax・書式・内部参照を保持する", async ({ page }) => {
+    await page.goto("atlas/ja/mathematics/linear-algebra/vector-space/");
+    await expect(
+      page.locator(".article-body mjx-container").first(),
+    ).toBeVisible();
+    await expect(page.locator(".article-body strong").first()).toHaveCSS(
+      "font-weight",
+      "700",
+    );
+    await expect(page.locator(".article-body ol").first()).toHaveCSS(
+      "list-style-type",
+      "decimal",
+    );
+
+    await page.goto("atlas/ja/mathematics/module-theory/module-homomorphisms/");
+    const reference = page.locator("a.article-reference").first();
+    await expect(reference).toHaveAttribute(
+      "href",
+      /module-homomorphisms\/#math-block-\d+$/,
+    );
+  });
+
+  test("数学記事の証明矢印・folding境界・命題枠を整える", async ({ page }) => {
+    await page.goto("atlas/ja/mathematics/module-theory/module-homomorphisms/");
+    const toggle = page.locator("[data-proof-toggle]");
+    await expect(toggle).toHaveText("▶ 証明を展開");
+    await expect(toggle).toHaveCSS("justify-content", "center");
+    await expect(page.locator("details.folding").first()).toHaveCSS(
+      "border-top-width",
+      "0px",
+    );
+    await expect(page.locator(".proof-details-inner").first()).toHaveCSS(
+      "border-left-width",
+      "3px",
+    );
+    const proposition = page.locator(".prop").first();
+    for (const side of ["top", "right", "bottom", "left"] as const) {
+      await expect(proposition).toHaveCSS(
+        `border-${side}-color`,
+        "rgb(224, 195, 117)",
+      );
+    }
+    await toggle.click();
+    await expect(toggle).toHaveText("▼ 証明を閉じる");
   });
 
   test("学習記録は触れた位置へ移動し、記事の上下で同期する", async ({
@@ -348,12 +464,18 @@ test.describe("学習サイト", () => {
       )
       .toBeGreaterThan(initialZoom);
 
+    // 共通検索は記事検索、地図内検索は概念検索として役割を明示する。
+    await expect(page.getByLabel("地図上の概念を検索")).toBeVisible();
     await page.locator("[data-map-search]").fill("群の定義");
     await page.locator("[data-map-search]").dispatchEvent("change");
     const fold = page.getByRole("button", { name: /群論を折りたたむ/ });
     await expect(fold).toBeVisible();
     await fold.click();
     await expect(fold).not.toBeVisible();
+    const detail = page.locator("[data-map-detail]");
+    await expect(detail).toContainText("群の定義");
+    await page.getByRole("button", { name: "記事の詳細を閉じる" }).click();
+    await expect(detail).toBeEmpty();
 
     const open = page.getByRole("button", { name: "学習ルート検索" });
     // 枠の外に箱を並べず、押したときだけ枠内にパネルを出す
@@ -438,15 +560,14 @@ test.describe("学習サイト", () => {
 
   test("地図上で選んだノードを経路の始点・終点にできる", async ({ page }) => {
     await page.goto("atlas/ja/map/");
-    const search = page.locator("[data-map-search]");
-
-    await search.fill("群の定義");
-    await search.dispatchEvent("change");
-    await page.getByRole("button", { name: "開始地点にする" }).click();
-
-    await search.fill("Schurの補題");
-    await search.dispatchEvent("change");
-    await page.getByRole("button", { name: "目的地点にする" }).click();
+    await page.getByRole("button", { name: "学習ルート検索" }).click();
+    await page
+      .locator("[data-route-start]")
+      .selectOption({ label: "群の定義" });
+    await page
+      .locator("[data-route-goal]")
+      .selectOption({ label: "Schurの補題" });
+    await page.getByRole("button", { name: "経路を表示" }).click();
 
     await expect(page.locator("[data-route-result]")).toContainText(
       "Schurの補題",
@@ -472,8 +593,9 @@ test.describe("学習サイト", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("atlas/ja/");
     const mainNav = page.locator("#atlas-main-nav");
-    // メニューで畳まず、3つの行き先と検索欄を最初から見せる
-    for (const name of ["分野", "学習リスト", "はじめての方へ"]) {
+    // ロゴをホーム導線にし、重複する「分野」は廃止。残る主要導線と検索欄を最初から見せる
+    await expect(mainNav.getByRole("link", { name: "分野" })).toHaveCount(0);
+    for (const name of ["学習リスト", "はじめての方へ"]) {
       await expect(mainNav.getByRole("link", { name })).toBeVisible();
     }
     await expect(page.locator("#header-search-input")).toBeVisible();
@@ -495,6 +617,7 @@ test.describe("学習サイト", () => {
     await xlarge.click();
     const language = menu.locator('select[name="lang"]');
     await language.selectOption("en");
+    await expect(page).toHaveURL(/\/atlas\/en\/$/);
     await expect(language.locator('option[value="ja"]')).toHaveText(
       "日本語(Japanese)",
     );
