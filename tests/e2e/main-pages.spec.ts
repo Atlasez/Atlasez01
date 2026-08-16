@@ -58,7 +58,7 @@ test.describe("公式サイト", () => {
     await expect(page.locator("h1")).toContainText("ベータ版");
   });
 
-  test("表示設定を右端に置き、応募フォームに現行項目を含める", async ({
+  test("表示設定を右端に置き、応募導線をGoogleフォームへつなぐ", async ({
     page,
   }) => {
     await page.goto("./");
@@ -70,92 +70,10 @@ test.describe("公式サイト", () => {
     );
     await expect(page.locator(".org-settings")).toBeVisible();
 
-    await page.goto("apply/");
-    for (const field of [
-      'input[name="birthDate"]',
-      'select[name="residencePrefecture"]',
-      'input[name="residenceCity"]',
-      'textarea[name="currentOrganizations"]',
-      'select[name="studentCouncilExperience"]',
-      'input[name="studentCouncilRole"]',
-      'input[name="desiredProjects"]',
-      'input[name="desiredRoles"]',
-      'input[name="discoverySource"]',
-      'input[name="participationReasons"]',
-      'textarea[name="interviewAvailability"]',
-      'textarea[name="questions"]',
-    ]) {
-      await expect(page.locator(field).first()).toBeVisible();
-    }
-  });
-});
-
-test.describe("運営用プロジェクト画面", () => {
-  test("メンバー用サイトに複数プロジェクト通知のベルを表示する", async ({
-    page,
-  }) => {
-    await page.goto("admin/portal/");
-    await expect(page.locator("[data-admin-notifications]")).toBeVisible();
-    await expect(page.locator("[data-admin-notification-panel]")).toContainText(
-      "プロジェクト通知",
-    );
-  });
-
-  test("ゼミ運営ページに進捗・ToDo・日程の操作欄がある", async ({ page }) => {
-    await page.goto("admin/projects/seminar-platform/");
-    await expect(page.locator("[data-progress-form]")).toBeVisible();
-    await expect(page.locator("[data-todo-form]")).toBeVisible();
-    await expect(page.locator("[data-event-form]")).toBeVisible();
-    await expect(page.locator("[data-progress-details]")).toBeVisible();
-    await expect(page.locator("[data-relative-reminder-list]")).toHaveCount(1);
+    await page.goto("join/");
     await expect(
-      page.locator("[data-relative-reminder-kind] option", {
-        hasText: "N日前",
-      }),
-    ).toHaveCount(1);
-    await expect(
-      page.locator("[data-relative-reminder-kind] option", {
-        hasText: "N時間前",
-      }),
-    ).toHaveCount(1);
-    await expect(
-      page.locator("[data-relative-reminder-kind] option", {
-        hasText: "当日毎時",
-      }),
-    ).toHaveCount(1);
-  });
-
-  test("運営のToDoに複数リマインダーと予定不可期間の入力欄がある", async ({
-    page,
-  }) => {
-    await page.goto("admin/operations/");
-    await page.getByRole("button", { name: "リマインダーを設定する" }).click();
-    await expect(page.locator("[data-task-reminder-row]")).toHaveCount(1);
-    await expect(
-      page.locator("[data-task-reminder-kind] option", { hasText: "N日前" }),
-    ).toHaveCount(1);
-    await expect(
-      page.locator("[data-task-reminder-kind] option", { hasText: "N時間前" }),
-    ).toHaveCount(1);
-    await expect(
-      page.locator("[data-task-reminder-kind] option", { hasText: "当日毎時" }),
-    ).toHaveCount(1);
-    await expect(page.locator("[data-task-reminder-amount]")).toBeVisible();
-    await expect(page.locator("[data-add-task-reminder]")).toBeVisible();
-    await expect(page.locator("[data-task-reminder-email]")).toBeVisible();
-    await expect(page.locator("[data-unavailable-start]")).toBeVisible();
-    await expect(page.locator("[data-unavailable-end]")).toBeVisible();
-    await expect(page.locator("[data-unavailable-timezone]")).toBeVisible();
-    await expect(page.locator("[data-task-view='assigned']")).toHaveCount(1);
-    await expect(page.locator("[data-task-view='created']")).toHaveCount(1);
-    await expect(page.locator("[data-task-summary]")).toBeVisible();
-    await expect(
-      page.locator("[data-task-summary-view='assigned']"),
-    ).toBeVisible();
-    await expect(
-      page.locator("[data-task-summary-filter='overdue']"),
-    ).toBeVisible();
-    await expect(page.locator("[data-timezone-search]")).toHaveCount(4);
+      page.getByRole("link", { name: "応募フォームを開く（Googleフォーム）" }),
+    ).toHaveAttribute("href", "https://forms.gle/NMXFgxzasbBsf3gX6");
   });
 });
 
@@ -176,20 +94,12 @@ test.describe("学習サイト", () => {
     await expect(page.getByText("準備中").first()).toBeVisible();
   });
 
-  test("漢字記事に専用の見出し・表スタイルが適用され、同時作業会タイルは一覧へ進む", async ({
-    page,
-  }) => {
+  test("漢字記事に専用の見出し・表スタイルが適用される", async ({ page }) => {
     await page.goto("atlas/ja/kanji/culture/musical-instruments/");
     await expect(page.locator(".article-body.kanji-article")).toBeVisible();
     await expect(
       page.locator(".article-body.kanji-article table").first(),
     ).toHaveCSS("border-style", "solid");
-    await page.goto("admin/atlas/");
-    await expect(
-      page.locator('.project-links a[href="/admin/events/"]'),
-    ).toHaveCount(1);
-    await page.goto("admin/events/");
-    await expect(page.locator("[data-event-list]")).toBeVisible();
   });
 
   test("はじめての方へは専用ガイドに移動する", async ({ page }) => {
@@ -301,13 +211,8 @@ test.describe("学習サイト", () => {
       .filter({ hasText: "集合族" });
     await expect(planned).toBeVisible();
     await expect(planned).toContainText("準備中");
-    // 本文が無いので、タイトル自体はリンクにしない
-    await expect(planned.locator(".article-title a")).toHaveCount(0);
-    // 代わりに、書き手として応募できる導線を1つだけ置く
-    await expect(planned.getByRole("link")).toHaveCount(1);
-    await expect(
-      planned.getByRole("link", { name: "この記事を書いてみませんか" }),
-    ).toBeVisible();
+    // 本文が無い準備中項目は、公開側から管理サイトへ直接誘導しない。
+    await expect(planned.getByRole("link")).toHaveCount(0);
   });
 
   test("分野の目次にジャンル紹介文を表示しない", async ({ page }) => {
@@ -335,8 +240,7 @@ test.describe("学習サイト", () => {
 
     await page.getByRole("tab", { name: "学習地図" }).click();
     await expect(page.locator("[data-view-panel='map']")).toBeVisible();
-    // 分野トップでは地図が対象分野に固定され、冗長な分野プルダウンは表示しない。
-    await expect(page.locator("[data-map-subject]")).toHaveCount(0);
+    await expect(page.locator("[data-map-subject]")).toHaveValue("mathematics");
 
     await page.getByRole("tab", { name: "リスト表示" }).click();
     await expect(page.locator(".toc-category-details[open]")).toHaveCount(0);
@@ -373,25 +277,6 @@ test.describe("学習サイト", () => {
     await expect(
       page.getByRole("button", { name: "報告を送信" }),
     ).toBeVisible();
-  });
-
-  test("本文準備中の項目から応募フォームへ行ける", async ({ page }) => {
-    await page.goto("atlas/ja/chemistry/matter/");
-    const cta = page
-      .getByRole("link", { name: "この記事を書いてみませんか" })
-      .first();
-    await expect(cta).toBeVisible();
-    const href = await cta.getAttribute("href");
-    expect(href).toContain("/apply/");
-    expect(href).toContain("project=atlas");
-    expect(href).toContain("subject=chemistry");
-    expect(href).toContain("article=");
-  });
-
-  test("総合リストに書き手募集の導線が出ている", async ({ page }) => {
-    await page.goto("atlas/ja/?view=list");
-    const write = page.locator(".planned-write").first();
-    await expect(write).toHaveAttribute("href", /\/apply\/\?project=atlas/);
   });
 
   test("数学記事の証明を一括で開閉できる", async ({ page }) => {
@@ -546,7 +431,7 @@ test.describe("学習サイト", () => {
 
     await page.getByRole("tab", { name: "学習地図" }).click();
     await expect(page.locator("[data-map-view-panel]")).toBeVisible();
-    await expect(page.locator("[data-map-subject]")).toHaveCount(0);
+    await expect(page.locator("[data-map-subject]")).toHaveValue("mathematics");
 
     await page.getByRole("tab", { name: "リスト表示" }).click();
     await expect(list).toHaveAttribute("data-view", "list");

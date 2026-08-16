@@ -28,9 +28,6 @@ interface Env {
   ASSETS: Fetcher;
   REPORTS: D1Database;
   DISCORD_REPORT_WEBHOOK_URL?: string;
-  /** Botトークンを学習サイトへ置かず、管理Workerへ問題報告を中継する。 */
-  DISCORD_REPORT_SYNC_URL?: string;
-  REPORT_DISCORD_SYNC_SECRET?: string;
   /** 報告者ハッシュのソルト。Cloudflare の Secret として登録する。 */
   REPORT_IP_HASH_SALT?: string;
 }
@@ -258,44 +255,12 @@ async function notifyDiscord(env: Env, report: DiscordReport): Promise<void> {
       // 通知失敗は報告保存に影響させない。Webhook URLもログへ出さない。
     }
   }
-
-  const syncUrl = env.DISCORD_REPORT_SYNC_URL?.trim();
-  const syncSecret = env.REPORT_DISCORD_SYNC_SECRET?.trim();
-  if (syncUrl && syncSecret) {
-    try {
-      const endpoint = new URL(syncUrl);
-      if (endpoint.protocol === "https:") {
-        const response = await fetch(endpoint, {
-          method: "POST",
-          headers: {
-            "content-type": "application/json",
-            "x-atlasez-report-sync-secret": syncSecret,
-          },
-          body: JSON.stringify({
-            articleTitle: report.articleTitle,
-            articleUrl: report.articleUrl,
-            subject: report.subject,
-            category: report.category,
-            reportType:
-              REPORT_TYPE_LABEL[report.reportType] ?? report.reportType,
-          }),
-        });
-        if (!response.ok)
-          console.error("Discord report relay failed", response.status);
-      }
-    } catch (error) {
-      console.error(
-        "Discord report relay error",
-        error instanceof Error ? error.name : "unknown",
-      );
-      // 管理Workerへの中継失敗も記事報告の保存結果には影響させない。
-    }
-  }
 }
 
 async function saveArticleReport(
   request: Request,
   env: Env,
+  ctx: ExecutionContext,
 ): Promise<Response> {
   if (
     request.headers.get("content-type")?.includes("application/json") !== true
@@ -422,15 +387,15 @@ async function saveArticleReport(
     )
     .run();
 
-  // Discord中継まで完了してから成功を返す。waitUntilだけに任せると、
-  // 静的アセットWorkerの短いリクエストでは実行環境終了時に通知が失われることがある。
-  await notifyDiscord(env, {
-    articleTitle,
-    articleUrl,
-    subject,
-    category,
-    reportType,
-  });
+  ctx.waitUntil(
+    notifyDiscord(env, {
+      articleTitle,
+      articleUrl,
+      subject,
+      category,
+      reportType,
+    }),
+  );
 
   return json({ ok: true }, 201);
 }
@@ -512,7 +477,7 @@ async function saveArticleAnalytics(
 }
 
 export default {
-  async fetch(request, env): Promise<Response> {
+  async fetch(request, env, ctx): Promise<Response> {
     const url = new URL(request.url);
     if (url.pathname === "/api/article-reports") {
       if (request.method === "OPTIONS") {
@@ -523,7 +488,7 @@ export default {
           json({ error: "POSTのみ利用できます。" }, 405),
           request,
         );
-      return withCors(await saveArticleReport(request, env), request);
+      return withCors(await saveArticleReport(request, env, ctx), request);
     }
     if (url.pathname === "/api/article-analytics") {
       if (request.method === "OPTIONS") {

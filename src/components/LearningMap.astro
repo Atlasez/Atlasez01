@@ -6,7 +6,7 @@
  * 総合ホームではタブが開かれるまで画面に入らないため、
  * cytoscape の読み込みは IntersectionObserver によって自然に遅延される。
  */
-import { withBase } from "../lib/site";
+import { atlasPath, withBase } from "../lib/site";
 import {
   t,
   localizedName,
@@ -32,6 +32,9 @@ const { list } = await getConcepts();
 const subjects = (await getPublishedSubjects()).filter(
   (s) => s.data.status === "published",
 );
+const selectableSubjects = fixedSubject
+  ? subjects.filter((s) => s.data.slug === fixedSubject)
+  : subjects;
 const graphUrl = withBase("/atlas/graph.json");
 
 const edgeKinds = [
@@ -72,6 +75,18 @@ const routeConceptGroups = fixedSubject
   ? conceptsBySubject.filter((group) => group.slug === fixedSubject)
   : conceptsBySubject;
 
+const fixedSubjectEntry = subjects.find((s) => s.data.slug === fixedSubject);
+const fixedCategoryEntry = fixedSubjectEntry?.data.categories.find(
+  (category) => category.slug === fixedCategory,
+);
+const mapRootPath = atlasPath(locale, "map");
+const mapSubjectPath = fixedSubject
+  ? `${mapRootPath}?subject=${encodeURIComponent(fixedSubject)}`
+  : mapRootPath;
+const mapCategoryPath = fixedSubject && fixedCategory
+  ? `${mapSubjectPath}&category=${encodeURIComponent(`${fixedSubject}/${fixedCategory}`)}`
+  : mapSubjectPath;
+
 /** カテゴリ名（地図のカテゴリ箱のラベルに使う） */
 const categoryMetaJson = JSON.stringify(
   subjects.flatMap((s) =>
@@ -88,6 +103,11 @@ const categoryMetaJson = JSON.stringify(
   <h2 id="graph-heading" class="visually-hidden">
     {locale === "ja" ? "概念マップ" : "Concept map"}
   </h2>
+  <nav class="map-breadcrumb" aria-label={locale === "ja" ? "学習地図内の現在地" : "Map location"}>
+    <a href={mapRootPath}>{locale === "ja" ? "アトラス" : "Atlas"}</a>
+    {fixedSubjectEntry && <><span aria-hidden="true">›</span><a href={mapSubjectPath}>{localizedName(fixedSubjectEntry.data.name, locale)}</a></>}
+    {fixedCategoryEntry && <><span aria-hidden="true">›</span><a href={mapCategoryPath}>{localizedName(fixedCategoryEntry.name, locale)}</a></>}
+  </nav>
   {/*
     地図の操作はすべて枠の中に置く。枠の外に箱を並べると横幅を食うため、
     経路検索も枠内のボタンから開くパネルにしている（地図アプリと同じ作法）。
@@ -101,6 +121,17 @@ const categoryMetaJson = JSON.stringify(
           {list.map((c) => <option value={localizedName(c.name, locale)} />)}
         </datalist>
       </div>
+      <label for="map-subject" class="map-subject-label">
+        {t(locale, "subjects")}
+      </label>
+      <select id="map-subject" data-map-subject>
+        {!fixedSubject && <option value="">{t(locale, "all")}</option>}
+        {selectableSubjects.map((s) => (
+          <option value={s.data.slug} selected={s.data.slug === fixedSubject}>
+            {localizedName(s.data.name, locale)}
+          </option>
+        ))}
+      </select>
       <span class="map-status" data-map-status aria-live="polite"></span>
       <div
         class="map-viewport-tools"
@@ -176,12 +207,12 @@ const categoryMetaJson = JSON.stringify(
           : "Choose a goal. Set a starting point only if there is a concept you already understand. Concepts are grouped by subject."}
       </p>
       <form data-route-form class="route-form">
-        {/* 分野の選択UIは廃止したが、旧ブックマークや自動操作との互換用に
-            非表示の値だけを残す。表示上は候補を分野ごとの optgroup で整理する。 */}
-        <select class="map-route-subject-compat" data-route-subject aria-hidden="true" tabindex="-1">
-          <option value="">{locale === "ja" ? "すべて" : "All subjects"}</option>
-          {routeConceptGroups.map(({ slug, name }) => <option value={slug}>{name}</option>)}
-        </select>
+        <div>
+          <label for="route-subject">{t(locale, "subjects")}</label>
+          <select id="route-subject" data-route-subject>
+            {routeConceptGroups.map(({ slug, name }) => <option value={slug}>{name}</option>)}
+          </select>
+        </div>
         <div>
           <label for="route-start">{locale === "ja" ? "開始地点（任意）" : "Starting point (optional)"}</label>
           <select id="route-start" data-route-start>
@@ -302,6 +333,17 @@ const categoryMetaJson = JSON.stringify(
   section {
     margin-block: var(--space-6);
   }
+  .map-breadcrumb {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .35rem;
+    margin: 0 0 var(--space-2);
+    color: var(--text-secondary);
+    font-size: calc(.84rem * var(--text-scale));
+  }
+  .map-breadcrumb a { color: inherit; text-decoration: none; }
+  .map-breadcrumb a:hover { color: var(--accent-primary); text-decoration: underline; }
   /* 地図まわりの枠。道具立てと経路検索をこの中に重ねる */
   .map-frame {
     position: relative;
@@ -343,6 +385,9 @@ const categoryMetaJson = JSON.stringify(
   .map-toolbar input,
   .map-toolbar select {
     min-width: 12rem;
+  }
+  .map-subject-label {
+    font-weight: 700;
   }
   .map-status {
     flex: 1 1 14rem;
@@ -564,16 +609,6 @@ const categoryMetaJson = JSON.stringify(
     border-radius: var(--radius);
     background: var(--background-primary);
     box-shadow: 0 4px 16px rgb(0 0 0 / 0.24);
-  }
-  /* 旧URL・自動操作との互換用。分野の選択は画面には表示しない。 */
-  .map-route-subject-compat {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    margin: -1px;
-    overflow: hidden;
-    opacity: 0;
-    pointer-events: none;
   }
   .map-route-head {
     display: flex;
