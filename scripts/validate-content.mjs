@@ -130,12 +130,17 @@ for (const file of articleFiles) {
   if (slugKeys.has(slugKey)) errors.push(`slugが重複: ${slugKey}`);
   slugKeys.add(slugKey);
   articleTitleKeys.add(`${fm.locale}/${fm.subject}/${fm.category}/${fm.title}`);
-  for (const c of fm.concepts ?? []) {
-    if (!conceptIds.has(c.id))
-      errors.push(`${file}: 存在しない概念 ${c.id} を参照`);
-  }
-  for (const p of [...(fm.prerequisites ?? []), ...(fm.related ?? [])]) {
-    if (!conceptIds.has(p)) errors.push(`${file}: 存在しない概念 ${p} を参照`);
+  // 下書きは記事作成直後の仮ID（例: example.category.concept）を許可する。
+  // 査読・公開へ進める時点では、実在する概念だけを参照していることを必須にする。
+  if (fm.status !== "draft") {
+    for (const c of fm.concepts ?? []) {
+      if (!conceptIds.has(c.id))
+        errors.push(`${file}: 存在しない概念 ${c.id} を参照`);
+    }
+    for (const p of [...(fm.prerequisites ?? []), ...(fm.related ?? [])]) {
+      if (!conceptIds.has(p))
+        errors.push(`${file}: 存在しない概念 ${p} を参照`);
+    }
   }
   articleMeta.push({ file, fm });
 }
@@ -151,6 +156,32 @@ const categoryKeys = new Set(
     ),
   ),
 );
+
+// 分野・カテゴリ自体の重複と、概念の所属先を検査する。
+// 参照先IDだけが正しくても所属カテゴリが誤っていると、地図や一覧で概念が
+// 行方不明になるため、静的ビルドより前に分かるエラーとして扱う。
+const subjectSlugs = new Set();
+for (const subject of subjects) {
+  if (subjectSlugs.has(subject.slug)) {
+    errors.push(`分野slugが重複: ${subject.slug}`);
+  }
+  subjectSlugs.add(subject.slug);
+  const categorySlugs = new Set();
+  for (const category of subject.categories ?? []) {
+    if (categorySlugs.has(category.slug)) {
+      errors.push(`カテゴリslugが重複: ${subject.slug}/${category.slug}`);
+    }
+    categorySlugs.add(category.slug);
+  }
+}
+for (const concept of concepts) {
+  const categoryKey = `${concept.subject}/${concept.category}`;
+  if (!categoryKeys.has(categoryKey)) {
+    errors.push(
+      `概念 ${concept.id} が存在しない分野・カテゴリ ${categoryKey} に所属`,
+    );
+  }
+}
 // ---------- 記事の分野・カテゴリとファイルの置き場所 ----------
 for (const { file, fm } of articleMeta) {
   if (!fm.subject || !fm.category) continue;
@@ -162,10 +193,19 @@ for (const { file, fm } of articleMeta) {
     continue;
   }
   // frontmatter と置き場所がずれていると、URL と中身が食い違う
+  const localeDirectory = { ja: "jpn", jpn: "jpn", en: "eng", eng: "eng" }[
+    String(fm.locale)
+  ];
+  if (!localeDirectory) {
+    errors.push(
+      `${file}: 未対応の言語コード ${String(fm.locale)}（ja/jpn または en/eng）`,
+    );
+    continue;
+  }
   const expected = join(
     root,
     "src/content/articles",
-    String(fm.locale),
+    localeDirectory,
     String(fm.subject),
     String(fm.category),
     `${fm.slug}.md`,

@@ -4,9 +4,11 @@
 
 ## 最初に読む
 
-| ドキュメント                                         | 内容                                                                 |
-| ---------------------------------------------------- | -------------------------------------------------------------------- |
-| **[SITE_ADMINISTRATION.md](SITE_ADMINISTRATION.md)** | **サイト全体の管理・引き継ぎマニュアル。管理担当者は最初に読むこと** |
+| ドキュメント                                         | 内容                                                                        |
+| ---------------------------------------------------- | --------------------------------------------------------------------------- |
+| **[SITE_ADMINISTRATION.md](SITE_ADMINISTRATION.md)** | **サイト全体の管理・引き継ぎマニュアル。管理担当者は最初に読むこと**        |
+| **[DEVELOPMENT_GUIDE.md](DEVELOPMENT_GUIDE.md)**     | **開発者・LLM向けの構成、変更箇所、テスト、権限、D1、デプロイの総合ガイド** |
+| **[ADMIN_GUIDE.md](ADMIN_GUIDE.md)**                 | **記事を書く人向けの使い方。編集・査読・ToDo・通知の基本手順**              |
 
 ## 記事を書く・直す
 
@@ -15,7 +17,7 @@
 | **[ADDING_ARTICLES.md](ADDING_ARTICLES.md)**   | **記事の追加手順。まずここ**（コマンド・本文の書き方・詰まりどころ） |
 | [CONTENT_MODEL.md](CONTENT_MODEL.md)           | frontmatter の全項目と、概念・記事の二層構造                         |
 | [CONCEPT_GRAPH.md](CONCEPT_GRAPH.md)           | 概念グラフの線の意味、学習地図の見え方、線の足し方                   |
-| [EDITORIAL_WORKFLOW.md](EDITORIAL_WORKFLOW.md) | ブランチ・PR・査読・公開の流れ                                       |
+| [EDITORIAL_WORKFLOW.md](EDITORIAL_WORKFLOW.md) | 運営サイトでの下書き・査読・公開の流れ                               |
 | [BACKLOG.md](BACKLOG.md)                       | 着手前の積み残しメモ                                                 |
 | [SUMMARY_TODO.md](SUMMARY_TODO.md)             | 要約が定型文のままの記事一覧（手書き待ち）                           |
 
@@ -60,7 +62,7 @@
 | `npm run new:article -- ...`          | 記事の雛形と概念を作る（[使い方](ADDING_ARTICLES.md)） |
 | `node scripts/validate-content.mjs`   | 必須項目・ID 重複・概念参照・循環・置き場所を検査      |
 | `node scripts/check-links.mjs dist /` | ビルド結果の内部リンク切れを検査                       |
-| `node scripts/audit-math.mjs`         | KaTeX で描画できない数式を検査                         |
+| `node scripts/audit-math.mjs`         | 公開組版と互換性のない数式を検査                       |
 
 ### 一括修正（原則もう使わないが、再発時の道具）
 

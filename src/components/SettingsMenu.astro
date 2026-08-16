@@ -134,6 +134,18 @@ const close = locale === "ja" ? "閉じる" : "Close";
       cursor: pointer;
     }
   }
+
+  /* 端末幅が特に狭い場合は、ヘッダーの操作群をアイコン中心に収める。 */
+  @media (max-width: 380px) {
+    .settings-menu > summary {
+      justify-content: center;
+      min-width: 2.6rem;
+      padding-inline: .45rem;
+    }
+    .settings-text {
+      display: none;
+    }
+  }
 </style>
 
 <script>

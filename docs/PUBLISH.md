@@ -1,6 +1,6 @@
 # 公開チェックリスト（Cloudflare Pages）
 
-配信は Cloudflare Pages が GitHub リポジトリ `mitukx/Atlasez01` を
+配信は Cloudflare Pages が GitHub リポジトリ `Atlasez/Atlasez01` を
 直接ビルドして行う。詳しい背景は `docs/DEPLOYMENT.md`。
 
 ---
@@ -64,7 +64,7 @@ git push -u origin feature/なにか
 - [ ] 学習地図（`/atlas/ja/map/`）が描画される
 - [ ] `/robots.txt` の `Sitemap:` が本番URLになっている
 - [ ] 記事ページのソースに `noindex` が **入っていない**
-- [ ] 数式（KaTeX）が崩れていない ← 例: `/atlas/ja/mathematics/set-theory/relations/`
+- [ ] 数式（MathJax）が崩れていない ← 例: `/atlas/ja/mathematics/set-theory/relations/`
 
 ## 5. GitHub 側の後始末
 
