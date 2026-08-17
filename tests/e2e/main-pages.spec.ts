@@ -326,15 +326,17 @@ test.describe("学習サイト", () => {
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
 
-    for (const [url, alt] of [
-      [
-        "atlas/ja/mathematics/group-theory/group-examples/",
-        "正多角形の対称軸の図",
-      ],
-      [
-        "atlas/ja/mathematics/group-theory/homomorphism-theorem/",
-        "準同型定理の可換図式",
-      ],
+    for (const { url, alt, minWidth } of [
+      {
+        url: "atlas/ja/mathematics/group-theory/group-examples/",
+        alt: "正多角形の対称軸の図",
+        minWidth: 300,
+      },
+      {
+        url: "atlas/ja/mathematics/group-theory/homomorphism-theorem/",
+        alt: "準同型定理の可換図式",
+        minWidth: 170,
+      },
     ] as const) {
       await page.goto(url);
       const image = page.locator(`img[alt="${alt}"]`);
@@ -346,7 +348,7 @@ test.describe("学習サイト", () => {
             (element) => (element as HTMLImageElement).naturalWidth,
           ),
         )
-        .toBeGreaterThan(0);
+        .toBeGreaterThanOrEqual(minWidth);
       await expect
         .poll(() =>
           page.evaluate(
