@@ -29,6 +29,16 @@ references: []
 
 定理 1 (準同型定理). $\varphi\colon G_1\to G_2$を群$G_1$から$G_2$への群準同型とする. $N\subset \mathop{\mathrm{Ker}}{\varphi}$を$G$の正規部分群として, $\pi\colon G_1\to G_1/N$を自然な射影とする. このとき準同型写像$\overline{\varphi}\colon G_1/N\to G_2$で$\varphi=\overline{\varphi}\circ \pi$となるもの, すなわち以下の図式を可換にするものが一意的に存在する.
 
+<figure class="math-figure">
+  <img
+    src="../../../../../images/math/homomorphism-theorem/commutative-diagram.svg"
+    alt="準同型定理の可換図式"
+    loading="lazy"
+    decoding="async"
+  />
+  <figcaption>準同型定理の可換図式</figcaption>
+</figure>
+
 さらに$\overline{\varphi}\colon G_1/N \to \mathop{\mathrm{Im}}\varphi$は同型写像である. つまり次の群の同型が成り立つ.
 
 $$
