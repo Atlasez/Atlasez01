@@ -33,8 +33,9 @@ jobs:
       - name: GitHub Pages 用にビルド
         run: npm run build
         env:
-          SITE_URL: https://mitukx.github.io
+          SITE_URL: https://atlasez.github.io/Atlasez01/
           BASE_PATH: /Atlasez01
+          NOINDEX: 1
       - name: 公開用ファイルをアップロード
         uses: actions/upload-pages-artifact@v3
         with:
