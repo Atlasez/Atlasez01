@@ -12,15 +12,15 @@
 
 ## 記事を書く・直す
 
-| ドキュメント                                   | 内容                                                                 |
-| ---------------------------------------------- | -------------------------------------------------------------------- |
-| **[ADDING_ARTICLES.md](ADDING_ARTICLES.md)**   | **記事の追加手順。まずここ**（コマンド・本文の書き方・詰まりどころ） |
-| **[MATH_ARTICLE_STYLE.md](MATH_ARTICLE_STYLE.md)** | **数学記事の記法・HTMLクラス・表示回帰を防ぐための規約** |
-| [CONTENT_MODEL.md](CONTENT_MODEL.md)           | frontmatter の全項目と、概念・記事の二層構造                         |
-| [CONCEPT_GRAPH.md](CONCEPT_GRAPH.md)           | 概念グラフの線の意味、学習地図の見え方、線の足し方                   |
-| [EDITORIAL_WORKFLOW.md](EDITORIAL_WORKFLOW.md) | 運営サイトでの下書き・査読・公開の流れ                               |
-| [BACKLOG.md](BACKLOG.md)                       | 着手前の積み残しメモ                                                 |
-| [SUMMARY_TODO.md](SUMMARY_TODO.md)             | 要約が定型文のままの記事一覧（手書き待ち）                           |
+| ドキュメント                                       | 内容                                                                 |
+| -------------------------------------------------- | -------------------------------------------------------------------- |
+| **[ADDING_ARTICLES.md](ADDING_ARTICLES.md)**       | **記事の追加手順。まずここ**（コマンド・本文の書き方・詰まりどころ） |
+| **[MATH_ARTICLE_STYLE.md](MATH_ARTICLE_STYLE.md)** | **数学記事の記法・HTMLクラス・表示回帰を防ぐための規約**             |
+| [CONTENT_MODEL.md](CONTENT_MODEL.md)               | frontmatter の全項目と、概念・記事の二層構造                         |
+| [CONCEPT_GRAPH.md](CONCEPT_GRAPH.md)               | 概念グラフの線の意味、学習地図の見え方、線の足し方                   |
+| [EDITORIAL_WORKFLOW.md](EDITORIAL_WORKFLOW.md)     | 運営サイトでの下書き・査読・公開の流れ                               |
+| [BACKLOG.md](BACKLOG.md)                           | 着手前の積み残しメモ                                                 |
+| [SUMMARY_TODO.md](SUMMARY_TODO.md)                 | 要約が定型文のままの記事一覧（手書き待ち）                           |
 
 ## サイトを運用する
 

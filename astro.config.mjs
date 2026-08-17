@@ -164,7 +164,8 @@ const removeMathFigureCaptions = () => (/** @type {any} */ tree) => {
           : [];
       if (classes.includes("math-figure") && Array.isArray(node.children)) {
         node.children = node.children.filter(
-          (child) => !(child?.type === "element" && child.tagName === "figcaption"),
+          (child) =>
+            !(child?.type === "element" && child.tagName === "figcaption"),
         );
       }
     }

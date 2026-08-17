@@ -430,10 +430,7 @@ test.describe("学習サイト", () => {
       "右加群は反対環上の左加群として扱うことができ",
     );
     for (const side of ["top", "right", "bottom", "left"] as const) {
-      await expect(moduleFolding).toHaveCSS(
-        "border-" + side + "-width",
-        "0px",
-      );
+      await expect(moduleFolding).toHaveCSS("border-" + side + "-width", "0px");
     }
 
     await page.goto("atlas/ja/mathematics/linear-algebra/vector-space/");
