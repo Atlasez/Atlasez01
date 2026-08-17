@@ -287,9 +287,11 @@ test.describe("学習サイト", () => {
     await expect(toggle).toBeVisible();
     await expect(proofs).not.toHaveCount(0);
     await expect(openProofs).toHaveCount(0);
+    await expect(toggle.locator("[data-proof-indicator]")).toHaveText("▶");
     await toggle.click();
     await expect(openProofs).toHaveCount(await proofs.count());
     await expect(toggle).toHaveText("▼ 証明を閉じる");
+    await expect(toggle.locator("[data-proof-indicator]")).toHaveText("▼");
     await toggle.click();
     await expect(openProofs).toHaveCount(0);
     await expect(toggle).toHaveText("▶ 証明を展開");
@@ -414,6 +416,46 @@ test.describe("学習サイト", () => {
     }
     await toggle.click();
     await expect(toggle).toHaveText("▼ 証明を閉じる");
+  });
+
+  test("数学記事の定義・例・図・foldingの書式を保持する", async ({ page }) => {
+    await page.goto("atlas/ja/mathematics/module-theory/modules/");
+    const definition = page.locator(".defi").first();
+    await expect(definition.locator("strong")).toHaveCSS("font-weight", "700");
+    const moduleFolding = page
+      .locator("details.folding")
+      .filter({ hasText: "右加群は反対環上の左加群として扱うことができ" });
+    await expect(moduleFolding).toHaveCount(1);
+    await expect(moduleFolding.locator(".folding-content")).toContainText(
+      "右加群は反対環上の左加群として扱うことができ",
+    );
+    for (const side of ["top", "right", "bottom", "left"] as const) {
+      await expect(moduleFolding).toHaveCSS(
+        "border-" + side + "-width",
+        "0px",
+      );
+    }
+
+    await page.goto("atlas/ja/mathematics/linear-algebra/vector-space/");
+    await expect(page.locator(".article-body ol").first()).toHaveCSS(
+      "list-style-type",
+      "decimal",
+    );
+
+    await page.goto("atlas/ja/mathematics/group-theory/group-examples/");
+    const example = page.locator(".example").first();
+    await expect(example).toHaveCSS("border-top-width", "0px");
+    await expect(example).toHaveCSS("box-shadow", "none");
+    await expect(page.locator(".math-figure figcaption")).toHaveCount(0);
+    await expect(
+      page.locator('.math-figure img[alt="正多角形の対称軸の図"]'),
+    ).toBeVisible();
+
+    await page.goto("atlas/ja/mathematics/group-theory/homomorphism-theorem/");
+    await expect(page.locator(".math-figure figcaption")).toHaveCount(0);
+    await expect(
+      page.locator('.math-figure img[alt="準同型定理の可換図式"]'),
+    ).toBeVisible();
   });
 
   test("学習記録は触れた位置へ移動し、記事の上下で同期する", async ({

@@ -36,7 +36,6 @@ references: []
     loading="lazy"
     decoding="async"
   />
-  <figcaption>準同型定理の可換図式</figcaption>
 </figure>
 
 さらに$\overline{\varphi}\colon G_1/N \to \mathop{\mathrm{Im}}\varphi$は同型写像である. つまり次の群の同型が成り立つ.

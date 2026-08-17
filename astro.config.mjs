@@ -74,7 +74,7 @@ const normalizeLegacyFolding = () => (/** @type {any} */ tree) => {
     if (!node || typeof node !== "object") return;
     if (
       node.type === "element" &&
-      ["div", "section", "article"].includes(String(node.tagName))
+      !["details", "summary"].includes(String(node.tagName))
     ) {
       const rawClasses = node.properties?.className;
       const classes = Array.isArray(rawClasses)
@@ -140,6 +140,32 @@ const normalizeLegacyFolding = () => (/** @type {any} */ tree) => {
           ],
         };
         node.children = [summary, inner];
+      }
+    }
+    if (Array.isArray(node.children)) node.children.forEach(visit);
+  };
+  visit(tree);
+};
+
+/**
+ * 数学記事の図は img の alt を唯一のアクセシブルな説明にする。
+ * 旧記事に残る figcaption はビルド時に取り除き、画像と alt は保持する。
+ */
+const removeMathFigureCaptions = () => (/** @type {any} */ tree) => {
+  /** @param {any} node */
+  const visit = (node) => {
+    if (!node || typeof node !== "object") return;
+    if (node.type === "element" && node.tagName === "figure") {
+      const rawClasses = node.properties?.className;
+      const classes = Array.isArray(rawClasses)
+        ? rawClasses.map(String)
+        : typeof rawClasses === "string"
+          ? rawClasses.split(/\s+/u).filter(Boolean)
+          : [];
+      if (classes.includes("math-figure") && Array.isArray(node.children)) {
+        node.children = node.children.filter(
+          (child) => !(child?.type === "element" && child.tagName === "figcaption"),
+        );
       }
     }
     if (Array.isArray(node.children)) node.children.forEach(visit);
@@ -226,6 +252,7 @@ export default defineConfig({
         // MathJax pass. Content is repository-controlled Markdown/HTML.
         rehypeRaw,
         normalizeLegacyFolding,
+        removeMathFigureCaptions,
         normalizeLegacyMath,
         normalizeHeadingAttributes,
         [

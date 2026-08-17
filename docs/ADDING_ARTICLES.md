@@ -142,12 +142,10 @@ public/images/math/group-examples/dihedral-symmetry-axes.svg
     loading="lazy"
     decoding="async"
   />
-  <figcaption>正多角形の対称軸の例</figcaption>
 </figure>
 ```
 
-- `alt`は必ず図の意味を説明する文章にする
-- `figure`と`figcaption`で本文との関係を示す
+- 数学記事の図は`figure.math-figure`と`img[alt]`だけで記述する（`figcaption`は使わない）
 - 外部画像、`iframe`、`object`、`embed`、記事本文内のscriptは使わない
 - 画像の著作権・出典・再利用条件を確認してから保存する
 - `npm run validate:media`でファイルの存在、`alt`、安全な埋め込みを確認する

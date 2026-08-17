@@ -15,6 +15,7 @@
 | ドキュメント                                   | 内容                                                                 |
 | ---------------------------------------------- | -------------------------------------------------------------------- |
 | **[ADDING_ARTICLES.md](ADDING_ARTICLES.md)**   | **記事の追加手順。まずここ**（コマンド・本文の書き方・詰まりどころ） |
+| **[MATH_ARTICLE_STYLE.md](MATH_ARTICLE_STYLE.md)** | **数学記事の記法・HTMLクラス・表示回帰を防ぐための規約** |
 | [CONTENT_MODEL.md](CONTENT_MODEL.md)           | frontmatter の全項目と、概念・記事の二層構造                         |
 | [CONCEPT_GRAPH.md](CONCEPT_GRAPH.md)           | 概念グラフの線の意味、学習地図の見え方、線の足し方                   |
 | [EDITORIAL_WORKFLOW.md](EDITORIAL_WORKFLOW.md) | 運営サイトでの下書き・査読・公開の流れ                               |

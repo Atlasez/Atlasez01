@@ -406,7 +406,8 @@ const structuredData = {
             aria-expanded="false"
             hidden
           >
-            ▶ 証明を展開
+            <span class="proof-toggle-icon" data-proof-indicator aria-hidden="true">▶</span>{" "}
+            <span data-proof-label>証明を展開</span>
           </button>
         )
       }
@@ -935,15 +936,16 @@ const structuredData = {
     max-width: 100%;
     width: auto;
   }
-  .article-body.math-article :global(.math-figure > figcaption) {
-    color: var(--text-secondary);
-    font-size: 0.88em;
-    margin-top: 0.55rem;
-  }
   .article-body.math-article :global(strong),
   .article-body.math-article :global(b) {
     font-weight: 700;
     font-synthesis: weight;
+  }
+  .article-body.math-article :global(.defi strong),
+  .article-body.math-article :global(.defi b),
+  .article-body.math-article :global(.math-definition strong),
+  .article-body.math-article :global(.math-definition b) {
+    font-weight: 700;
   }
   .article-body.math-article :global(a) {
     color: var(--link);
@@ -970,7 +972,6 @@ const structuredData = {
   .article-body :global(.thm),
   .article-body :global(.lemma),
   .article-body :global(.cor),
-  .article-body :global(.example),
   .article-body :global(.math-theorem) {
     background: color-mix(in srgb, #e0c375 12%, var(--background-primary));
     border: 1px solid #e0c375;
@@ -982,6 +983,15 @@ const structuredData = {
     box-sizing: border-box;
     min-width: 0;
     overflow: visible;
+  }
+  /* 例は意味上のグループであり、命題・定理と同じカード枠は付けない。 */
+  .article-body :global(.example) {
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    margin-block: 2.2rem 1.15rem;
+    padding: 0;
   }
   .article-body :global(.defi) > :first-child,
   .article-body :global(.prop) > :first-child,
@@ -1038,6 +1048,13 @@ const structuredData = {
     border-color: #e0c375;
     color: #4b3a12;
   }
+  .article-body :global(.example .thmtitle) {
+    display: inline-block;
+    float: none;
+    margin: 0 0.5rem 0.35rem 0;
+    border: 1px solid #e0c375;
+    border-radius: 0.35rem;
+  }
   .article-body :global(.proof-details) { margin-block: 1.2rem; }
   .article-body :global(.proof-details > summary) {
     background: var(--background-secondary);
@@ -1089,6 +1106,14 @@ const structuredData = {
     text-align: center;
     white-space: nowrap;
     gap: 0.45rem;
+  }
+  .proof-toggle-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 1.1em;
+    line-height: 1;
+    text-align: center;
   }
   .proof-toggle:hover { background: var(--accent-hover); }
   .proof-toggle:focus-visible { outline-offset: 3px; }
@@ -1160,7 +1185,7 @@ const structuredData = {
   .article-body :global(.rem) { background: color-mix(in srgb, var(--background-secondary) 75%, transparent); border: 1px solid var(--border-default); border-left: 4px solid var(--border-strong); border-radius: 0.35rem; color: var(--text-secondary); margin-block: 1.2rem; padding: 0.7rem 0.9rem; }
   /* folding の外枠は証明本文の左ガイド線と二重になるため持たせない。
      .proof-details-inner.folding-content の左borderは別ルールで維持する。 */
-  .article-body :global(details.folding) { border-radius: 0.45rem; margin-block: 1rem; overflow: hidden; }
+  .article-body :global(details.folding) { border: 0; border-radius: 0.45rem; margin-block: 1rem; overflow: hidden; }
   .article-body :global(details.folding > summary) { background: var(--background-secondary); cursor: pointer; list-style: none; padding: 0.55rem 0.8rem 0.55rem 2rem; position: relative; }
   .article-body :global(details.folding > summary::-webkit-details-marker) { display: none; }
   .article-body :global(details.folding > summary::before) { border-bottom: 2px solid var(--text-secondary); border-right: 2px solid var(--text-secondary); content: ""; height: 0.45rem; left: 0.8rem; position: absolute; top: 0.75rem; transform: rotate(45deg); transition: transform .15s ease; width: 0.45rem; }
@@ -1930,10 +1955,20 @@ const structuredData = {
       const proofs = [...mathBody.querySelectorAll<HTMLDetailsElement>("details.proof-details")];
       if (proofToggle && proofs.length > 0) {
         proofToggle.hidden = false;
+        const indicator = proofToggle.querySelector<HTMLElement>("[data-proof-indicator]");
+        const label = proofToggle.querySelector<HTMLElement>("[data-proof-label]");
+        const setProofToggleLabel = (expanded: boolean) => {
+          if (indicator) indicator.textContent = expanded ? "▼" : "▶";
+          if (label) label.textContent = expanded ? "証明を閉じる" : "証明を展開";
+          if (!indicator && !label) {
+            proofToggle.textContent = expanded ? "▼ 証明を閉じる" : "▶ 証明を展開";
+          }
+        };
+        setProofToggleLabel(false);
         proofToggle.addEventListener("click", () => {
           const expand = proofs.some((proof) => !proof.open);
           proofs.forEach((proof) => { proof.open = expand; });
-          proofToggle.textContent = expand ? "▼ 証明を閉じる" : "▶ 証明を展開";
+          setProofToggleLabel(expand);
           proofToggle.setAttribute("aria-expanded", String(expand));
         });
       }
