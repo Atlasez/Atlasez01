@@ -134,6 +134,7 @@ Cloudflare Pages
 - `draft`と`in-review`は検証対象に残りますが、本番公開対象から除外されます。
 - `dist/`は生成物です。手編集・コミットしません。
 - 数式は`remark-math`と`rehype-mathjax/svg`でビルド時にMathJax SVGになります。記事側の数式をHTMLへ手変換しないでください。
+- 図・画像は`public/images/math/<article>/`へ保存し、記事本文の`figure`から相対`images/` URLで参照します。`alt`、レスポンシブ表示、出典を必須にし、外部画像やGoogle Sites iframeへ依存させません。
 - 旧記事の`math`、`folding`、見出し属性は`astro.config.mjs`の正規化処理で後方互換を保っています。正規化を変更したら数学記事と折りたたみ証明のE2Eを確認します。
 
 ### 3.2 記事・概念・分野の関係

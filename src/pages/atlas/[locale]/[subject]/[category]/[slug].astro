@@ -919,6 +919,27 @@ const structuredData = {
     display: list-item;
     padding-inline-start: 0.15rem;
   }
+  /* 旧数学サイトの図は本文内のSVGとして移行する。外部画像に依存せず、
+     記事幅とスマホ幅の両方に収まるfigureとして扱う。 */
+  .article-body.math-article :global(.math-figure) {
+    box-sizing: border-box;
+    margin: 1.5rem auto;
+    max-width: 100%;
+    text-align: center;
+  }
+  .article-body.math-article :global(.math-figure > img),
+  .article-body.math-article :global(.math-figure > svg) {
+    display: block;
+    height: auto;
+    margin-inline: auto;
+    max-width: 100%;
+    width: auto;
+  }
+  .article-body.math-article :global(.math-figure > figcaption) {
+    color: var(--text-secondary);
+    font-size: 0.88em;
+    margin-top: 0.55rem;
+  }
   .article-body.math-article :global(strong),
   .article-body.math-article :global(b) {
     font-weight: 700;

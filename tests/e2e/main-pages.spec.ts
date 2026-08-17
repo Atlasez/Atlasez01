@@ -321,6 +321,42 @@ test.describe("学習サイト", () => {
     );
   });
 
+  test("旧数学サイトから移行した図を読み込み、スマホ幅に収める", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+
+    for (const [url, alt] of [
+      [
+        "atlas/ja/mathematics/group-theory/group-examples/",
+        "正多角形の対称軸の図",
+      ],
+      [
+        "atlas/ja/mathematics/group-theory/homomorphism-theorem/",
+        "準同型定理の可換図式",
+      ],
+    ] as const) {
+      await page.goto(url);
+      const image = page.locator(`img[alt="${alt}"]`);
+      await image.scrollIntoViewIfNeeded();
+      await expect(image).toBeVisible();
+      await expect
+        .poll(() =>
+          image.evaluate(
+            (element) => (element as HTMLImageElement).naturalWidth,
+          ),
+        )
+        .toBeGreaterThan(0);
+      await expect
+        .poll(() =>
+          page.evaluate(
+            () => document.documentElement.scrollWidth <= window.innerWidth,
+          ),
+        )
+        .toBe(true);
+    }
+  });
+
   test("数学記事の証明矢印・folding境界・命題枠を整える", async ({ page }) => {
     await page.goto("atlas/ja/mathematics/module-theory/module-homomorphisms/");
     const toggle = page.locator("[data-proof-toggle]");
