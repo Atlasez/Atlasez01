@@ -381,6 +381,41 @@ Secretの値をGitHub issue、PR、LLM、スクリーンショットへ貼りま
 
 `wrangler.jsonc`や文書に、現在のWorkerコードが読まない旧連携変数が残っていないか、アカウント移行前に確認します。設定に名前があるだけで連携が動くとは限りません。実際に`src/worker.ts`の`Env`、デプロイ設定、Cloudflare DashboardのSecret/Variable、D1 bindingを突き合わせます。
 
+### 7.4 Google検索の統計（Search Console）
+
+Google検索からの流入を測る場合は、[Google Search Console](https://search.google.com/search-console/about)を使います。Search Consoleの[検索パフォーマンス](https://support.google.com/webmasters/answer/7576553)では、検索語・ページ・国などの単位で、クリック数、表示回数、CTR、平均掲載順位を確認できます。これはブラウザへGoogle AnalyticsのJavaScriptを追加する仕組みではなく、検索結果上でのサイトの見え方を測る仕組みです。
+
+#### 取得する統計の役割分担
+
+| 目的                           | 使うもの                | 分かること                                                |
+| ------------------------------ | ----------------------- | --------------------------------------------------------- |
+| Google検索で見つかったか       | Google Search Console   | 検索語、表示回数、クリック、CTR、平均掲載順位、ページ、国 |
+| サイト内で何をしたか           | 既存の匿名記事統計      | 記事の閲覧、熟読、読了などのサイト内イベント              |
+| 流入元とサイト内行動を広く見る | GA4（導入する場合のみ） | セッション、参照元、イベント、コンバージョン              |
+
+Search Consoleのデータは、まずSearch Consoleの管理画面で見る構成を推奨します。運営サイトに検索語や掲載順位を表示する必要が出た場合だけ、Google Search Console APIを`Admin-Atlesez`側へ追加します。Google OAuth、API token、検索クエリの集計結果を公開リポジトリや公開Workerへ持ち込まないでください。
+
+#### 初回設定（独自ドメイン確定後）
+
+1. 本番ドメインを決める（例: `atlasez.org`）。`www`を使うか、公式サイトと学習サイトを同一ドメイン配下に置くかもこの時点で固定する。
+2. Cloudflare PagesのProduction環境へ`SITE_URL=https://atlasez.org`、`BASE_PATH=/`を設定する。
+3. Google Search ConsoleでDomain property（例: `atlasez.org`）を追加し、[所有権確認](https://support.google.com/webmasters/answer/9008080)に表示されたDNS TXTレコードをCloudflare DNSへ登録する。URL-prefix propertyを使う場合は、`https://`、`www`の有無、パスを正確に一致させる。
+4. 本番の`https://atlasez.org/robots.txt`を開き、`Sitemap: https://atlasez.org/sitemap-index.xml`が出ていることを確認する。
+5. Search ConsoleのSitemapsへ`https://atlasez.org/sitemap-index.xml`を登録する。
+6. `NOINDEX=1`のミラーやPreview URLを本番propertyとして登録しない。本番の`main`ビルドに`noindex`が残っていないことを確認する。
+7. Search Consoleのユーザー権限を個人アカウントへ直接集約せず、団体の管理用Googleアカウントを所有者にして必要なメンバーだけを追加する。
+
+Search Consoleは所有権確認後すぐに過去データが揃うとは限らず、サイトがGoogleに認識・クロールされてから表示されます。独自ドメインを変更した場合は、旧propertyを消すのではなく、新property、canonical、sitemap、主要URLのインデックス状況を確認してから移行します。
+
+#### 運用時の確認
+
+- 月1回、検索パフォーマンスを「検索語」「ページ」「国」で分け、表示回数が多いのにCTRが低いページと、掲載順位が改善しているページを確認する。
+- `インデックス登録`、`ページ`、`サイトマップ`のエラーを確認する。404、重複canonical、意図しないnoindexは公開経路の変更後に重点確認する。
+- 学習記事のタイトル、description、見出し、内部リンクを変更する場合は、検索結果のクリック率と記事内の匿名統計を別々に見る。
+- Search Consoleからダウンロードした検索語・ページ別データは、個人情報や機密情報が混ざる可能性を考慮し、GitHub issue、PR、LLMの入力、公開D1へ保存しない。
+
+Search Consoleの検索パフォーマンスは検索結果の統計であり、訪問者の同意管理やサイト内行動の計測を代替しません。GA4を追加する場合は、目的、Cookie/同意、プライバシーポリシー、データ保持期間、管理者権限を別途決めてから実装します。
+
 ## 8. 障害対応の入口
 
 ### ビルドが失敗する
