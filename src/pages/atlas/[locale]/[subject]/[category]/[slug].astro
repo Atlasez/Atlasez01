@@ -1908,10 +1908,16 @@ const structuredData = {
             next = following;
             continue;
           }
-          // remark-math places a display equation between two paragraphs.
-          // Keep the continuation paragraph in the same card so text is not
-          // visually separated from its definition or theorem.
-          if (sawDisplayMath && next.tagName === "P") wrapper.append(next);
+          // remark-math places display equations between paragraphs. Keep the
+          // entire contiguous run in the same card until the next theorem,
+          // heading, proof, or other math block. This matters for examples
+          // such as group examples 5 and 7, which contain multiple equations.
+          if (sawDisplayMath && next.tagName === "P") {
+            const following = next.nextElementSibling;
+            wrapper.append(next);
+            next = following;
+            continue;
+          }
           break;
         }
       }
