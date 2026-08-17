@@ -444,8 +444,12 @@ test.describe("学習サイト", () => {
     await expect(example).toHaveCSS("border-top-width", "0px");
     await expect(example).toHaveCSS("box-shadow", "none");
     // 複数のディスプレイ数式を含む例でも、本文と数式が同じ枠に残る。
-    await expect(page.locator(".example").nth(4).locator('mjx-container[display="true"]')).toHaveCount(2);
-    await expect(page.locator(".example").nth(6).locator('mjx-container[display="true"]')).toHaveCount(2);
+    await expect(
+      page.locator(".example").nth(4).locator('mjx-container[display="true"]'),
+    ).toHaveCount(2);
+    await expect(
+      page.locator(".example").nth(6).locator('mjx-container[display="true"]'),
+    ).toHaveCount(2);
     await expect(page.locator(".math-figure figcaption")).toHaveCount(0);
     await expect(
       page.locator('.math-figure img[alt="正多角形の対称軸の図"]'),
