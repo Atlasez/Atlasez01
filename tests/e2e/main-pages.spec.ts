@@ -359,6 +359,39 @@ test.describe("学習サイト", () => {
     }
   });
 
+  test("物理記事の長い別行数式をスマホ幅で式ごとにスクロールできる", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(
+      "atlas/ja/physics/newtonian-mechanics/kinetic-energy-work/",
+    );
+
+    const equation = page
+      .locator('.article-body mjx-container[display="true"]')
+      .first();
+    await expect(equation).toBeVisible();
+    await expect
+      .poll(() =>
+        equation.evaluate((element) => {
+          const style = getComputedStyle(element);
+          return {
+            display: style.display,
+            overflowX: style.overflowX,
+            isScrollable: element.scrollWidth > element.clientWidth,
+          };
+        }),
+      )
+      .toEqual({ display: "block", overflowX: "auto", isScrollable: true });
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () => document.documentElement.scrollWidth <= window.innerWidth,
+        ),
+      )
+      .toBe(true);
+  });
+
   test("数学記事の証明矢印・folding境界・命題枠を整える", async ({ page }) => {
     await page.goto("atlas/ja/mathematics/module-theory/module-homomorphisms/");
     const toggle = page.locator("[data-proof-toggle]");

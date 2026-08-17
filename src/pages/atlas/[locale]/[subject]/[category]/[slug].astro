@@ -1093,7 +1093,7 @@ const structuredData = {
   .proof-toggle:hover { background: var(--accent-hover); }
   .proof-toggle:focus-visible { outline-offset: 3px; }
   .article-body :global(.katex-display),
-  .article-body.math-article :global(mjx-container[display="true"]) {
+  .article-body :global(mjx-container[display="true"]) {
     box-sizing: border-box;
     display: block;
     margin-block: 0.9rem;
@@ -1353,7 +1353,7 @@ const structuredData = {
     }
     /* 別行立ての数式は画面幅を超えるので、その式だけ横に送れるようにする */
     .article-body :global(.katex-display),
-    .article-body.math-article :global(mjx-container[display="true"]) {
+    .article-body :global(mjx-container[display="true"]) {
       overflow-x: auto;
       overflow-y: hidden;
     }
