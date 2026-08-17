@@ -77,4 +77,14 @@ $$
 
 正$n$角形の対称軸は具体的には次の$n$本である. $n$が奇数の場合, 正$n$角形の頂点とそれと向かい合う辺の中点を結ぶ直線. $n$が偶数の場合, 向かい合う2つの頂点を結ぶ直線が$n/2$本と, 向かい合う2つの辺の中点を結ぶ直線が$n/2$本の合計$n$本の直線.
 
+<figure class="math-figure">
+  <img
+    src="../../../../../images/math/group-examples/dihedral-symmetry-axes.svg"
+    alt="正多角形の対称軸の図"
+    loading="lazy"
+    decoding="async"
+  />
+  <figcaption>正多角形の対称軸の例</figcaption>
+</figure>
+
 以上の回転と鏡映の操作の集合を$D_n$としたとき, $D_n$は操作の合成を演算として群となる. これを二面体群(dihedral group)という. $0^{\circ}$の回転が二面体群の単位元である. $D_n$は位数$2n$の有限群で$n\geq 3$のとき非アーベル群である.

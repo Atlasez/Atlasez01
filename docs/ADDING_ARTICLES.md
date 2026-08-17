@@ -124,6 +124,34 @@ MathJax（ビルド時 SVG 出力）を使います。行内は `$...$`、別行
 
 化学式は mhchem が使えます: `$\ce{H2O}$`
 
+### 図・画像
+
+数学記事の図や画像は、外部URLやGoogle Sitesのiframeへ依存させず、リポジトリの
+`public/images/math/<article>/`へ保存します。記事URLはGitHub Pagesの`BASE_PATH`にも
+対応させるため、本文では`images/`までの相対URLを使います。
+
+```text
+public/images/math/group-examples/dihedral-symmetry-axes.svg
+```
+
+```html
+<figure class="math-figure">
+  <img
+    src="../../../../../images/math/group-examples/dihedral-symmetry-axes.svg"
+    alt="正多角形の対称軸の図"
+    loading="lazy"
+    decoding="async"
+  />
+  <figcaption>正多角形の対称軸の例</figcaption>
+</figure>
+```
+
+- `alt`は必ず図の意味を説明する文章にする
+- `figure`と`figcaption`で本文との関係を示す
+- 外部画像、`iframe`、`object`、`embed`、記事本文内のscriptは使わない
+- 画像の著作権・出典・再利用条件を確認してから保存する
+- `npm run validate:media`でファイルの存在、`alt`、安全な埋め込みを確認する
+
 ### 表
 
 Markdown の表がそのまま使えます。ヘッダ行を必ず付けてください。
