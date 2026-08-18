@@ -44,9 +44,14 @@ const ogImage = new URL(
 <link rel="canonical" href={canonical.href} />
 {
   /* プレビュー配信は本番と同じ内容なので、必ず検索対象から外す */
-  (noindex || !IS_PRODUCTION_DEPLOY) && (
-    <meta name="robots" content="noindex, nofollow" />
-  )
+  <meta
+    name="robots"
+    content={
+      noindex || !IS_PRODUCTION_DEPLOY
+        ? "noindex, nofollow"
+        : "index, follow, max-image-preview:large"
+    }
+  />
 }
 <link
   rel="icon"

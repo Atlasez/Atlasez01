@@ -10,7 +10,7 @@ export async function GET(context: APIContext) {
   return rss({
     title: "Atlasez お知らせ",
     description: "学生団体Atlasezからのお知らせ",
-    site: context.site ?? "https://atlasez.github.io",
+    site: context.site ?? "https://atlasez.org",
     items: news.map((n) => ({
       title: n.data.title,
       description: n.data.summary,

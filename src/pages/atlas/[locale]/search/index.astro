@@ -25,6 +25,7 @@ const filterLabels: Record<string, string> = {
   description={locale === "ja"
     ? "学習サイト「アトラス」の記事を分野横断で検索します。"
     : "Search articles across all subjects."}
+  noindex={true}
   localeSwitchHrefs={Object.fromEntries(
     LOCALES.map((l) => [l, atlasPath(l, "search")]),
   )}

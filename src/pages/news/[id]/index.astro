@@ -27,8 +27,17 @@ const structuredData = {
   "@context": "https://schema.org",
   "@type": "NewsArticle",
   headline: entry.data.title,
+  description: entry.data.summary,
+  url: new URL(withBase(`/news/${entry.id.replace(/\.md$/, "")}/`), Astro.site)
+    .href,
   datePublished: entry.data.date.toISOString(),
-  publisher: { "@type": "Organization", name: "Atlasez" },
+  dateModified: entry.data.date.toISOString(),
+  author: { "@type": "Organization", name: "Atlasez" },
+  publisher: {
+    "@type": "Organization",
+    name: "Atlasez",
+    url: Astro.site?.href,
+  },
 };
 ---
 

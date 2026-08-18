@@ -244,7 +244,23 @@ export default defineConfig({
     "/atlas/ja/bookmarks/": "/atlas/ja/list/",
     "/atlas/ja/history/": "/atlas/ja/list/",
   },
-  integrations: [sitemap()],
+  integrations: [
+    sitemap({
+      // 検索結果・学習履歴・開発用比較ページは検索対象にしない。
+      // noindex は HTML の指示なので、sitemap からも除外してクロール先を
+      // 公開コンテンツへ集中させる。
+      filter: (page) => {
+        const pathname = new URL(page).pathname;
+        return !(
+          pathname.includes("/atlas/ja/list/") ||
+          pathname.includes("/atlas/en/list/") ||
+          pathname.includes("/atlas/ja/search/") ||
+          pathname.includes("/atlas/en/search/") ||
+          pathname.startsWith("/atlas/design-lab/")
+        );
+      },
+    }),
+  ],
   markdown: {
     processor: unified({
       remarkPlugins: [remarkMath],

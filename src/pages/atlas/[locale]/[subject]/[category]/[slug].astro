@@ -217,13 +217,21 @@ const structuredData = {
   "@type": "Article",
   headline: entry.data.title,
   description: entry.data.summary,
+  url: new URL(
+    articlePath(locale, entry.data.subject, entry.data.category, entry.data.slug),
+    Astro.site,
+  ).href,
   inLanguage: locale,
   dateModified: entry.data.updatedAt.toISOString(),
   datePublished: entry.data.createdAt.toISOString(),
   // frontmatter の authors は "atlas-math-team" のような内部IDなので、
   // 人名として出さず団体を著者にする。
   author: { "@type": "Organization", name: "Atlasez" },
-  publisher: { "@type": "Organization", name: "Atlasez" },
+  publisher: {
+    "@type": "Organization",
+    name: "Atlasez",
+    url: Astro.site?.href,
+  },
 };
 
 ---
