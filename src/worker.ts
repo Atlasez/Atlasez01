@@ -67,6 +67,7 @@ const ALLOWED_REPORT_TYPES = new Set([
   "other",
 ]);
 const ALLOWED_ANALYTICS_EVENTS = new Set(["view", "engaged", "complete"]);
+const COUNTRY_CODE = /^[A-Z]{2,3}$/;
 const ISO639_3_BY_LOCALE: Record<string, string> = {
   ja: "jpn",
   en: "eng",
@@ -476,6 +477,31 @@ async function saveArticleAnalytics(
   return json({ ok: true }, 201);
 }
 
+/** Cloudflareの国コードだけを使い、サイト全体のページビューを日別集計する。 */
+async function saveSiteAnalytics(
+  request: Request,
+  env: Env,
+): Promise<Response> {
+  if (request.headers.get("content-type")?.includes("application/json") !== true)
+    return json({ error: "JSON形式で送信してください。" }, 415);
+  if (!isTrustedReportOrigin(request.headers.get("origin"), new URL(request.url)))
+    return json({ error: "この送信元からは受け付けられません。" }, 403);
+  const now = new Date();
+  const day = now.toISOString().slice(0, 10);
+  const headerCountry = text(request.headers.get("CF-IPCountry"), 8).toUpperCase();
+  const country = COUNTRY_CODE.test(headerCountry) ? headerCountry : "ZZ";
+  await env.REPORTS.prepare(
+    `INSERT INTO site_analytics_country_daily (day, country, pageviews, updated_at)
+     VALUES (?, ?, 1, ?)
+     ON CONFLICT(day, country) DO UPDATE SET
+       pageviews = pageviews + 1,
+       updated_at = excluded.updated_at`,
+  )
+    .bind(day, country, now.toISOString())
+    .run();
+  return json({ ok: true }, 201);
+}
+
 export default {
   async fetch(request, env, ctx): Promise<Response> {
     const url = new URL(request.url);
@@ -500,6 +526,17 @@ export default {
           request,
         );
       return withCors(await saveArticleAnalytics(request, env), request);
+    }
+    if (url.pathname === "/api/site-analytics") {
+      if (request.method === "OPTIONS") {
+        return withCors(new Response(null, { status: 204 }), request);
+      }
+      if (request.method !== "POST")
+        return withCors(
+          json({ error: "POSTのみ利用できます。" }, 405),
+          request,
+        );
+      return withCors(await saveSiteAnalytics(request, env), request);
     }
     return env.ASSETS.fetch(request);
   },
