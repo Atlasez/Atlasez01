@@ -482,13 +482,20 @@ async function saveSiteAnalytics(
   request: Request,
   env: Env,
 ): Promise<Response> {
-  if (request.headers.get("content-type")?.includes("application/json") !== true)
+  if (
+    request.headers.get("content-type")?.includes("application/json") !== true
+  )
     return json({ error: "JSON形式で送信してください。" }, 415);
-  if (!isTrustedReportOrigin(request.headers.get("origin"), new URL(request.url)))
+  if (
+    !isTrustedReportOrigin(request.headers.get("origin"), new URL(request.url))
+  )
     return json({ error: "この送信元からは受け付けられません。" }, 403);
   const now = new Date();
   const day = now.toISOString().slice(0, 10);
-  const headerCountry = text(request.headers.get("CF-IPCountry"), 8).toUpperCase();
+  const headerCountry = text(
+    request.headers.get("CF-IPCountry"),
+    8,
+  ).toUpperCase();
   const country = COUNTRY_CODE.test(headerCountry) ? headerCountry : "ZZ";
   await env.REPORTS.prepare(
     `INSERT INTO site_analytics_country_daily (day, country, pageviews, updated_at)
