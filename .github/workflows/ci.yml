@@ -51,8 +51,24 @@ jobs:
         run: npx pagefind --site dist
       - name: 内部リンク検証
         run: node scripts/check-links.mjs dist "$BASE_PATH"
+      # `--with-deps` は毎回 apt を叩くため、ミラーが詰まるとジョブ全体が
+      # タイムアウトする（CI #191 はここで14分24秒待ってから打ち切られた）。
+      # ubuntu-latest のランナー画像には Chromium の共有ライブラリが入って
+      # いるので apt は使わず、ブラウザ本体だけをキャッシュ付きで入れる。
+      - name: Playwrightのバージョンを取得
+        id: playwright-version
+        run: |
+          echo "value=$(node -p "require('./package-lock.json').packages['node_modules/@playwright/test'].version")" >> "$GITHUB_OUTPUT"
+      - name: Playwrightブラウザのキャッシュ
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.value }}
       - name: Playwrightブラウザ導入
-        run: npx playwright install --with-deps chromium
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        timeout-minutes: 5
+        run: npx playwright install chromium
       - name: E2E・アクセシビリティ検査 (Playwright + axe)
         run: npx playwright test
         env:
