@@ -1055,12 +1055,17 @@ const structuredData = {
     border-color: #e0c375;
     color: #4b3a12;
   }
+  /* 例には枠を付けないため、タイトルを枠の上辺へ重ねる負のマージンは
+     使えない。定義・命題と同じ塊のラベルとして単独の行に置き、本文を
+     次の行から始めることで、他の数学ブロックと読み方を揃える。 */
   .article-body :global(.example .thmtitle) {
-    display: inline-block;
+    display: block;
     float: none;
-    margin: 0 0.5rem 0.35rem 0;
-    border: 1px solid #e0c375;
-    border-radius: 0.35rem;
+    width: fit-content;
+    max-width: 100%;
+    margin: 0 0 0.5rem;
+    border: 3px solid #e0c375;
+    border-radius: 6px;
   }
   .article-body :global(.proof-details) { margin-block: 1.2rem; }
   .article-body :global(.proof-details > summary) {

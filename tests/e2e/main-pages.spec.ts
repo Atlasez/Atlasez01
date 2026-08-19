@@ -450,6 +450,16 @@ test.describe("学習サイト", () => {
     const example = page.locator(".example").first();
     await expect(example).toHaveCSS("border-top-width", "0px");
     await expect(example).toHaveCSS("box-shadow", "none");
+    // 例のラベルは枠を持たない代わりに、定義・命題と同じ塊のラベルとして
+    // 単独の行に置く。本文がラベルの右へ回り込まないことを確かめる。
+    const exampleTitle = example.locator(".thmtitle");
+    await expect(exampleTitle).toHaveCSS("display", "block");
+    await expect(exampleTitle).toHaveCSS("float", "none");
+    await expect(exampleTitle).toHaveCSS("border-top-width", "3px");
+    await expect(exampleTitle).toHaveCSS(
+      "background-color",
+      "rgb(224, 195, 117)",
+    );
     // 複数のディスプレイ数式を含む例でも、本文と数式が同じ枠に残る。
     await expect(
       page.locator(".example").nth(4).locator('mjx-container[display="true"]'),
