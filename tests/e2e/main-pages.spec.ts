@@ -447,15 +447,22 @@ test.describe("学習サイト", () => {
     );
 
     await page.goto("atlas/ja/mathematics/group-theory/group-examples/");
+    // 例も命題・定理と同じカード枠にする。枠が無いと、例だけの記事
+    // （群の例）が他のページと違って見えてしまう。
     const example = page.locator(".example").first();
-    await expect(example).toHaveCSS("border-top-width", "0px");
-    await expect(example).toHaveCSS("box-shadow", "none");
-    // 例のラベルは枠を持たない代わりに、定義・命題と同じ塊のラベルとして
-    // 単独の行に置く。本文がラベルの右へ回り込まないことを確かめる。
+    for (const side of ["top", "right", "bottom"] as const) {
+      await expect(example).toHaveCSS(
+        `border-${side}-color`,
+        "rgb(224, 195, 117)",
+      );
+    }
+    await expect(example).toHaveCSS("border-top-width", "1px");
+    await expect(example).toHaveCSS("border-left-width", "3px");
+    await expect(example).not.toHaveCSS("box-shadow", "none");
+    // ラベルは定義・命題と同じく枠の左上へタブとして乗る。
     const exampleTitle = example.locator(".thmtitle");
     await expect(exampleTitle).toHaveCSS("display", "block");
-    await expect(exampleTitle).toHaveCSS("float", "none");
-    await expect(exampleTitle).toHaveCSS("border-top-width", "3px");
+    await expect(exampleTitle).toHaveCSS("float", "left");
     await expect(exampleTitle).toHaveCSS(
       "background-color",
       "rgb(224, 195, 117)",
