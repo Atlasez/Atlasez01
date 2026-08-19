@@ -20,6 +20,14 @@ body {
   font-feature-settings: "palt" 1;
 }
 
+/* hidden属性は常に非表示にする。
+   コンポーネント側で display を指定していると、ブラウザ既定の
+   `[hidden] { display: none }` が上書きされ、hidden のままの要素が
+   画面に出てしまう（証明のない記事で「証明を展開」ボタンが残るなど）。 */
+[hidden] {
+  display: none !important;
+}
+
 /* リンク: 色だけに依存せず下線を維持 */
 a {
   color: var(--link);

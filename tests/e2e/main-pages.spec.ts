@@ -299,6 +299,13 @@ test.describe("学習サイト", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.reload();
     await expect(toggle).toHaveCSS("position", "static");
+
+    // 証明のない記事ではボタンを出さない。hidden属性がCSSのdisplayに
+    // 打ち消されて、押しても何も起きないボタンが残っていた。
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto("atlas/ja/mathematics/group-theory/group-examples/");
+    await expect(page.locator("details.proof-details")).toHaveCount(0);
+    await expect(page.locator("[data-proof-toggle]")).toBeHidden();
   });
 
   test("数学記事のMathJax・書式・内部参照を保持する", async ({ page }) => {
