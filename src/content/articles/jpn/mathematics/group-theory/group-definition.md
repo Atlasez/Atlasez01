@@ -113,7 +113,7 @@ $$
 \begin{align*} \forall x,y\in G,\quad x\cdot y=y\cdot x \end{align*}
 $$
 
-を満たすとき$(G,\cdot,e,{}^{-1})$をアーベル群(abelian group)または**可換群**(commutative group)という. アーベル群でない群は非アーベル群(non-abelian group)または**非可換群**(non-commutative group)という. 特にアーベル群の演算は加法(addition)と呼び, $+$で書くことも多い.
+を満たすとき$(G,\cdot,e,{}^{-1})$をアーベル群(abelian group)または<strong>可換群(commutative group)</strong>という. アーベル群でない群は非アーベル群(non-abelian group)または<strong>非可換群(non-commutative group)</strong>という. 特にアーベル群の演算は加法(addition)と呼び, $+$で書くことも多い.
 
 ## 結合法則から従う演算の略記
 
@@ -131,13 +131,13 @@ $$
 
 ## 両側単位元と両側逆元の存在
 
-$G$を空でないマグマで結合法則が成り立つものとするとき, 次の条件を満たす$e\in G$を$G$の両側単位元(two-sided identity element)または単に**単位元**(identity element)という.
+$G$を空でないマグマで結合法則が成り立つものとするとき, 次の条件を満たす$e\in G$を$G$の両側単位元(two-sided identity element)または単に<strong>単位元(identity element)</strong>という.
 
 $$
 \begin{align*} \forall x\in G,\quad ex=xe=x \end{align*}
 $$
 
-また, $x\in G$に対し次の条件を満たすような$x^{-1}\in G$を$x$の両側逆元(two-sided inverse element)または単に**逆元**(inverse element)という.
+また, $x\in G$に対し次の条件を満たすような$x^{-1}\in G$を$x$の両側逆元(two-sided inverse element)または単に<strong>逆元(inverse element)</strong>という.
 
 $$
 \begin{align*} x^{-1}x=xx^{-1}=e \end{align*}
@@ -261,7 +261,7 @@ $$
 
 ## 有限群, 無限群の定義
 
-定義 8 (有限群, 無限群). 群$G$が有限個の元からなるとき$G$を**有限群**(finite group)という. このとき$G$の集合としての濃度$|G|$を$G$の**位数**(order)という. 群$G$が有限群でないとき$G$を**無限群**(infinite group)という.
+定義 8 (有限群, 無限群). 群$G$が有限個の元からなるとき$G$を<strong>有限群(finite group)</strong>という. このとき$G$の集合としての濃度$|G|$を$G$の<strong>位数(order)</strong>という. 群$G$が有限群でないとき$G$を<strong>無限群(infinite group)</strong>という.
 
 ## 群の部分集合の積
 

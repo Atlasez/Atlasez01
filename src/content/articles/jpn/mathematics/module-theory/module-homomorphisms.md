@@ -75,13 +75,13 @@ $$
 
 3. 逆写像$f^{-1}\colon M_2\to M_1$も$R$準同型写像である.
 
-$R$同型写像$f\colon M_1\to M_2$が存在するとき$M_1$と$M_2$は**同型**(isomorphic)であるといい
+$R$同型写像$f\colon M_1\to M_2$が存在するとき$M_1$と$M_2$は<strong>同型(isomorphic)</strong>であるといい
 
 $$
 \begin{align*} M_1\cong M_2 \end{align*}
 $$
 
-と表す. 特に$M=M_1=M_2$であるとき$M_1$から$M_2$への同型写像を$M$の**自己同型写像**(automorphism)という.
+と表す. 特に$M=M_1=M_2$であるとき$M_1$から$M_2$への同型写像を$M$の<strong>自己同型写像(automorphism)</strong>という.
 
 ## 同型写像であることの同値な条件
 

@@ -33,11 +33,11 @@ $$
 \begin{align*} gHg^{-1}=H \end{align*}
 $$
 
-が成り立つとき$H$は$G$の**正規部分群**(normal subgroup)であるという. このことを$H\vartriangleleft G$と表す.
+が成り立つとき$H$は$G$の<strong>正規部分群(normal subgroup)</strong>であるという. このことを$H\vartriangleleft G$と表す.
 
 定義からわかるようにアーベル群の部分群は全て正規部分群である. また群$G$の部分群として$\{e\},G$を考えるとこれらは常に$G$の正規部分群である. $\{e\},G$を自明な正規部分群という.
 
-定義 2 (単純群). 自明でない群$G$の正規部分群が$G,\{e_G\}$のみであるとき, $G$は**単純群**(simple group)であるという.
+定義 2 (単純群). 自明でない群$G$の正規部分群が$G,\{e_G\}$のみであるとき, $G$は<strong>単純群(simple group)</strong>であるという.
 
 ## 特性部分群の定義
 
@@ -47,7 +47,7 @@ $$
 \begin{align*} \varphi(H)= H \end{align*}
 $$
 
-が成り立つとき$H$は$G$の**特性部分群**(characteristic subgroup)であるという. このことを$H\blacktriangleleft G$と表す.
+が成り立つとき$H$は$G$の<strong>特性部分群(characteristic subgroup)</strong>であるという. このことを$H\blacktriangleleft G$と表す.
 
 内部自己同型写像は自己同型写像の特別な場合なので, 特性部分群は正規部分群である. また, 自明な正規部分群$\{e\}$, $G$は特性部分群でもある.
 

@@ -27,7 +27,7 @@ references: []
 
 ## 共役作用の定義
 
-定義 1 (共役作用). 群$G$の$G$自身への作用で以下の条件を満たすものを共役作用(conjugation), **随伴作用**(adjoint action)という.
+定義 1 (共役作用). 群$G$の$G$自身への作用で以下の条件を満たすものを共役作用(conjugation), <strong>随伴作用(adjoint action)</strong>という.
 
 1. 一般の群$G$に対しては自明とは限らない作用である.
 
@@ -109,7 +109,7 @@ $$
 
 アーベル群における共役作用は常に自明な作用になることに注意する.
 
-各$g\in G$に対して定まる自己同型写像$\operatorname{Ad}(g)\colon x\mapsto gxg^{-1}$は$\operatorname{Ad}_g$と書き, $g\in G$の定める$G$の**内部自己同型写像**(inner automorphism)という.
+各$g\in G$に対して定まる自己同型写像$\operatorname{Ad}(g)\colon x\mapsto gxg^{-1}$は$\operatorname{Ad}_g$と書き, $g\in G$の定める$G$の<strong>内部自己同型写像(inner automorphism)</strong>という.
 
 ## 群の元の共役
 
@@ -119,7 +119,7 @@ $$
 \begin{align*} x^g:=g^{-1}xg \end{align*}
 $$
 
-を$x$の$g$による**共役**(conjugate)という. 群$G$の二つの元$x,y$が共役であるとは, ある共役作用によって一方をもう一方に移すことができること, すなわちある$g\in G$が存在して
+を$x$の$g$による<strong>共役(conjugate)</strong>という. 群$G$の二つの元$x,y$が共役であるとは, ある共役作用によって一方をもう一方に移すことができること, すなわちある$g\in G$が存在して
 
 $$
 \begin{align*} y=x^g \end{align*}
@@ -155,7 +155,7 @@ $$
 \begin{align*} S^g:=\{s^g\mid s\in S\} \end{align*}
 $$
 
-を$S$の$g$による**共役集合**(conjugate set)という. 群$G$の二つの部分集合$S,T$が共役であるとは, 共役作用によって一方をもう一方に移すことができること, すなわちある$g\in G$が存在して
+を$S$の$g$による<strong>共役集合(conjugate set)</strong>という. 群$G$の二つの部分集合$S,T$が共役であるとは, 共役作用によって一方をもう一方に移すことができること, すなわちある$g\in G$が存在して
 
 $$
 \begin{align*} T=S^g \end{align*}
@@ -185,7 +185,7 @@ $$
 
 ◻
 
-命題 7 (共役部分群). $H$を群$G$の部分群とすると, 任意の$g\in G$に対し共役集合$H^g$も$G$の部分群である. $H^g$を$H$の$g$による**共役部分群**(conjugate subgroup)という.
+命題 7 (共役部分群). $H$を群$G$の部分群とすると, 任意の$g\in G$に対し共役集合$H^g$も$G$の部分群である. $H^g$を$H$の$g$による<strong>共役部分群(conjugate subgroup)</strong>という.
 
 証明. まず$e= e^g\in H^g$である. 次に任意の$h_1^g,h_2^g\in H^g$に対して, [共役作用:命題 4]により
 

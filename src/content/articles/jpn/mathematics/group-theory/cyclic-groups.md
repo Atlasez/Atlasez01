@@ -27,7 +27,7 @@ references: []
 
 ## 巡回群
 
-定義 1 (巡回部分群, 巡回群). 群$G$に対して, ある$a\in G$が存在して$G=\langle a\rangle$となるとき, $G$を**巡回群**(cyclic group)という. また, $G$の部分群で巡回群であるものを$G$の**巡回部分群**(cyclic subgroup)という.
+定義 1 (巡回部分群, 巡回群). 群$G$に対して, ある$a\in G$が存在して$G=\langle a\rangle$となるとき, $G$を<strong>巡回群(cyclic group)</strong>という. また, $G$の部分群で巡回群であるものを$G$の<strong>巡回部分群(cyclic subgroup)</strong>という.
 
 生成系により生成される群の具体的な表示([群の生成系:命題 3])より巡回群$G=\langle a\rangle$の元は整数$i$を用いて$a^i$と表すことができる. ただしこの表示は一意的とは限らない.
 
@@ -53,7 +53,7 @@ $$
 \begin{align*} \langle a\rangle=\{e,a,a^2,\ldots ,a^{m-1}\} \end{align*}
 $$
 
-となる. この$m$を$a$の**位数**(order)という. このとき$a^n=e$ならば$n$は$m$で割り切れる.
+となる. この$m$を$a$の<strong>位数(order)</strong>という. このとき$a^n=e$ならば$n$は$m$で割り切れる.
 
 - 任意の整数$n\neq 0$に対して$a^n\neq e$となるとき, 巡回部分群は次の形で表される無限群になる.
 

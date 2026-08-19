@@ -33,7 +33,7 @@ $$
 \begin{align*} (g_1N)\cdot(g_2N):=(g_1g_2)N \end{align*}
 $$
 
-で定めることができる(well-defined). この演算による群$G/N$を$G$の$N$による**剰余群**(quotient group)という.
+で定めることができる(well-defined). この演算による群$G/N$を$G$の$N$による<strong>剰余群(quotient group)</strong>という.
 
 $g_1N=g_1'N$かつ$g_2N=g_2'N$とする. すると$g_1'^{-1}g_1\in N$かつ$g_2'^{-1}g_2\in N$となる. このとき
 

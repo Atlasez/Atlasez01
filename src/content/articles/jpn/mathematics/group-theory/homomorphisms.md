@@ -27,7 +27,7 @@ references: []
 
 ## 準同型写像の定義
 
-定義 1 (準同型写像). $(G_1,\circ_1,e_1,{}^{(-1)_{G_1}}),(G_2,\circ_2,e_2,{}^{(-1)_{G_2}})$を群とする. 写像$\varphi\colon G_1\to G_2$が次の条件を満たすとき$G_1$から$G_2$への**準同型写像**(homomorphism)という.
+定義 1 (準同型写像). $(G_1,\circ_1,e_1,{}^{(-1)_{G_1}}),(G_2,\circ_2,e_2,{}^{(-1)_{G_2}})$を群とする. 写像$\varphi\colon G_1\to G_2$が次の条件を満たすとき$G_1$から$G_2$への<strong>準同型写像(homomorphism)</strong>という.
 
 1. $\forall x,y\in G_1,\,\varphi(x\circ_1 y)=\varphi(x)\circ_2\varphi(y)$
 
@@ -35,7 +35,7 @@ references: []
 
 3. $\forall x\in G_1,\, \varphi(x^{(-1)_{G_1}})=\varphi(x)^{(-1)_{G_2}}$.
 
-特に群$G$から$G$自身への準同型写像は$G$の**自己準同型写像**(endomorphism)という. $G_1$から$G_2$への準同型写像全体の集合を$\mathop{\mathrm{Hom}}(G_1,G_2)$, $G$の自己準同型写像全体の集合を$\mathop{\mathrm{End}}(G)$で表す.
+特に群$G$から$G$自身への準同型写像は$G$の<strong>自己準同型写像(endomorphism)</strong>という. $G_1$から$G_2$への準同型写像全体の集合を$\mathop{\mathrm{Hom}}(G_1,G_2)$, $G$の自己準同型写像全体の集合を$\mathop{\mathrm{End}}(G)$で表す.
 
 上の定義では演算を区別するために$\circ_1,\circ_2$と異なる記号を用いたが, 準同型の始域と終域に従えば誤解のおそれはないので, 基本的に演算は省略する. また, 単に準同型写像$\varphi\colon G_1\to G_2$と書いたとき, 特に断らなくとも$G_1$, $G_2$は群である.
 
@@ -67,7 +67,7 @@ $$
 
 ## 反準同型写像
 
-定義 4 (反準同型写像). 写像$\varphi\colon G_1\to G_2$が次の条件を満たすとき$G_1$から$G_2$への**反準同型写像**(antihomomorphism)という.
+定義 4 (反準同型写像). 写像$\varphi\colon G_1\to G_2$が次の条件を満たすとき$G_1$から$G_2$への<strong>反準同型写像(antihomomorphism)</strong>という.
 
 $$
 \begin{align*} \forall x,y\in G_1,\quad\varphi(xy)=\varphi(y)\varphi(x) \end{align*}
@@ -77,7 +77,7 @@ $$
 
 反準同型写像$\varphi\colon G_1\to G_2$は, 演算の順序を逆にした群に関する準同型写像と見ることができる.
 
-定義 5 (反対群). 群$(G,\cdot)$に対して, 集合$G^{\mathrm{op}}:=G$に演算$\circ_{\mathrm{op}}$を次のように定義した群$(G^{\mathrm{op}},\circ_{\mathrm{op}})$を群$(G,\circ)$の**反対群**(opposite group)という.
+定義 5 (反対群). 群$(G,\cdot)$に対して, 集合$G^{\mathrm{op}}:=G$に演算$\circ_{\mathrm{op}}$を次のように定義した群$(G^{\mathrm{op}},\circ_{\mathrm{op}})$を群$(G,\circ)$の<strong>反対群(opposite group)</strong>という.
 
 $$
 \begin{align*} \forall x, y \in G^{\text{op}}, \quad x \circ_{\text{op}} y := y \cdot x \end{align*}
@@ -157,7 +157,7 @@ $$
 
 ## 同型写像
 
-定義 10 (同型写像). 写像$\varphi\colon G_1\to G_2$が以下の条件を満たすとき$\varphi$を$G_1$から$G_2$への**同型写像**(isomorphism)という.
+定義 10 (同型写像). 写像$\varphi\colon G_1\to G_2$が以下の条件を満たすとき$\varphi$を$G_1$から$G_2$への<strong>同型写像(isomorphism)</strong>という.
 
 1. $\varphi\colon G_1\to G_2$は準同型写像である.
 
@@ -165,13 +165,13 @@ $$
 
 3. $\varphi$が1. を満たし, 逆写像$\varphi^{-1}\colon G_2\to G_1$が準同型写像である.
 
-同型写像$\varphi\colon G_1\to G_2$が存在するとき$G_1$と$G_2$は**同型**(isomorphic)であるといい
+同型写像$\varphi\colon G_1\to G_2$が存在するとき$G_1$と$G_2$は<strong>同型(isomorphic)</strong>であるといい
 
 $$
 \begin{align*} G_1\cong G_2 \end{align*}
 $$
 
-と表す. 特に$G=G_1=G_2$であるとき$G_1$から$G_2$への同型写像を$G$の**自己同型写像**(automorphism)という. $G_1$から$G_2$への同型写像全体の集合を$\mathop{\mathrm{Iso}}(G_1,G_2)$, $G$の自己同型写像全体の集合を$\mathop{\mathrm{Aut}}(G)$で表す.
+と表す. 特に$G=G_1=G_2$であるとき$G_1$から$G_2$への同型写像を$G$の<strong>自己同型写像(automorphism)</strong>という. $G_1$から$G_2$への同型写像全体の集合を$\mathop{\mathrm{Iso}}(G_1,G_2)$, $G$の自己同型写像全体の集合を$\mathop{\mathrm{Aut}}(G)$で表す.
 
 ## 同型写像であることの同値な条件
 

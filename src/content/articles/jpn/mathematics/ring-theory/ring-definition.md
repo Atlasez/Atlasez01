@@ -77,7 +77,7 @@ $$
 \begin{align*} \forall x, y, z \in R,\ (x + y)\cdot z = x\cdot z + y\cdot z \end{align*}
 $$
 
-上の環の定義では乗法の単位元$1$の存在を仮定していない. 乗法の単位元を持つ環, すなわち$(R,\cdot,1)$がモノイドをなすと**き単位的環**(unital ring)と呼ぶ. 一方, 単位元の存在を仮定しない環を非単位的環(non-unital ring, rng), 擬環(pseudo ring)と呼んで区別することもある.
+上の環の定義では乗法の単位元$1$の存在を仮定していない. 乗法の単位元を持つ環, すなわち$(R,\cdot,1)$がモノイドをなすと<strong>き単位的環(unital ring)</strong>と呼ぶ. 一方, 単位元の存在を仮定しない環を非単位的環(non-unital ring, rng), 擬環(pseudo ring)と呼んで区別することもある.
 
 $0$は零元または加法単位元, $1$は単位元または乗法単位元と呼ばれる. 特にそれらが環$R$におけるものであることを明確にしたい場合は$0_R, 1_R$と書く.
 
@@ -91,7 +91,7 @@ $$
 \begin{align*} \forall x,y\in R,\quad xy=yx \end{align*}
 $$
 
-が成り立つとき, $R$を**可換環**(commutative ring)という. 可換でない環を**非可換環**(non-commutative ring)という.
+が成り立つとき, $R$を<strong>可換環(commutative ring)</strong>という. 可換でない環を<strong>非可換環(non-commutative ring)</strong>という.
 
 ## 単位元と逆元の一意性
 
@@ -151,7 +151,7 @@ $$
 
 ## 零環
 
-ただ一つの元からなる集合$\{\ast\}$は$\ast+\ast:=\ast$, $\ast\cdot \ast=\ast$と定めることで環, 特に単位的環になる. このとき$\{\ast\}$の加法単位元と乗法単位元はともに$\ast$である. この環を**零環**(zero ring)といい, その元は通常$0$で表す.
+ただ一つの元からなる集合$\{\ast\}$は$\ast+\ast:=\ast$, $\ast\cdot \ast=\ast$と定めることで環, 特に単位的環になる. このとき$\{\ast\}$の加法単位元と乗法単位元はともに$\ast$である. この環を<strong>零環(zero ring)</strong>といい, その元は通常$0$で表す.
 
 逆に, 環$R$において加法単位元$0$と乗法単位元$1$が一致しているとき, 任意の$x\in R$は
 

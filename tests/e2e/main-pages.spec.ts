@@ -447,22 +447,15 @@ test.describe("学習サイト", () => {
     );
 
     await page.goto("atlas/ja/mathematics/group-theory/group-examples/");
-    // 例も命題・定理と同じカード枠にする。枠が無いと、例だけの記事
-    // （群の例）が他のページと違って見えてしまう。
     const example = page.locator(".example").first();
-    for (const side of ["top", "right", "bottom"] as const) {
-      await expect(example).toHaveCSS(
-        `border-${side}-color`,
-        "rgb(224, 195, 117)",
-      );
-    }
-    await expect(example).toHaveCSS("border-top-width", "1px");
-    await expect(example).toHaveCSS("border-left-width", "3px");
-    await expect(example).not.toHaveCSS("box-shadow", "none");
-    // ラベルは定義・命題と同じく枠の左上へタブとして乗る。
+    await expect(example).toHaveCSS("border-top-width", "0px");
+    await expect(example).toHaveCSS("box-shadow", "none");
+    // 例のラベルは枠を持たない代わりに、定義・命題と同じ塊のラベルとして
+    // 単独の行に置く。本文がラベルの右へ回り込まないことを確かめる。
     const exampleTitle = example.locator(".thmtitle");
     await expect(exampleTitle).toHaveCSS("display", "block");
-    await expect(exampleTitle).toHaveCSS("float", "left");
+    await expect(exampleTitle).toHaveCSS("float", "none");
+    await expect(exampleTitle).toHaveCSS("border-top-width", "3px");
     await expect(exampleTitle).toHaveCSS(
       "background-color",
       "rgb(224, 195, 117)",
@@ -484,6 +477,58 @@ test.describe("学習サイト", () => {
     await expect(
       page.locator('.math-figure img[alt="準同型定理の可換図式"]'),
     ).toBeVisible();
+  });
+
+  test("折りたたみの矢印は▶と▼で縦中央に置く", async ({ page }) => {
+    await page.goto("atlas/ja/mathematics/group-theory/subgroups/");
+    const summary = page.locator("details.proof-details > summary").first();
+    const marker = () =>
+      summary.evaluate((el) => {
+        const cs = getComputedStyle(el, "::before");
+        const own = getComputedStyle(el);
+        const box = el.getBoundingClientRect();
+        return {
+          content: cs.content.replace(/"/gu, ""),
+          // top:50% + translateY(-50%) で、ボタンの高さが変わっても中央に残る。
+          // top はボーダーを除いたパディングボックス基準で解決される。
+          centered:
+            Math.abs(
+              Number.parseFloat(cs.top) -
+                (box.height -
+                  Number.parseFloat(own.borderTopWidth) -
+                  Number.parseFloat(own.borderBottomWidth)) /
+                  2,
+            ) < 0.5 && cs.transform.includes("-"),
+        };
+      });
+    expect(await marker()).toEqual({ content: "▶", centered: true });
+    await summary.click();
+    expect(await marker()).toEqual({ content: "▼", centered: true });
+  });
+
+  test("補足ブロックは下辺の枠線を持たない", async ({ page }) => {
+    await page.goto("atlas/ja/mathematics/group-theory/group-definition/");
+    const supp = page.locator("details.supp-details").first();
+    await supp.locator("summary").click();
+    await expect(supp).toHaveCSS("border-bottom-width", "0px");
+    await expect(supp.locator(".supp-details-inner")).toHaveCSS(
+      "border-bottom-width",
+      "0px",
+    );
+  });
+
+  test("定義した用語は英語の併記まで含めて太字にする", async ({ page }) => {
+    await page.goto("atlas/ja/mathematics/group-theory/subgroups/");
+    await expect(page.locator(".defi strong").first()).toHaveText(
+      "部分群(subgroup)",
+    );
+    await expect(page.locator(".defi strong").first()).toHaveCSS(
+      "font-weight",
+      "700",
+    );
+    await expect(page.locator(".example strong").first()).toHaveText(
+      "自明な部分群(trivial subgroup)",
+    );
   });
 
   test("証明枠は◻で閉じ、続く本文と参照リンクを外に残す", async ({ page }) => {

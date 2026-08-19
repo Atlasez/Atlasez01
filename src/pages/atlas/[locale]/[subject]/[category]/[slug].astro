@@ -979,7 +979,6 @@ const structuredData = {
   .article-body :global(.thm),
   .article-body :global(.lemma),
   .article-body :global(.cor),
-  .article-body :global(.example),
   .article-body :global(.math-theorem) {
     background: color-mix(in srgb, #e0c375 12%, var(--background-primary));
     border: 1px solid #e0c375;
@@ -991,6 +990,15 @@ const structuredData = {
     box-sizing: border-box;
     min-width: 0;
     overflow: visible;
+  }
+  /* 例は意味上のグループであり、命題・定理と同じカード枠は付けない。 */
+  .article-body :global(.example) {
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    margin-block: 2.2rem 1.15rem;
+    padding: 0;
   }
   .article-body :global(.defi) > :first-child,
   .article-body :global(.prop) > :first-child,
@@ -1046,6 +1054,18 @@ const structuredData = {
     background: #e0c375;
     border-color: #e0c375;
     color: #4b3a12;
+  }
+  /* 例には枠を付けないため、タイトルを枠の上辺へ重ねる負のマージンは
+     使えない。定義・命題と同じ塊のラベルとして単独の行に置き、本文を
+     次の行から始めることで、他の数学ブロックと読み方を揃える。 */
+  .article-body :global(.example .thmtitle) {
+    display: block;
+    float: none;
+    width: fit-content;
+    max-width: 100%;
+    margin: 0 0 0.5rem;
+    border: 3px solid #e0c375;
+    border-radius: 6px;
   }
   .article-body :global(.proof-details) { margin-block: 1.2rem; }
   .article-body :global(.proof-details > summary) {
@@ -1179,15 +1199,30 @@ const structuredData = {
   .article-body :global(.supp-details-summary::-webkit-details-marker) { display: none; }
   .article-body :global(.supp-details-summary::after) { content: "+"; position: absolute; right: 0.8rem; }
   .article-body :global(.supp-details[open] .supp-details-summary::after) { content: "−"; }
-  .article-body :global(.supp-details-inner) { border: 1px solid var(--border-default); border-top: 0; border-radius: 0 0 0.45rem 0.45rem; padding: 0.8rem 1rem; }
+  .article-body :global(.supp-details) { border-bottom: 0; }
+  .article-body :global(.supp-details-inner) { border: 1px solid var(--border-default); border-top: 0; border-bottom: 0; border-radius: 0; padding: 0.8rem 1rem; }
   .article-body :global(.rem) { background: color-mix(in srgb, var(--background-secondary) 75%, transparent); border: 1px solid var(--border-default); border-left: 4px solid var(--border-strong); border-radius: 0.35rem; color: var(--text-secondary); margin-block: 1.2rem; padding: 0.7rem 0.9rem; }
   /* folding の外枠は証明本文の左ガイド線と二重になるため持たせない。
      .proof-details-inner.folding-content の左borderは別ルールで維持する。 */
   .article-body :global(details.folding) { border: 0; border-radius: 0.45rem; margin-block: 1rem; overflow: hidden; }
   .article-body :global(details.folding > summary) { background: var(--background-secondary); cursor: pointer; list-style: none; padding: 0.55rem 0.8rem 0.55rem 2rem; position: relative; }
   .article-body :global(details.folding > summary::-webkit-details-marker) { display: none; }
-  .article-body :global(details.folding > summary::before) { border-bottom: 2px solid var(--text-secondary); border-right: 2px solid var(--text-secondary); content: ""; height: 0.45rem; left: 0.8rem; position: absolute; top: 0.75rem; transform: rotate(45deg); transition: transform .15s ease; width: 0.45rem; }
-  .article-body :global(details.folding[open] > summary::before) { transform: rotate(225deg); }
+  /* 折りたたみの矢印は CSS の山形ではなく ▶ / ▼ の文字にする。
+     top を固定するとボタンの高さに追随せず中央から外れるため、
+     50% と translateY で常に縦中央へ置く。 */
+  .article-body :global(details.folding > summary::before) {
+    color: var(--text-secondary);
+    content: "▶";
+    font-size: 0.8em;
+    left: 0.8rem;
+    line-height: 1;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+  .article-body :global(details.folding[open] > summary::before) {
+    content: "▼";
+  }
   .article-body :global(.folding-content) { padding: 0.8rem 1rem; }
   .article-refs,
   .article-footer {

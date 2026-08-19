@@ -27,7 +27,7 @@ references: []
 
 ## 単元群の定義
 
-命題 1 (単元群) 単位的環$R$の単元全体を$R^{\times}$と表す. このとき$R^{\times}$は環の乗法を演算として群をなす. $R^{\times}$を単元群(group of units)または**乗法群**(multiplicative group)と呼ぶ.
+命題 1 (単元群) 単位的環$R$の単元全体を$R^{\times}$と表す. このとき$R^{\times}$は環の乗法を演算として群をなす. $R^{\times}$を単元群(group of units)または<strong>乗法群(multiplicative group)</strong>と呼ぶ.
 
 証明. $R$の単位元$1$について$1\in R^{\times}$であるから$R^{\times}$は空でない.
 
@@ -69,7 +69,7 @@ $$
 
 例 4 (体の単元群) 体$K$の単元群は$K\setminus \{0\}$である.
 
-例 5 (一般線形群) 単位的環$R$に対して全行列環$\mathrm{M}_n(R)$の単元群を**一般線形群**(general linear group)といい$\mathrm{GL}_n(R)$で表す.
+例 5 (一般線形群) 単位的環$R$に対して全行列環$\mathrm{M}_n(R)$の単元群を<strong>一般線形群(general linear group)</strong>といい$\mathrm{GL}_n(R)$で表す.
 
 例 6 (整数環の単元群) $\mathbb{Z}$の単元は$\pm 1$である. よって$\mathbb{Z}$の単元群は$\{\pm 1\}\cong \mathbb{Z}/2\mathbb{Z}$である. また, ガウス整数環$\mathbb{Z}[i]$の単元は$\{\pm 1, \pm i\}$である. よって$\mathbb{Z}[i]$の単元群は$\{\pm 1, \pm i\}\cong \mathbb{Z}/4\mathbb{Z}$である.
 

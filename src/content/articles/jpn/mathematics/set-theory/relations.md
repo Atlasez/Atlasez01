@@ -33,7 +33,7 @@ $$
 \begin{align*} R\subset \prod_{i\in I}X_i \end{align*}
 $$
 
-を考える. このとき, 組$(\{X_i\}_{i\in I},R)$を$\{X_i\}_{i\in I}$上の**関係**(relation)という. 特に$I$が濃度$n$の有限集合であるとき、$n$項関係($n$-ary relation), $n=1$の場合は単項関係という. また$\forall i\in I\ X_i=X$の場合は$X$上の関係といい, 特に$X$上の2項関係は自己関係(endrelation)ともいう.
+を考える. このとき, 組$(\{X_i\}_{i\in I},R)$を$\{X_i\}_{i\in I}$上の<strong>関係(relation)</strong>という. 特に$I$が濃度$n$の有限集合であるとき、$n$項関係($n$-ary relation), $n=1$の場合は単項関係という. また$\forall i\in I\ X_i=X$の場合は$X$上の関係といい, 特に$X$上の2項関係は自己関係(endrelation)ともいう.
 
 $(x_i)_{i\in I}\in R$を満たすとき, $(x_i)_{i\in I}$は関係$R$を持つといい, これを$R(x_i)_{i\in I}$と表す。特に$I$が有限集合のとき$Rx_1x_2\ldots x_n$、2項関係は$x_1Rx_2$などとも表す.
 

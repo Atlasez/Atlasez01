@@ -29,11 +29,11 @@ references: []
 
 定義 1 (単元, 可逆元)
 
-1. 単位的環$R$の元$x$が左単元(left unit)または**左可逆元**(left invertible element)であるとは, $yx=1$となる左逆元$y\in R$が存在することである.
+1. 単位的環$R$の元$x$が左単元(left unit)または<strong>左可逆元(left invertible element)</strong>であるとは, $yx=1$となる左逆元$y\in R$が存在することである.
 
-2. 単位的環$R$の元$x$が右単元(right unit)または**右可逆元**(right invertible element)であるとは, $xy=1$となる右逆元$y\in R$が存在することである.
+2. 単位的環$R$の元$x$が右単元(right unit)または<strong>右可逆元(right invertible element)</strong>であるとは, $xy=1$となる右逆元$y\in R$が存在することである.
 
-3. 単位的環$R$の元$x$が左単元かつ右単元であるとき, 単元(unit)または**可逆元**(invertible element)と呼ぶ.
+3. 単位的環$R$の元$x$が左単元かつ右単元であるとき, 単元(unit)または<strong>可逆元(invertible element)</strong>と呼ぶ.
 
 可換環では左可逆元と右可逆元の区別はない.
 

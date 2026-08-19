@@ -27,7 +27,7 @@ references: []
 
 ## 自己同型群の定義
 
-定義 1 (自己同型群). 群$G$の自己同型写像全体の集合$\operatorname{Aut}(G)$は写像の合成を演算として群をなす. これを$G$の**自己同型群**(automorphism group)という.
+定義 1 (自己同型群). 群$G$の自己同型写像全体の集合$\operatorname{Aut}(G)$は写像の合成を演算として群をなす. これを$G$の<strong>自己同型群(automorphism group)</strong>という.
 
 自己同型群の単位元は恒等写像である. $\varphi\in \operatorname{Aut}(G)$の逆元はその逆写像$\varphi^{-1}$で, これが再び自己準同型写像であることは[準同型写像の定義:命題 11]から分かる. また, $\varphi,\psi\in \operatorname{Aut}(G)$の積$\varphi\circ\psi$も自己同型写像であることは[準同型写像の定義:命題 6]から分かる.
 
@@ -127,7 +127,7 @@ $$
 \begin{align*} \mathop{\mathrm{Inn}}(G):=\{\operatorname{Ad}_g\colon G\to G,\;x\mapsto x^g\mid g\in G\} \end{align*}
 $$
 
-を$G$の**内部自己同型群**(inner automorphism group)という.
+を$G$の<strong>内部自己同型群(inner automorphism group)</strong>という.
 
 アーベル群$G$の内部自己同型は全て恒等写像になるため, $\mathop{\mathrm{Inn}}(G)$は自明な群となる.
 
@@ -159,7 +159,7 @@ $$
 
 [自己同型群:命題 7]より剰余群$\operatorname{Aut}(G)/\mathop{\mathrm{Inn}}(G)$が定義できる.
 
-定義 8 (外部自己同型群). 剰余群$\operatorname{Aut}(G)/\mathop{\mathrm{Inn}}(G)$を$G$の**外部自己同型群**(outer automorphism group)といい, $\mathop{\mathrm{Out}}(G)$と表す.
+定義 8 (外部自己同型群). 剰余群$\operatorname{Aut}(G)/\mathop{\mathrm{Inn}}(G)$を$G$の<strong>外部自己同型群(outer automorphism group)</strong>といい, $\mathop{\mathrm{Out}}(G)$と表す.
 
 ## 内部自己同型群の性質
 
