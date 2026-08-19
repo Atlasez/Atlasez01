@@ -462,6 +462,69 @@ test.describe("学習サイト", () => {
     ).toBeVisible();
   });
 
+  test("証明枠は◻で閉じ、続く本文と参照リンクを外に残す", async ({ page }) => {
+    await page.goto("atlas/ja/mathematics/group-theory/generating-sets/");
+    const proofs = page.locator("details.proof-details");
+    await expect(proofs).not.toHaveCount(0);
+    for (const text of await proofs.allTextContents()) {
+      // 証明の本文は終止記号で終わり、その後の解説文を巻き込まない。
+      expect(text.trim().endsWith("◻")).toBe(true);
+    }
+    // 証明の直後の段落は枠の外にあり、リンクも生きている。
+    const followUp = page
+      .locator(".article-body > p")
+      .filter({ hasText: "単項生成であるといい" });
+    await expect(followUp).toHaveCount(1);
+    await expect(followUp.locator("a.article-reference")).toHaveAttribute(
+      "href",
+      /cyclic-groups\/#math-block-1$/,
+    );
+    // 未公開記事への参照は角括弧のままにせず、リンクにもしない。
+    const pending = page.locator("span.article-reference-pending");
+    await expect(pending.first()).toHaveText("有限生成群:定義 1");
+    await expect(
+      pending.filter({ hasText: "Frattini部分群:定義 1" }),
+    ).toHaveCount(1);
+    await expect(page.locator(".article-body")).not.toContainText(
+      "[Frattini部分群:定義 1]",
+    );
+  });
+
+  test("本文の補足は補足ブロックとして折りたためる", async ({ page }) => {
+    await page.goto("atlas/ja/mathematics/group-theory/generating-sets/");
+    const supp = page.locator("details.supp-details");
+    await expect(supp).toHaveCount(1);
+    await expect(supp.locator("summary.supp-details-summary")).toHaveText(
+      "補足.",
+    );
+    await expect(supp.locator(".supp-details-inner")).toContainText(
+      "極小生成系は線型空間における基底にあたる",
+    );
+    await expect(supp.locator(".supp-details-inner")).not.toContainText(
+      "補足 ",
+    );
+
+    await page.goto("atlas/ja/mathematics/group-theory/group-definition/");
+    await expect(page.locator("details.supp-details")).not.toHaveCount(0);
+  });
+
+  test("定義に付随する条件はfoldingで折りたためる", async ({ page }) => {
+    await page.goto("atlas/ja/mathematics/module-theory/modules/");
+    const conditions = page
+      .locator("details.folding")
+      .filter({ hasText: "加法群であることの条件" });
+    await expect(conditions.first()).toBeVisible();
+    await expect(conditions.first().locator(".folding-content")).toContainText(
+      "二項演算の閉性",
+    );
+    // 折りたたみの中身は開くまで表示しない。
+    await expect(
+      conditions.first().locator(".folding-content"),
+    ).not.toBeVisible();
+    await conditions.first().locator("summary").click();
+    await expect(conditions.first().locator(".folding-content")).toBeVisible();
+  });
+
   test("学習記録は触れた位置へ移動し、記事の上下で同期する", async ({
     page,
   }) => {

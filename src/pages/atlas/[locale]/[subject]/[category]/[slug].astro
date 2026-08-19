@@ -414,8 +414,7 @@ const structuredData = {
             aria-expanded="false"
             hidden
           >
-            <span class="proof-toggle-icon" data-proof-indicator aria-hidden="true">▶</span>{" "}
-            <span data-proof-label>証明を展開</span>
+            <span class="proof-toggle-icon" data-proof-indicator aria-hidden="true">▶</span>{" "}<span data-proof-label>証明を展開</span>
           </button>
         )
       }
@@ -1113,7 +1112,6 @@ const structuredData = {
     line-height: 1.25;
     text-align: center;
     white-space: nowrap;
-    gap: 0.45rem;
   }
   .proof-toggle-icon {
     display: inline-flex;
@@ -1121,7 +1119,14 @@ const structuredData = {
     justify-content: center;
     flex: 0 0 1.1em;
     line-height: 1;
+    margin-inline-end: 0.2rem;
     text-align: center;
+  }
+  .article-body :global(.article-reference-pending) {
+    border-bottom: 1px dotted var(--border-strong);
+    color: var(--text-secondary);
+    cursor: help;
+    text-decoration: none;
   }
   .proof-toggle:hover { background: var(--accent-hover); }
   .proof-toggle:focus-visible { outline-offset: 3px; }
@@ -1825,6 +1830,16 @@ const structuredData = {
         ".defi,.prop,.thm,.lemma,.cor,.example,.math-definition,.math-theorem,.proof,.proof-details,.folding,.supp,.supp-details",
       );
       const isProofNode = (node: Element) => node.matches(".proof") || isProofLead(node);
+      // 証明は「◻」「□」「∎」で閉じる。証明の後に続く本文まで枠へ
+      // 取り込まないよう、終止記号を見つけた時点で取り込みを打ち切る。
+      const qedLead = /[◻□∎]\s*$/u;
+      const closesProof = (node: Element) => qedLead.test((node.textContent ?? "").trim());
+      // MathJax が本文末尾へ挿入する style などは枠の中身にしない。
+      const isRenderableBlock = (node: Element) =>
+        !["STYLE", "SCRIPT", "LINK", "TEMPLATE", "META"].includes(node.tagName);
+      const suppLead = /^補足(?:\s|[．。\.:：]|$)/u;
+      const isSuppLead = (node: Element) =>
+        node.tagName === "P" && suppLead.test((node.textContent ?? "").trim());
       const legacyDetails = (node: HTMLElement) => {
         const isSupplement = node.classList.contains("supp");
         const details = document.createElement("details");
@@ -1858,6 +1873,46 @@ const structuredData = {
         if (node.closest("details.folding,details.supp-details")) return;
         legacyDetails(node);
       });
+      // 本文の「補足 …」は旧記事の div.supp と同じ補足ブロックである。
+      // 記事ごとに書き方が違っても同じ折りたたみになるよう、ここで
+      // details.supp-details へ揃える。次の見出し・定理枠・証明までを中身にする。
+      const buildSupplement = (node: HTMLElement) => {
+        const details = document.createElement("details");
+        details.className = "supp-details";
+        const summary = document.createElement("summary");
+        summary.className = "supp-details-summary";
+        summary.textContent = "補足.";
+        const inner = document.createElement("div");
+        inner.className = "supp-details-inner";
+        node.parentNode?.insertBefore(details, node);
+        details.append(summary, inner);
+        const firstText = [...node.childNodes].find(
+          (child) => child.nodeType === Node.TEXT_NODE && (child.textContent ?? "").trim(),
+        );
+        if (firstText) {
+          firstText.textContent = (firstText.textContent ?? "").replace(/^\s*補足[．。\.:：]?\s*/u, "");
+        }
+        inner.append(node);
+        let next = details.nextElementSibling;
+        while (
+          next &&
+          isRenderableBlock(next) &&
+          !isHeading(next) &&
+          !isMathBlock(next) &&
+          !isTheoremLead(next) &&
+          !isProofLead(next) &&
+          !isSuppLead(next)
+        ) {
+          const following = next.nextElementSibling;
+          inner.append(next);
+          next = following;
+        }
+      };
+      for (const node of [...mathBody.children] as HTMLElement[]) {
+        if (!isSuppLead(node)) continue;
+        if (node.closest("details.supp-details")) continue;
+        buildSupplement(node);
+      }
       const normalizeTheoremLabel = (value: string) => {
         const trimmed = value.trim().replace(/[.．。:：]+$/u, "");
         return trimmed ? `${trimmed}.` : trimmed;
@@ -1902,7 +1957,8 @@ const structuredData = {
         let next = wrapper.nextElementSibling;
         let sawDisplayMath = false;
         while (next) {
-          if (isHeading(next) || isMathBlock(next) || isTheoremLead(next) || isProofLead(next)) break;
+          if (!isRenderableBlock(next)) break;
+          if (isHeading(next) || isMathBlock(next) || isTheoremLead(next) || isProofLead(next) || isSuppLead(next)) break;
           if (isDisplayMath(next)) {
             const following = next.nextElementSibling;
             wrapper.append(next);
@@ -1950,18 +2006,31 @@ const structuredData = {
         inner.className = "proof-details-inner folding-content";
         node.parentNode?.insertBefore(details, node);
         details.append(summary, inner);
+        let closed = false;
         if (node.matches(".proof")) {
           while (node.firstChild) inner.append(node.firstChild);
           removeProofLabel(inner);
           node.remove();
+          closed = true;
         } else {
           removeProofLabel(node);
           inner.append(node);
+          closed = closesProof(node);
         }
         let next = details.nextElementSibling;
-        while (next && !isHeading(next) && !isMathBlock(next) && !isTheoremLead(next) && !isProofNode(next)) {
+        while (
+          !closed &&
+          next &&
+          isRenderableBlock(next) &&
+          !isHeading(next) &&
+          !isMathBlock(next) &&
+          !isTheoremLead(next) &&
+          !isProofNode(next) &&
+          !isSuppLead(next)
+        ) {
           const following = next.nextElementSibling;
           inner.append(next);
+          closed = closesProof(next);
           next = following;
         }
       }
@@ -2081,15 +2150,26 @@ const structuredData = {
             const parts = reference.match(
               /^(.+?)\s*:\s*(?:定義|命題|定理|補題|系|例)\s*(\d+)\s*$/u,
             );
-            const href = parts?.[1] ? referenceMap[parts[1]] : undefined;
-            if (!parts || !href) continue;
+            if (!parts) continue;
+            const href = parts[1] ? referenceMap[parts[1]] : undefined;
             fragment.append(value.slice(cursor, match.index));
-            const link = document.createElement("a");
-            link.className = "article-reference";
-            link.href = `${href}#math-block-${parts[2]}`;
-            link.dataset.articleReference = reference;
-            link.textContent = reference;
-            fragment.append(link);
+            if (href) {
+              const link = document.createElement("a");
+              link.className = "article-reference";
+              link.href = `${href}#math-block-${parts[2]}`;
+              link.dataset.articleReference = reference;
+              link.textContent = reference;
+              fragment.append(link);
+            } else {
+              // 参照先の記事がまだ公開されていない場合、角括弧のままだと
+              // 壊れたリンクに見える。文章として読める表記に留める。
+              const pending = document.createElement("span");
+              pending.className = "article-reference article-reference-pending";
+              pending.dataset.articleReference = reference;
+              pending.title = "この記事はまだ公開されていません";
+              pending.textContent = reference;
+              fragment.append(pending);
+            }
             cursor = match.index + match[0].length;
             changed = true;
           }

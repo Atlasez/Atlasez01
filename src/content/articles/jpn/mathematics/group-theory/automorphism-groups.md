@@ -27,7 +27,7 @@ references: []
 
 ## 自己同型群の定義
 
-定義 1 (自己同型群). 群$G$の自己同型写像全体の集合$\operatorname{Aut}(G)$は写像の合成を演算として群をなす. これを$G$の自己同型群(automorphism group)という.
+定義 1 (自己同型群). 群$G$の自己同型写像全体の集合$\operatorname{Aut}(G)$は写像の合成を演算として群をなす. これを$G$の**自己同型群**(automorphism group)という.
 
 自己同型群の単位元は恒等写像である. $\varphi\in \operatorname{Aut}(G)$の逆元はその逆写像$\varphi^{-1}$で, これが再び自己準同型写像であることは[準同型写像の定義:命題 11]から分かる. また, $\varphi,\psi\in \operatorname{Aut}(G)$の積$\varphi\circ\psi$も自己同型写像であることは[準同型写像の定義:命題 6]から分かる.
 
@@ -91,11 +91,11 @@ $$
 
 証明. $G=\langle a\rangle$とする. このとき$f\in \operatorname{Aut}(G)$は生成元の行先$f(a)$を定めることで決定されることに注意する. $\varphi\colon (\mathbb{Z}/n\mathbb{Z})^{\times}\to \operatorname{Aut}(G)$を$\overline{k}\mapsto f_k$, $f_k(a):=a^k$で定める. このとき以下を確かめることで題意が示される.
 
-- $\varphi$はwell-definedである. つまり代表元によらず定まり, $f_k\in \operatorname{Aut}(G)$.
+1. $\varphi$はwell-definedである. つまり代表元によらず定まり, $f_k\in \operatorname{Aut}(G)$.
 
-- $\varphi$は全単射な群準同型である.
+2. $\varphi$は全単射な群準同型である.
 
-- まず$\varphi$が代表元によらず定まることを示す. $\overline{k}=\overline{l}\in (\mathbb{Z}/n\mathbb{Z})^{\times}$と仮定すると$k-l$は$n$で割り切れる. このとき$a^n=e$を用いると
+3. まず$\varphi$が代表元によらず定まることを示す. $\overline{k}=\overline{l}\in (\mathbb{Z}/n\mathbb{Z})^{\times}$と仮定すると$k-l$は$n$で割り切れる. このとき$a^n=e$を用いると
 
 $$
 \begin{align*} f_k(a)f_l(a)^{-1}=a^{k}a^{-l}=a^{k-l}=e \end{align*}
@@ -127,7 +127,7 @@ $$
 \begin{align*} \mathop{\mathrm{Inn}}(G):=\{\operatorname{Ad}_g\colon G\to G,\;x\mapsto x^g\mid g\in G\} \end{align*}
 $$
 
-を$G$の内部自己同型群(inner automorphism group)という.
+を$G$の**内部自己同型群**(inner automorphism group)という.
 
 アーベル群$G$の内部自己同型は全て恒等写像になるため, $\mathop{\mathrm{Inn}}(G)$は自明な群となる.
 
@@ -159,7 +159,7 @@ $$
 
 [自己同型群:命題 7]より剰余群$\operatorname{Aut}(G)/\mathop{\mathrm{Inn}}(G)$が定義できる.
 
-定義 8 (外部自己同型群). 剰余群$\operatorname{Aut}(G)/\mathop{\mathrm{Inn}}(G)$を$G$の外部自己同型群(outer automorphism group)といい, $\mathop{\mathrm{Out}}(G)$と表す.
+定義 8 (外部自己同型群). 剰余群$\operatorname{Aut}(G)/\mathop{\mathrm{Inn}}(G)$を$G$の**外部自己同型群**(outer automorphism group)といい, $\mathop{\mathrm{Out}}(G)$と表す.
 
 ## 内部自己同型群の性質
 

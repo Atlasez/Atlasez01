@@ -37,7 +37,7 @@ $$
 \{x\in P \mid \forall a\in A\ a\leq x\}
 $$
 
-を上界集合という。$x\in P$が$A\subset P$の上界集合の元であるとき、$x$は$A$の上界(upper bound)であるという。
+を上界集合という。$x\in P$が$A\subset P$の上界集合の元であるとき、$x$は$A$の**上界**(upper bound)であるという。
 
 -
 
@@ -45,7 +45,7 @@ $$
 \{x\in P \mid \forall a\in A\ x\leq a\}
 $$
 
-を下界集合という。$x\in P$が$A\subset P$の下界集合の元であるとき、$x$は$A$の下界(lower bound)であるという。
+を下界集合という。$x\in P$が$A\subset P$の下界集合の元であるとき、$x$は$A$の**下界**(lower bound)であるという。
 
 命題 2. $A$の上界集合は$A$の各元の主上方集合の共通部分に等しい。
 
@@ -75,7 +75,7 @@ $$
 \forall x\in A,\; x\leq a
 $$
 
-が成り立つ$a\in A$を$A$の最大元(maximum element)といい、$\max A$で表す。
+が成り立つ$a\in A$を$A$の**最大元**(maximum element)といい、$\max A$で表す。
 
 - $A$の元かつ$A$の下界集合の元であるような元、すなわち
 
@@ -83,7 +83,7 @@ $$
 \forall x\in A,\; a\leq x
 $$
 
-が成り立つ$a\in A$を$A$の最小元(minimum element)といい、$\min A$で表す。
+が成り立つ$a\in A$を$A$の**最小元**(minimum element)といい、$\min A$で表す。
 
 命題 5. 前順序集合$P$の部分集合$A$に対して、最大元や最小元は存在すれば$x\sim y\iff (x\leq y \land y\leq x)$で定まる同値を除いて一意に定まる。
 
@@ -93,9 +93,9 @@ $$
 
 定義 6 (上限・下限). 前順序集合$P$の部分集合$A$について考える。
 
-- $A$の上界集合の最小元を$A$の上限(supremum)あるいは最小上界(least upper bound)といい、$\sup A$で表す。
+1. $A$の上界集合の最小元を$A$の上限(supremum)あるいは**最小上界**(least upper bound)といい、$\sup A$で表す。
 
-- $A$の上界集合の最大元を$A$の下限(infimum)あるいは最大下界(greatest lower bound)といい、$\inf A$で表す。
+2. $A$の上界集合の最大元を$A$の下限(infimum)あるいは**最大下界**(greatest lower bound)といい、$\inf A$で表す。
 
 命題 7. 前順序集合$P$の部分集合$A$に対して、上限や下限は存在すれば$x\sim y\iff (x\leq y \land y\leq x)$で定まる同値を除いて一意に定まる。特に、$A$の最大元や最小元が存在するとき、これらがそれぞれ$A$の上限や下限となる。
 

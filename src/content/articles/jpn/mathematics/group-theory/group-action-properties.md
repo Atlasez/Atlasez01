@@ -33,7 +33,7 @@ $$
 \begin{align*} \forall x,y\in X,\,\exists g\in G,\, g.x=y \end{align*}
 $$
 
-となるときこの群作用は推移的(transitive)であるという.
+となるときこの群作用は**推移的**(transitive)であるという.
 
 定義 2 (忠実な作用). 群$G$が集合$X$に作用しているとする. その置換表現$\rho\colon G\to \mathop{\mathrm{Sym}}{X}$が単射であるとき, すなわち$g\in G$として
 
@@ -41,7 +41,7 @@ $$
 \begin{align*} [\forall x\in X,\, g.x=x] \iff g=e \end{align*}
 $$
 
-が成り立つとき, 群作用は忠実(faithful)であるという.
+が成り立つとき, 群作用は**忠実**(faithful)であるという.
 
 定義 3 (自由な作用). 群$G$が集合$X$に作用しているとする. 単位元による作用以外に不動点を持たない, すなわち$g\in G$として
 
@@ -49,17 +49,17 @@ $$
 \begin{align*} \forall x\in X,\, [g.x=x \iff g=e] \end{align*}
 $$
 
-が成り立つとき, 群作用は自由(free)であるという.
+が成り立つとき, 群作用は**自由**(free)であるという.
 
 定義から分かるように群の作用が自由ならば忠実である.
 
-定義 4 (正則作用). 群$G$が集合$X$に作用しているとする. その作用が自由かつ推移的であるとき, 群作用は正則(regular)であるという.
+定義 4 (正則作用). 群$G$が集合$X$に作用しているとする. その作用が自由かつ推移的であるとき, 群作用は**正則**(regular)であるという.
 
 ## 群の作用の例
 
-例 5 (正則作用). $G$を群とする. $g,h\in G$として$G$は$G$自身に$g.h:=gh$によって左から作用する. この作用の置換表現$\rho\colon G\to \mathop{\mathrm{Sym}}(G)$は$\rho(g)\colon h\mapsto gh$でありこれを左正則作用(left regular action)という. Cayleyの[対称群の定義:定理 4]の証明で構成した準同型写像はこの左正則作用である.
+例 5 (正則作用). $G$を群とする. $g,h\in G$として$G$は$G$自身に$g.h:=gh$によって左から作用する. この作用の置換表現$\rho\colon G\to \mathop{\mathrm{Sym}}(G)$は$\rho(g)\colon h\mapsto gh$でありこれを**左正則作用**(left regular action)という. Cayleyの[対称群の定義:定理 4]の証明で構成した準同型写像はこの左正則作用である.
 
-また, $G$は$G$自身に$g.h:=hg^{-1}$によって左から作用する. この作用の置換表現$\rho\colon G\to \mathop{\mathrm{Sym}}(G)$は$\rho(g)\colon h\mapsto hg^{-1}$でありこれを右正則作用(right regular action)という.
+また, $G$は$G$自身に$g.h:=hg^{-1}$によって左から作用する. この作用の置換表現$\rho\colon G\to \mathop{\mathrm{Sym}}(G)$は$\rho(g)\colon h\mapsto hg^{-1}$でありこれを**右正則作用**(right regular action)という.
 
 左正則作用と右正則作用はともに正則な作用である.
 
@@ -111,6 +111,6 @@ $$
 \begin{align*} A. \mathbf{x}:=A\mathbf{x},\quad (A\in GL(n,\mathbb{R}),\,\mathbf{x}\in \mathbb{R}^n) \end{align*}
 $$
 
-によって作用する. この作用の置換表現$\rho\colon GL(n,\mathbb{R})\to \mathop{\mathrm{Sym}}(\mathbb{R}^n)$は$\rho(A)\colon \mathbf{x}\mapsto A\mathbf{x}$である. このとき$\rho(A)$は線形写像である. このように線型空間への作用の置換表現のうち, 作用が線形写像として定まるものを線型表現(linear representation)という([群の線形表現:定義 1]).
+によって作用する. この作用の置換表現$\rho\colon GL(n,\mathbb{R})\to \mathop{\mathrm{Sym}}(\mathbb{R}^n)$は$\rho(A)\colon \mathbf{x}\mapsto A\mathbf{x}$である. このとき$\rho(A)$は線形写像である. このように線型空間への作用の置換表現のうち, 作用が線形写像として定まるものを**線型表現**(linear representation)という([群の線形表現:定義 1]).
 
 この作用は忠実な作用である. 推移的, 自由な作用ではない. ただし原点を除いた$\mathbb{R}^n\setminus\{\mathbf{0}\}$への作用として考えると忠実な作用になる.

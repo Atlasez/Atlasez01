@@ -33,11 +33,11 @@ $$
 \begin{align*} gHg^{-1}=H \end{align*}
 $$
 
-が成り立つとき$H$は$G$の正規部分群(normal subgroup)であるという. このことを$H\vartriangleleft G$と表す.
+が成り立つとき$H$は$G$の**正規部分群**(normal subgroup)であるという. このことを$H\vartriangleleft G$と表す.
 
 定義からわかるようにアーベル群の部分群は全て正規部分群である. また群$G$の部分群として$\{e\},G$を考えるとこれらは常に$G$の正規部分群である. $\{e\},G$を自明な正規部分群という.
 
-定義 2 (単純群). 自明でない群$G$の正規部分群が$G,\{e_G\}$のみであるとき, $G$は単純群(simple group)であるという.
+定義 2 (単純群). 自明でない群$G$の正規部分群が$G,\{e_G\}$のみであるとき, $G$は**単純群**(simple group)であるという.
 
 ## 特性部分群の定義
 
@@ -47,7 +47,7 @@ $$
 \begin{align*} \varphi(H)= H \end{align*}
 $$
 
-が成り立つとき$H$は$G$の特性部分群(characteristic subgroup)であるという. このことを$H\blacktriangleleft G$と表す.
+が成り立つとき$H$は$G$の**特性部分群**(characteristic subgroup)であるという. このことを$H\blacktriangleleft G$と表す.
 
 内部自己同型写像は自己同型写像の特別な場合なので, 特性部分群は正規部分群である. また, 自明な正規部分群$\{e\}$, $G$は特性部分群でもある.
 
@@ -59,11 +59,11 @@ $$
 
 命題 4 (正規部分群であることの同値な条件). $G$の部分群$H$に対して, 以下の条件は全て同値である.
 
-- $H$は$G$の正規部分群である.
+1. $H$は$G$の正規部分群である.
 
-- 任意の$g\in G$に対して$gHg^{-1}\subset H$である.
+2. 任意の$g\in G$に対して$gHg^{-1}\subset H$である.
 
-- 任意の$g\in G$に対して$gH=Hg$である.
+3. 任意の$g\in G$に対して$gH=Hg$である.
 
 証明. 1. ならば2. は定義から直ちに従う.
 
@@ -73,9 +73,9 @@ $$
 
 命題 5 (特性部分群であることの同値な条件). $G$の部分群$H$に対して, 以下の条件は同値である.
 
-- $H$は$G$の特性部分群である.
+1. $H$は$G$の特性部分群である.
 
-- 任意の$\varphi\in \mathop{\mathrm{Aut}}(G)$に対して$\varphi(H)\subset H$である.
+2. 任意の$\varphi\in \mathop{\mathrm{Aut}}(G)$に対して$\varphi(H)\subset H$である.
 
 証明. 1. ならば2. は定義から直ちに従う.
 
@@ -85,15 +85,15 @@ $$
 
 命題 6 (正規部分群の共通部分と積).
 
-- $\{N_{\lambda}\}_{\lambda\in\Lambda}$を$G$の正規部分群の族とする. このとき$\bigcap_{\lambda\in\Lambda}N_{\lambda}$は$G$の正規部分群である.
+1. $\{N_{\lambda}\}_{\lambda\in\Lambda}$を$G$の正規部分群の族とする. このとき$\bigcap_{\lambda\in\Lambda}N_{\lambda}$は$G$の正規部分群である.
 
-- $N_1,N_2$を$G$の正規部分群とする. このとき積$N_1N_2$は$G$の正規部分群である. さらに$N_1$は$N_1N_2$の正規部分群である.
+2. $N_1,N_2$を$G$の正規部分群とする. このとき積$N_1N_2$は$G$の正規部分群である. さらに$N_1$は$N_1N_2$の正規部分群である.
 
 証明.
 
-- $\bigcap_{\lambda\in\Lambda}N_{\lambda}$が$G$の部分群であることは[部分群の定義:命題 7]より分かる. $g\in G$, $h\in \bigcap_{\lambda\in\Lambda}N_{\lambda}$とすると各$N_{\lambda}$の正規性から, 任意の$\lambda\in\Lambda$に対して$ghg^{-1}\in N_{\lambda}$である. すなわち$ghg^{-1}\in \bigcap_{\lambda\in\Lambda}N_{\lambda}$となることより$\bigcap_{\lambda\in\Lambda}N_{\lambda}$は$G$の正規部分群である.
+1. $\bigcap_{\lambda\in\Lambda}N_{\lambda}$が$G$の部分群であることは[部分群の定義:命題 7]より分かる. $g\in G$, $h\in \bigcap_{\lambda\in\Lambda}N_{\lambda}$とすると各$N_{\lambda}$の正規性から, 任意の$\lambda\in\Lambda$に対して$ghg^{-1}\in N_{\lambda}$である. すなわち$ghg^{-1}\in \bigcap_{\lambda\in\Lambda}N_{\lambda}$となることより$\bigcap_{\lambda\in\Lambda}N_{\lambda}$は$G$の正規部分群である.
 
-- $N_1,N_2$は$G$の正規部分群なので$N_1N_2=N_2N_1$が成り立つ. [部分群の定義:命題 10]より$N_1N_2$は$G$の部分群である. さらに$g\in G$, $n_1n_2\in N_1N_2$に対して
+2. $N_1,N_2$は$G$の正規部分群なので$N_1N_2=N_2N_1$が成り立つ. [部分群の定義:命題 10]より$N_1N_2$は$G$の部分群である. さらに$g\in G$, $n_1n_2\in N_1N_2$に対して
 
 $$
 \begin{align*} g(n_1n_2)g^{-1}=(gn_1g^{-1})(gn_2g^{-1})\in N_1N_2 \end{align*}
@@ -111,15 +111,15 @@ $$
 
 命題 7 (特性部分群の共通部分と積).
 
-- $\{H_{\lambda}\}_{\lambda\in\Lambda}$を$G$の特性部分群の族とする. このとき$\bigcap_{\lambda\in\Lambda}H_{\lambda}$は$G$の特性部分群である.
+1. $\{H_{\lambda}\}_{\lambda\in\Lambda}$を$G$の特性部分群の族とする. このとき$\bigcap_{\lambda\in\Lambda}H_{\lambda}$は$G$の特性部分群である.
 
-- $H_1,H_2$を$G$の特性部分群とする. このとき積$H_1H_2$は$G$の特性部分群である.
+2. $H_1,H_2$を$G$の特性部分群とする. このとき積$H_1H_2$は$G$の特性部分群である.
 
 証明.
 
-- 任意の$\varphi\in \mathop{\mathrm{Aut}}(G)$, $h\in \bigcap_{\lambda\in\Lambda}H_{\lambda}$に対して各$H_{\lambda}$は$G$の特性部分群であるから, 任意の$\lambda\in\Lambda$に対して$\varphi(h)\in H_{\lambda}$である. すなわち$\varphi(h)\in \bigcap_{\lambda\in\Lambda}H_{\lambda}$となることより$\bigcap_{\lambda\in\Lambda}H_{\lambda}$は$G$の特性部分群である.
+1. 任意の$\varphi\in \mathop{\mathrm{Aut}}(G)$, $h\in \bigcap_{\lambda\in\Lambda}H_{\lambda}$に対して各$H_{\lambda}$は$G$の特性部分群であるから, 任意の$\lambda\in\Lambda$に対して$\varphi(h)\in H_{\lambda}$である. すなわち$\varphi(h)\in \bigcap_{\lambda\in\Lambda}H_{\lambda}$となることより$\bigcap_{\lambda\in\Lambda}H_{\lambda}$は$G$の特性部分群である.
 
-- $H_1,H_2$は$G$の特性部分群なので特に正規部分群でもある. よって$H_1H_2$は$G$の部分群である. さらに任意の$\varphi\in \mathop{\mathrm{Aut}}(G)$, $h_1h_2\in H_1H_2$に対して
+2. $H_1,H_2$は$G$の特性部分群なので特に正規部分群でもある. よって$H_1H_2$は$G$の部分群である. さらに任意の$\varphi\in \mathop{\mathrm{Aut}}(G)$, $h_1h_2\in H_1H_2$に対して
 
 $$
 \begin{align*} \varphi(h_1h_2)=\varphi(h_1)\varphi(h_2)\in H_1H_2 \end{align*}
@@ -149,15 +149,15 @@ $$
 
 命題 10.
 
-- $K\blacktriangleleft H,\ H\blacktriangleleft G$ならば$K\blacktriangleleft G$である.
+1. $K\blacktriangleleft H,\ H\blacktriangleleft G$ならば$K\blacktriangleleft G$である.
 
-- $K\blacktriangleleft H,\ H\vartriangleleft G$ならば$K\vartriangleleft G$である.
+2. $K\blacktriangleleft H,\ H\vartriangleleft G$ならば$K\vartriangleleft G$である.
 
 証明.
 
-- 任意の$\varphi\in \mathop{\mathrm{Aut}}(G)$に対し$\varphi(H)=H$である. よって$\varphi$を$H$へ制限した写像$\varphi|_H\colon H\to H$は$H$の自己同型写像である. すなわち$\varphi|_H(K)=K$であって, $K\subset H$から$\varphi(K)=K$となる. 以上より$K$は$G$の特性部分群である.
+1. 任意の$\varphi\in \mathop{\mathrm{Aut}}(G)$に対し$\varphi(H)=H$である. よって$\varphi$を$H$へ制限した写像$\varphi|_H\colon H\to H$は$H$の自己同型写像である. すなわち$\varphi|_H(K)=K$であって, $K\subset H$から$\varphi(K)=K$となる. 以上より$K$は$G$の特性部分群である.
 
-- 上の$\varphi$として内部自己同型写像を取ればよい.
+2. 上の$\varphi$として内部自己同型写像を取ればよい.
 
 ◻
 

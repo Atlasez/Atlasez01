@@ -33,7 +33,7 @@ $$
 \begin{align*} R\subset \prod_{i\in I}X_i \end{align*}
 $$
 
-を考える. このとき, 組$(\{X_i\}_{i\in I},R)$を$\{X_i\}_{i\in I}$上の関係(relation)という. 特に$I$が濃度$n$の有限集合であるとき、$n$項関係($n$-ary relation), $n=1$の場合は単項関係という. また$\forall i\in I\ X_i=X$の場合は$X$上の関係といい, 特に$X$上の2項関係は自己関係(endrelation)ともいう.
+を考える. このとき, 組$(\{X_i\}_{i\in I},R)$を$\{X_i\}_{i\in I}$上の**関係**(relation)という. 特に$I$が濃度$n$の有限集合であるとき、$n$項関係($n$-ary relation), $n=1$の場合は単項関係という. また$\forall i\in I\ X_i=X$の場合は$X$上の関係といい, 特に$X$上の2項関係は自己関係(endrelation)ともいう.
 
 $(x_i)_{i\in I}\in R$を満たすとき, $(x_i)_{i\in I}$は関係$R$を持つといい, これを$R(x_i)_{i\in I}$と表す。特に$I$が有限集合のとき$Rx_1x_2\ldots x_n$、2項関係は$x_1Rx_2$などとも表す.
 
@@ -111,19 +111,19 @@ $$
 
 定義 15 (一意性). $X,Y$上の2項関係$(X,Y,R)$に対し,
 
-- $R^{-1}\circ R\subset R^0_X$すなわち$\forall x_1,x_2\in X,\ y\in Y\ (x_1Ry\text{かつ}x_2Ry\Longrightarrow x_1=x_2)$が成り立つとき, 関係$R$は左一意的あるいは単射であるという.
+1. $R^{-1}\circ R\subset R^0_X$すなわち$\forall x_1,x_2\in X,\ y\in Y\ (x_1Ry\text{かつ}x_2Ry\Longrightarrow x_1=x_2)$が成り立つとき, 関係$R$は左一意的あるいは単射であるという.
 
-- $R\circ R^{-1}\subset R^0_Y$すなわち$\forall x\in X,\ y_1,y_2\in Y\ (xRy_1\text{かつ}xRy_2\Longrightarrow y_1=y_2)$が成り立つとき, 関係$R$は右一意的あるいは関数的であるという.
+2. $R\circ R^{-1}\subset R^0_Y$すなわち$\forall x\in X,\ y_1,y_2\in Y\ (xRy_1\text{かつ}xRy_2\Longrightarrow y_1=y_2)$が成り立つとき, 関係$R$は右一意的あるいは関数的であるという.
 
-- 関係$R$が左一意的かつ右一意的であるとき, 一対一であるという.
+3. 関係$R$が左一意的かつ右一意的であるとき, 一対一であるという.
 
 定義 16 (全域性).
 
-- 定義域が始域と一致する、すなわち$\forall x\in X\exists y\in Y,\ xRy$が成り立つとき, 関係$R$は左全域的であるという.
+1. 定義域が始域と一致する、すなわち$\forall x\in X\exists y\in Y,\ xRy$が成り立つとき, 関係$R$は左全域的であるという.
 
-- 値域が終域と一致する、すなわち$\forall y\in Y,\ \exists x\in X\ xRy$が成り立つとき, 関係$R$は右全域的あるいは全射であるという.
+2. 値域が終域と一致する、すなわち$\forall y\in Y,\ \exists x\in X\ xRy$が成り立つとき, 関係$R$は右全域的あるいは全射であるという.
 
-- 関係$R$が左全域的かつ右全域的であるとき, 対応であるという.
+3. 関係$R$が左全域的かつ右全域的であるとき, 対応であるという.
 
 ## 自己関係の性質
 
@@ -141,24 +141,24 @@ $$
 
 定義 21 (反射性).
 
-- $R^0\subset R$すなわち$\forall x\in X \ xRx$が成り立つとき, 関係$R$は反射的であるという.
+1. $R^0\subset R$すなわち$\forall x\in X \ xRx$が成り立つとき, 関係$R$は反射的であるという.
 
-- $R^0\cap R=\varnothing$すなわち$\forall x\in X \ \lnot(xRx)$が成り立つとき, 関係$R$は非反射的であるという.
+2. $R^0\cap R=\varnothing$すなわち$\forall x\in X \ \lnot(xRx)$が成り立つとき, 関係$R$は非反射的であるという.
 
-- $R^0\supset R$すなわち$\forall x,y\in X \ (xRy\Longrightarrow x=y)$が成り立つとき, 関係$R$は余反射的であるという.
+3. $R^0\supset R$すなわち$\forall x,y\in X \ (xRy\Longrightarrow x=y)$が成り立つとき, 関係$R$は余反射的であるという.
 
 定義 22 (推移性).
 
-- $R\subset R^2$すなわち$\forall x,y,z\in X \ (xRy\land yRz\Longrightarrow xRz)$が成り立つとき, 関係$R$は推移的であるという.
+1. $R\subset R^2$すなわち$\forall x,y,z\in X \ (xRy\land yRz\Longrightarrow xRz)$が成り立つとき, 関係$R$は推移的であるという.
 
-- $R\not\subset R^2$すなわち$\exists x, y, z \in X \ (xRy \land yRz \land \neg xRz)$が成り立つとき, 関係$R$は非推移的であるという.
+2. $R\not\subset R^2$すなわち$\exists x, y, z \in X \ (xRy \land yRz \land \neg xRz)$が成り立つとき, 関係$R$は非推移的であるという.
 
-- $R\cap R^2=\varnothing$すなわち$\forall x, y, z \in X \ (xRy \land yRz \implies \neg xRz)$が成り立つとき, 関係$R$は反推移的であるという.
+3. $R\cap R^2=\varnothing$すなわち$\forall x, y, z \in X \ (xRy \land yRz \implies \neg xRz)$が成り立つとき, 関係$R$は反推移的であるという.
 
 定義 23 (対称性).
 
-- $R^{-1}=R$すなわち$\forall x,y \in X,\ (xRy \implies yRx)$が成り立つとき, 関係$R$は対称的であるという.
+1. $R^{-1}=R$すなわち$\forall x,y \in X,\ (xRy \implies yRx)$が成り立つとき, 関係$R$は対称的であるという.
 
-- $R\cap R^{-1}=\varnothing$すなわち$\forall x,y \in X,\ (xRy \implies \neg(yRx))$が成り立つとき, 関係$R$は非対称的であるという.
+2. $R\cap R^{-1}=\varnothing$すなわち$\forall x,y \in X,\ (xRy \implies \neg(yRx))$が成り立つとき, 関係$R$は非対称的であるという.
 
-- $R\cap R^{-1}\subset R^0$すなわち$\forall x, y \in X,\ ((xRy \land yRx) \implies x = y)$が成り立つとき, 関係$R$は反対称的であるという.
+3. $R\cap R^{-1}\subset R^0$すなわち$\forall x, y \in X,\ ((xRy \land yRx) \implies x = y)$が成り立つとき, 関係$R$は反対称的であるという.

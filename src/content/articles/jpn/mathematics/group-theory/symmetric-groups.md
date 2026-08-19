@@ -27,9 +27,9 @@ references: []
 
 ## 対称群の定義
 
-定義 1 ((一般の)対称群). 集合$X$に対し$\mathop{\mathrm{Sym}}X$を$X$から$X$への全単射全体の集合とすると写像の合成を演算として群となる. これを$X$の対称群(symmetric group)とよぶ.
+定義 1 ((一般の)対称群). 集合$X$に対し$\mathop{\mathrm{Sym}}X$を$X$から$X$への全単射全体の集合とすると写像の合成を演算として群となる. これを$X$の**対称群**(symmetric group)とよぶ.
 
-$\mathop{\mathrm{Sym}}(X)$の元は置換(permutation)とよぶ. 対称群$\mathop{\mathrm{Sym}}(X)$の単位元は$X$上の恒等写像$\mathrm{id}_X\in\mathop{\mathrm{Sym}}(X)$でこれを恒等置換(identity permutation)とよぶ. $f\in \mathop{\mathrm{Sym}}(X)$の逆元はその逆写像$f^{-1}\in \mathop{\mathrm{Sym}}(X)$である.
+$\mathop{\mathrm{Sym}}(X)$の元は**置換**(permutation)とよぶ. 対称群$\mathop{\mathrm{Sym}}(X)$の単位元は$X$上の恒等写像$\mathrm{id}_X\in\mathop{\mathrm{Sym}}(X)$でこれを**恒等置換**(identity permutation)とよぶ. $f\in \mathop{\mathrm{Sym}}(X)$の逆元はその逆写像$f^{-1}\in \mathop{\mathrm{Sym}}(X)$である.
 
 命題 2. $|X|\leq |Y|$ならば, $\mathop{\mathrm{Sym}}(X)$と同型な$\mathop{\mathrm{Sym}}(Y)$の部分群が存在する.
 
@@ -135,7 +135,7 @@ $$
 \begin{align*} \sigma=(i_1,i_2,i_3,\ldots ,i_m) \end{align*}
 $$
 
-このような置換を長さ$m$の巡回置換(cyclic permutation)という. 特に, 長さ2の巡回置換を互換(transposition)という.
+このような置換を長さ$m$の**巡回置換**(cyclic permutation)という. 特に, 長さ2の巡回置換を**互換**(transposition)という.
 
 例 8. 5次対称群$S_5$において
 
@@ -167,9 +167,9 @@ $$
 
 命題 10. 長さ$m$の巡回置換$(i_1,i_2,\ldots ,i_m)$について次が成り立つ.
 
-- $(i_1,i_2,\ldots ,i_m)^{-1}=(i_m,i_{m-1},\ldots ,i_1)$.
+1. $(i_1,i_2,\ldots ,i_m)^{-1}=(i_m,i_{m-1},\ldots ,i_1)$.
 
-- $(i_1,i_2,\ldots ,i_m)$の位数は$m$である.
+2. $(i_1,i_2,\ldots ,i_m)$の位数は$m$である.
 
 証明. 長さ$m$の巡回置換$(i_1,i_2,\ldots ,i_m)$を$\sigma$とおく. $\sigma$は$i_1,i_2,\ldots ,i_m$のみを動かす.
 
