@@ -505,7 +505,16 @@ test.describe("学習サイト", () => {
     );
 
     await page.goto("atlas/ja/mathematics/group-theory/group-definition/");
-    await expect(page.locator("details.supp-details")).not.toHaveCount(0);
+    const supplements = page.locator("details.supp-details");
+    await expect(supplements).toHaveCount(2);
+    // 補足が証明の続きを担う場合も、◻ の後の本文は補足の外に残す。
+    await expect(supplements.nth(1)).toContainText("◻");
+    await expect(supplements.nth(1)).not.toContainText(
+      "以降は単位元と言えば両側単位元を指し",
+    );
+    await expect(page.locator(".article-body > p").last()).not.toContainText(
+      "**",
+    );
   });
 
   test("定義に付随する条件はfoldingで折りたためる", async ({ page }) => {

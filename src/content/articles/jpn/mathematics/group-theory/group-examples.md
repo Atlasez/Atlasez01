@@ -39,7 +39,7 @@ $$
 
 と定義すれば結合法則が成り立ち, 単位元は$-1$, $x\in\mathbb{R}$の逆元は$-x-2\in\mathbb{R}$である.
 
-例 5 (対称群). 集合$\{1,2,\ldots ,n\}$からそれ自身への全単射全体は写像の合成を演算として群をなす. 単位元は恒等写像である. この群を$S_n$で表し**$n$次対称群**(symmetric group)という. $\sigma\in S_n$を次のように表す.
+例 5 (対称群). 集合$\{1,2,\ldots ,n\}$からそれ自身への全単射全体は写像の合成を演算として群をなす. 単位元は恒等写像である. この群を$S_n$で表し<strong>$n$次対称群</strong>(symmetric group)という. $\sigma\in S_n$を次のように表す.
 
 $$
 \begin{align*} \sigma= \begin{pmatrix} 1 & 2 & \cdots & n-1 & n \\ \sigma(1) & \sigma(2) & \cdots & \sigma(n-1) & \sigma(n) \end{pmatrix} \end{align*}

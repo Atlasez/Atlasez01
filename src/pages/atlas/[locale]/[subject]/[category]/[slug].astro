@@ -1893,8 +1893,12 @@ const structuredData = {
           firstText.textContent = (firstText.textContent ?? "").replace(/^\s*補足[．。\.:：]?\s*/u, "");
         }
         inner.append(node);
+        // 補足が証明の続きを担うことがある。証明と同じく終止記号で
+        // 取り込みを打ち切り、その後の本文を補足の外へ残す。
+        let closed = closesProof(node);
         let next = details.nextElementSibling;
         while (
+          !closed &&
           next &&
           isRenderableBlock(next) &&
           !isHeading(next) &&
@@ -1905,6 +1909,7 @@ const structuredData = {
         ) {
           const following = next.nextElementSibling;
           inner.append(next);
+          closed = closesProof(next);
           next = following;
         }
       };
