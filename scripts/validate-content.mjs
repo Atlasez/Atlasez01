@@ -4,6 +4,7 @@
  * - 概念: 重複ID / 存在しない参照 / prerequisite循環
  * - 記事: articleId重複 / ロケール内slug重複 / 存在しない概念参照 / 必須フィールド
  * - 準備中記事: 存在しない分野・カテゴリ / 重複 / 公開済み記事との題名衝突
+ * - 本文: CommonMarkが強調として解釈しない `**...**`（本文に ** が露出する）
  * 失敗時は終了コード1。
  */
 import { readFileSync, readdirSync, statSync } from "node:fs";
@@ -243,6 +244,45 @@ for (const item of planned) {
   plannedKeys.add(plannedKey);
   if (articleTitleKeys.has(`ja/${plannedKey}`)) {
     errors.push(`準備中記事が公開済み記事と重複: ${plannedKey}`);
+  }
+}
+
+// ---------- 本文の強調記法 ----------
+// CommonMarkの delimiter run は前後の文字種で開閉が決まる。`**$n$次対称群**`
+// のように `$` で始まる強調は開始側が left-flanking にならず、本文へ `**` が
+// そのまま出てしまう。数式や括弧を含む語を強調するときは <strong> を使う。
+// CommonMark 0.31 以降は記号(Sカテゴリ)も句読点として扱う。`$` もここに入る。
+const PUNCTUATION = /[\p{P}\p{S}]/u;
+const isSpace = (ch) => ch === undefined || /\s/u.test(ch);
+const isPunct = (ch) => ch !== undefined && PUNCTUATION.test(ch);
+
+function emphasisErrors(text) {
+  const found = [];
+  const pattern = /\*\*(?=\S)([\s\S]*?\S)\*\*/gu;
+  let match;
+  while ((match = pattern.exec(text))) {
+    const before = text[match.index - 1];
+    const openNext = text[match.index + 2];
+    const closePrev = text[match.index + match[0].length - 3];
+    const after = text[match.index + match[0].length];
+    const canOpen =
+      !isSpace(openNext) &&
+      (!isPunct(openNext) || isSpace(before) || isPunct(before));
+    const canClose =
+      !isSpace(closePrev) &&
+      (!isPunct(closePrev) || isSpace(after) || isPunct(after));
+    if (!canOpen || !canClose) found.push(match[0]);
+  }
+  return found;
+}
+
+for (const file of articleFiles) {
+  const body = readFileSync(file, "utf8").split(/^---$/mu).slice(2).join("---");
+  for (const span of emphasisErrors(body)) {
+    errors.push(
+      `${relative(root, file)}: 強調として解釈されない記法: ${span}` +
+        " — <strong>…</strong> を使ってください",
+    );
   }
 }
 

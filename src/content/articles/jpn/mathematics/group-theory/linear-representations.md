@@ -29,11 +29,11 @@ references: []
 
 ## 群の線形表現の定義
 
-定義 1 (群の線形表現). $G$を群, $V$を体$\mathbb{K}$上の線形空間とする. 準同型写像$\rho\colon G\to \mathop{\mathrm{\mathit{GL}}}(V)$を$G$の$V$上の線形表現(linear representation)または単に表現(representation)という. 組$(V,\rho)$は$G$の表現空間(representation space)という. また, $V$の次元を表現$(\rho,V)$の次元(dimension)という.
+定義 1 (群の線形表現). $G$を群, $V$を体$\mathbb{K}$上の線形空間とする. 準同型写像$\rho\colon G\to \mathop{\mathrm{\mathit{GL}}}(V)$を$G$の$V$上の線形表現(linear representation)または単に<strong>表現(representation)</strong>という. 組$(V,\rho)$は$G$の<strong>表現空間(representation space)</strong>という. また, $V$の次元を表現$(\rho,V)$の<strong>次元(dimension)</strong>という.
 
 表現空間$(V,\rho)$について線形空間$V$に作用する表現$\rho$が文脈上明らかなとき, 省略して単に表現空間$V$という. また, 群$G$の表現$\rho$について線形空間$V$を明示したいとき, $(\rho,V)$とかくこともある。
 
-表現空間が有限次元である表現を有限次元表現(finite-dimensional representation)という. また, $(\rho,V)$を$G$の有限次元表現とすると各$g\in G$に対して線形写像$\rho(g)\in \mathop{\mathrm{\mathit{GL}}}(V)$が定まる. $V$の基底を一つ取ることで$\rho(g)$の表現行列が定まる.
+表現空間が有限次元である表現を<strong>有限次元表現(finite-dimensional representation)</strong>という. また, $(\rho,V)$を$G$の有限次元表現とすると各$g\in G$に対して線形写像$\rho(g)\in \mathop{\mathrm{\mathit{GL}}}(V)$が定まる. $V$の基底を一つ取ることで$\rho(g)$の表現行列が定まる.
 
 例 2 (自明表現). 群$G$の線形空間$V$上の自明表現(trivial representation)とは, 任意の$g\in G$に対して恒等写像$\mathrm{id}_V\in \mathop{\mathrm{\mathit{GL}}}(V)$を対応させる表現である. 自明な表現$\rho(g)$に対する$\rho(g)$の表現行列は単位行列である.
 
@@ -49,7 +49,7 @@ $$
 
 定義 4 ($G$不変部分空間と部分表現). $(\rho,V)$を群$G$の線形表現とする. $V$の部分空間$W$が$G$不変部分空間($G$-invariant subspace)または単に$G$不変($G$-invariant)であるとは, 任意の$g\in G$に対して$\rho(g)(W)\subset W$が成り立つことである.
 
-このとき$W$上の表現$\rho|_W\colon G\to \mathop{\mathrm{\mathit{GL}}}(W)$が$\rho|_W(g):=\rho(g)|_W$によって定まり, $(\rho|_W,W)$を$V$の部分表現(subrepresentation)という.
+このとき$W$上の表現$\rho|_W\colon G\to \mathop{\mathrm{\mathit{GL}}}(W)$が$\rho|_W(g):=\rho(g)|_W$によって定まり, $(\rho|_W,W)$を$V$の<strong>部分表現(subrepresentation)</strong>という.
 
 $V$の部分表現$(\rho|_W,W)$は省略して, 単に$V$の部分表現$W$と書く.
 
@@ -69,7 +69,7 @@ $$
 
 ## 既約表現の定義
 
-定義 7 (既約表現). $(\rho,V)$を群$G$の線形表現とする. $V\neq \{0\}$かつ, 非自明な$G$不変部分空間をもたないとき, $(\rho,V)$を既約表現(irreducible representation)という. $(\rho,V)$が既約表現でないときは可約表現(reducible representation)という.
+定義 7 (既約表現). $(\rho,V)$を群$G$の線形表現とする. $V\neq \{0\}$かつ, 非自明な$G$不変部分空間をもたないとき, $(\rho,V)$を<strong>既約表現(irreducible representation)</strong>という. $(\rho,V)$が既約表現でないときは<strong>可約表現(reducible representation)</strong>という.
 
 例 8 (一次元表現は既約表現). 一次元表現$(\rho,V)$について, $V$は部分空間として$\{0\}, V$のみを持つので既約表現である.
 

@@ -299,6 +299,13 @@ test.describe("学習サイト", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.reload();
     await expect(toggle).toHaveCSS("position", "static");
+
+    // 証明のない記事ではボタンを出さない。hidden属性がCSSのdisplayに
+    // 打ち消されて、押しても何も起きないボタンが残っていた。
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto("atlas/ja/mathematics/group-theory/group-examples/");
+    await expect(page.locator("details.proof-details")).toHaveCount(0);
+    await expect(page.locator("[data-proof-toggle]")).toBeHidden();
   });
 
   test("数学記事のMathJax・書式・内部参照を保持する", async ({ page }) => {
@@ -443,6 +450,16 @@ test.describe("学習サイト", () => {
     const example = page.locator(".example").first();
     await expect(example).toHaveCSS("border-top-width", "0px");
     await expect(example).toHaveCSS("box-shadow", "none");
+    // 例のラベルは枠を持たない代わりに、定義・命題と同じ塊のラベルとして
+    // 単独の行に置く。本文がラベルの右へ回り込まないことを確かめる。
+    const exampleTitle = example.locator(".thmtitle");
+    await expect(exampleTitle).toHaveCSS("display", "block");
+    await expect(exampleTitle).toHaveCSS("float", "none");
+    await expect(exampleTitle).toHaveCSS("border-top-width", "3px");
+    await expect(exampleTitle).toHaveCSS(
+      "background-color",
+      "rgb(224, 195, 117)",
+    );
     // 複数のディスプレイ数式を含む例でも、本文と数式が同じ枠に残る。
     await expect(
       page.locator(".example").nth(4).locator('mjx-container[display="true"]'),
@@ -460,6 +477,130 @@ test.describe("学習サイト", () => {
     await expect(
       page.locator('.math-figure img[alt="準同型定理の可換図式"]'),
     ).toBeVisible();
+  });
+
+  test("折りたたみの矢印は▶と▼で縦中央に置く", async ({ page }) => {
+    await page.goto("atlas/ja/mathematics/group-theory/subgroups/");
+    const summary = page.locator("details.proof-details > summary").first();
+    const marker = () =>
+      summary.evaluate((el) => {
+        const cs = getComputedStyle(el, "::before");
+        const own = getComputedStyle(el);
+        const box = el.getBoundingClientRect();
+        return {
+          content: cs.content.replace(/"/gu, ""),
+          // top:50% + translateY(-50%) で、ボタンの高さが変わっても中央に残る。
+          // top はボーダーを除いたパディングボックス基準で解決される。
+          centered:
+            Math.abs(
+              Number.parseFloat(cs.top) -
+                (box.height -
+                  Number.parseFloat(own.borderTopWidth) -
+                  Number.parseFloat(own.borderBottomWidth)) /
+                  2,
+            ) < 0.5 && cs.transform.includes("-"),
+        };
+      });
+    expect(await marker()).toEqual({ content: "▶", centered: true });
+    await summary.click();
+    expect(await marker()).toEqual({ content: "▼", centered: true });
+  });
+
+  test("補足ブロックは下辺の枠線を持たない", async ({ page }) => {
+    await page.goto("atlas/ja/mathematics/group-theory/group-definition/");
+    const supp = page.locator("details.supp-details").first();
+    await supp.locator("summary").click();
+    await expect(supp).toHaveCSS("border-bottom-width", "0px");
+    await expect(supp.locator(".supp-details-inner")).toHaveCSS(
+      "border-bottom-width",
+      "0px",
+    );
+  });
+
+  test("定義した用語は英語の併記まで含めて太字にする", async ({ page }) => {
+    await page.goto("atlas/ja/mathematics/group-theory/subgroups/");
+    await expect(page.locator(".defi strong").first()).toHaveText(
+      "部分群(subgroup)",
+    );
+    await expect(page.locator(".defi strong").first()).toHaveCSS(
+      "font-weight",
+      "700",
+    );
+    await expect(page.locator(".example strong").first()).toHaveText(
+      "自明な部分群(trivial subgroup)",
+    );
+  });
+
+  test("証明枠は◻で閉じ、続く本文と参照リンクを外に残す", async ({ page }) => {
+    await page.goto("atlas/ja/mathematics/group-theory/generating-sets/");
+    const proofs = page.locator("details.proof-details");
+    await expect(proofs).not.toHaveCount(0);
+    for (const text of await proofs.allTextContents()) {
+      // 証明の本文は終止記号で終わり、その後の解説文を巻き込まない。
+      expect(text.trim().endsWith("◻")).toBe(true);
+    }
+    // 証明の直後の段落は枠の外にあり、リンクも生きている。
+    const followUp = page
+      .locator(".article-body > p")
+      .filter({ hasText: "単項生成であるといい" });
+    await expect(followUp).toHaveCount(1);
+    await expect(followUp.locator("a.article-reference")).toHaveAttribute(
+      "href",
+      /cyclic-groups\/#math-block-1$/,
+    );
+    // 未公開記事への参照は角括弧のままにせず、リンクにもしない。
+    const pending = page.locator("span.article-reference-pending");
+    await expect(pending.first()).toHaveText("有限生成群:定義 1");
+    await expect(
+      pending.filter({ hasText: "Frattini部分群:定義 1" }),
+    ).toHaveCount(1);
+    await expect(page.locator(".article-body")).not.toContainText(
+      "[Frattini部分群:定義 1]",
+    );
+  });
+
+  test("本文の補足は補足ブロックとして折りたためる", async ({ page }) => {
+    await page.goto("atlas/ja/mathematics/group-theory/generating-sets/");
+    const supp = page.locator("details.supp-details");
+    await expect(supp).toHaveCount(1);
+    await expect(supp.locator("summary.supp-details-summary")).toHaveText(
+      "補足.",
+    );
+    await expect(supp.locator(".supp-details-inner")).toContainText(
+      "極小生成系は線型空間における基底にあたる",
+    );
+    await expect(supp.locator(".supp-details-inner")).not.toContainText(
+      "補足 ",
+    );
+
+    await page.goto("atlas/ja/mathematics/group-theory/group-definition/");
+    const supplements = page.locator("details.supp-details");
+    await expect(supplements).toHaveCount(2);
+    // 補足が証明の続きを担う場合も、◻ の後の本文は補足の外に残す。
+    await expect(supplements.nth(1)).toContainText("◻");
+    await expect(supplements.nth(1)).not.toContainText(
+      "以降は単位元と言えば両側単位元を指し",
+    );
+    await expect(page.locator(".article-body > p").last()).not.toContainText(
+      "**",
+    );
+  });
+
+  test("定義に付随する条件はfoldingで折りたためる", async ({ page }) => {
+    await page.goto("atlas/ja/mathematics/module-theory/modules/");
+    const conditions = page
+      .locator("details.folding")
+      .filter({ hasText: "加法群であることの条件" });
+    await expect(conditions.first()).toBeVisible();
+    await expect(conditions.first().locator(".folding-content")).toContainText(
+      "二項演算の閉性",
+    );
+    // 折りたたみの中身は開くまで表示しない。
+    await expect(
+      conditions.first().locator(".folding-content"),
+    ).not.toBeVisible();
+    await conditions.first().locator("summary").click();
+    await expect(conditions.first().locator(".folding-content")).toBeVisible();
   });
 
   test("学習記録は触れた位置へ移動し、記事の上下で同期する", async ({

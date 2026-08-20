@@ -27,27 +27,27 @@ references: []
 
 ## 群の作用の定義
 
-定義 1 (左群作用). 群$G$と集合$X$に対し, 演算$\alpha\colon G\times X\to X$が定まっているとする. 次の条件を満たすとき$G$は$X$に左から作用する(act on $X$ from the left)といい, 演算$\alpha$を左群作用(left group action)という. このことを$\alpha\colon G\curvearrowright X$で表す. また, 左作用$\alpha(g,x)$は$g.x$と表記する.
+定義 1 (左群作用). 群$G$と集合$X$に対し, 演算$\alpha\colon G\times X\to X$が定まっているとする. 次の条件を満たすとき$G$は$X$に<strong>左から作用する(act on $X$ from the left)</strong>といい, 演算$\alpha$を<strong>左群作用(left group action)</strong>という. このことを$\alpha\colon G\curvearrowright X$で表す. また, 左作用$\alpha(g,x)$は$g.x$と表記する.
 
-- $\forall g_1,g_2\in G,\,x\in X,\,(g_1g_2). x=g_1.(g_2. x)$.
+1. $\forall g_1,g_2\in G,\,x\in X,\,(g_1g_2). x=g_1.(g_2. x)$.
 
-- $G$の単位元を$e$として$\forall x\in X,\,e. x=x$.
+2. $G$の単位元を$e$として$\forall x\in X,\,e. x=x$.
 
-定義 2 (右群作用). 群$G$と集合$X$に対し, 演算$\alpha\colon X\times G\to X$が定まっているとする. 次の条件を満たすとき$G$は$X$に右から作用する(act on $X$ from the right)といい, 演算$\alpha$を右群作用(right group action)という. このことを$\alpha\colon X\curvearrowleft G$で表す. また, 右作用$\alpha(x,g)$は$x.g$と表記する.
+定義 2 (右群作用). 群$G$と集合$X$に対し, 演算$\alpha\colon X\times G\to X$が定まっているとする. 次の条件を満たすとき$G$は$X$に<strong>右から作用する(act on $X$ from the right)</strong>といい, 演算$\alpha$を<strong>右群作用(right group action)</strong>という. このことを$\alpha\colon X\curvearrowleft G$で表す. また, 右作用$\alpha(x,g)$は$x.g$と表記する.
 
-- $\forall g_1,g_2\in G,\,x\in X,\,x.(g_1g_2)=(x. g_1). g_2$.
+1. $\forall g_1,g_2\in G,\,x\in X,\,x.(g_1g_2)=(x. g_1). g_2$.
 
-- $G$の単位元を$e$として$\forall x\in X,\,x. e=x$.
+2. $G$の単位元を$e$として$\forall x\in X,\,x. e=x$.
 
 単に群の作用といえば左群作用を指すことが多い. 本記事では群作用を群の演算と区別するために$g.x$で表すが, 文献によっては$g\cdot x$や$gx$で表すこともある.
 
-定義 3 (両側群作用). 群$G$, $H$と集合$X$に対し, 次の条件をみたすとき$G$, $H$は$X$に両側から作用する(act on $X$ from left and right)という. このことを$G\curvearrowright X\curvearrowleft H$で表す.
+定義 3 (両側群作用). 群$G$, $H$と集合$X$に対し, 次の条件をみたすとき$G$, $H$は$X$に<strong>両側から作用する(act on $X$ from left and right)</strong>という. このことを$G\curvearrowright X\curvearrowleft H$で表す.
 
-- $G$は$X$に左から作用する.
+1. $G$は$X$に左から作用する.
 
-- $H$は$X$に右から作用する.
+2. $H$は$X$に右から作用する.
 
-- $\forall g\in G, h\in H, x\in X,\,g.(x. h)=(g. x). h$.
+3. $\forall g\in G, h\in H, x\in X,\,g.(x. h)=(g. x). h$.
 
 特に両側作用の条件3. より$(g.x).h=g.(x.h)$であるからかっこを省略して$g.x.h$と書いてよいことが従う.
 
@@ -55,7 +55,7 @@ references: []
 
 Cayleyの定理([対称群:定理 3])より, 任意の群$G$は対称群に埋め込むことができる. これは群を対称群の部分として表現して調べることができるということである. すなわち群から対称群への準同型により, 群$G$の構造の部分や全体は対称群へ写し取られ, 表現される.
 
-定義 4 (群の置換表現). 準同型写像$\rho\colon G\to \mathop{\mathrm{Sym}}(X)$を$G$の$X$上の置換表現(permutation representation)という.
+定義 4 (群の置換表現). 準同型写像$\rho\colon G\to \mathop{\mathrm{Sym}}(X)$を$G$の$X$上の<strong>置換表現(permutation representation)</strong>という.
 
 次の命題により, 群の作用と置換表現は一対一に対応することが分かる.
 
@@ -127,4 +127,4 @@ $$
 
 よって群の作用や置換表現は本質的には左群作用を考えれば十分である.
 
-例 6 (自明な作用). $G$を群, $X$を集合とする. 任意の$g\in G, x\in X$に対して$g.x:=x$で定めると, これは群作用である. この作用を自明な作用(trivial action)という. 自明な作用の置換表現は$G$の元に対して$X$上の恒等写像を対応させる準同型写像である.
+例 6 (自明な作用). $G$を群, $X$を集合とする. 任意の$g\in G, x\in X$に対して$g.x:=x$で定めると, これは群作用である. この作用を<strong>自明な作用(trivial action)</strong>という. 自明な作用の置換表現は$G$の元に対して$X$上の恒等写像を対応させる準同型写像である.

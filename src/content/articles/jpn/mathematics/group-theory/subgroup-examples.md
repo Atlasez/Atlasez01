@@ -39,9 +39,9 @@ $$
 \begin{align*} \mathop{\mathrm{\mathit{O}}}(n)&:=\{A\in \mathop{\mathrm{\mathit{GL}}}(n,\mathbb{R})\mid A^TA=AA^T=I\} \\ \mathop{\mathrm{\mathit{SO}}}(n)&:=\{A\in \mathop{\mathrm{\mathit{O}}}(n,\mathbb{R})\mid \det A=1\} \end{align*}
 $$
 
-例 3 (置換群). 集合$X$の対称群$\mathop{\mathrm{Sym}}(X)$の部分群は置換群(permutation group)という. 例えば集合$X$の部分集合$Y$が与えられたとき, その対称群$\mathop{\mathrm{Sym}}(Y)$は$\mathop{\mathrm{Sym}}(X)$の部分群である.
+例 3 (置換群). 集合$X$の対称群$\mathop{\mathrm{Sym}}(X)$の部分群は<strong>置換群(permutation group)</strong>という. 例えば集合$X$の部分集合$Y$が与えられたとき, その対称群$\mathop{\mathrm{Sym}}(Y)$は$\mathop{\mathrm{Sym}}(X)$の部分群である.
 
-例 4 (交代群). $n$次対称群$S_n$に対し$S_n$の偶置換全体を$A_n$で表す. $A_n$は位数$n!/2$の$S_n$の部分群で, これを$n$次交代群(alternating group)という.
+例 4 (交代群). $n$次対称群$S_n$に対し$S_n$の偶置換全体を$A_n$で表す. $A_n$は位数$n!/2$の$S_n$の部分群で, これを<strong>$n$次交代群(alternating group)</strong>という.
 
 例 5 ($\mathbb{Z}$の部分群). 加法群$(\mathbb{Z},+)$部分群$H$は, ある$m\in\mathbb{Z}$を用いて$H=m\mathbb{Z}=\{mx\mid x\in\mathbb{Z}\}$と表される.
 

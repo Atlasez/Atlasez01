@@ -29,6 +29,8 @@ references: []
 
 定義 1 (左R加群) $R$を単位的環とする. 集合$M$と$R$ の組$((M, +_{\small M}, 0_{\small M}, -_{\small M}), (R, +_{\small R},0,-_{\small R}, \cdot_{\small R}, 1_{\small R}), . \ )$ が以下の条件を満たすとき, $M$を**左$R$加群**と呼ぶ.
 
+<div class="folding" data-summary="加法群であることの条件">
+
 $(M, +_{\small M}, 0_{\small M}, -_{\small M})$ が可換群であるとは, 以下の条件を満たすことをいう.
 
 - (二項演算の閉性) $M$ 上の閉じた二項演算（加法）$+_{\small M} : M \times M \to M$ が定まっている.
@@ -40,6 +42,10 @@ $(M, +_{\small M}, 0_{\small M}, -_{\small M})$ が可換群であるとは, 以
 - (加法逆元の存在) 各 $x \in M$ にその加法逆元を与える単項演算 $-_{\small M} : M \to M$ が定まっていて, 任意の $x \in M$ に対し, $(-_{\small M} x) +_{\small M} x = 0_{\small M}$ を満たす. この $-_{\small M} x$ を $x$ の 逆元 という.
 
 - (加法の可換性) $\forall x, y \in M, \ x +_{\small M} y = y +_{\small M} x$.
+
+</div>
+
+<div class="folding" data-summary="係数環が単位的環であることの条件">
 
 $(R, +_{\small R},0,-_{\small R}, \cdot_{\small R}, 1_{\small R})$ が単位的環であるとは, 以下の条件を満たすことをいう.
 
@@ -97,6 +103,10 @@ $$
 \begin{align*} \forall a, b, c \in R,\ (a +_{\small R} b)\cdot_{\small R} c = a\cdot_{\small R} c +_{\small R} b\cdot_{\small R} c \end{align*}
 $$
 
+</div>
+
+<div class="folding" data-summary="環作用であることの条件">
+
 写像 $\mathbin{.}: R \times M \to M$ が単位的環作用であるということは以下の条件を満たすことをいう.
 
 - $\forall a, b \in R, \ \forall x \in M$ に対し, $(a \cdot_{\small R} b).x = a.(b.x)$
@@ -107,13 +117,17 @@ $$
 
 - $\forall a \in R, \ \forall x, y \in M$ に対し, $a.(x +_{\small M} y) = a.x +_{\small M} a.y$
 
+</div>
+
 混同の恐れがない限り, 左$R$加群を定義する組$((M, +_{\small M}, 0_{\small M}, -_{\small M}), (R, +_{\small R},0,-_R, \cdot_{\small R}, 1_{\small R}), . \ )$は, 単にその台集合$M$または係数体との組$(M,R)$として表記される. また, 係数環が文脈上明らかなときは単に加群$M$ということもある. これに伴い, $M$における加法$\mathbin{+_M}$および$R$における加法$\mathbin{+_R}$は, 演算の対象によって数学的な意味が一意に定まるため, いずれも単に$+$で表す. また, 左作用$R\times M\to M$を表す記法も簡略化され, $a.x$は単に$ax$と表記される.
 
 ## 右加群と両側加群の定義
 
 左加群を左作用を持つ加群として定義したのと同様に, 右作用を持つ加群として右加群が定義される. また, 両側加群とは左右両方の作用をもつ加群のことである.
 
-定義 2 (右R加群) $R$を単位的環とする. 集合$M$と$R$ の組$((M, +_{\small M}, 0_{\small M}, -_{\small M}), (R, +_{\small R},0,-_R, \cdot_{\small R}, 1_{\small R}), . \ )$ が以下の条件を満たすとき, $M$ を 右$R$加群と呼ぶ.
+定義 2 (右R加群) $R$を単位的環とする. 集合$M$と$R$ の組$((M, +_{\small M}, 0_{\small M}, -_{\small M}), (R, +_{\small R},0,-_R, \cdot_{\small R}, 1_{\small R}), . \ )$ が以下の条件を満たすとき, $M$ を **右$R$加群**と呼ぶ.
+
+<div class="folding" data-summary="加法群であることの条件">
 
 $(M, +_{\small M}, 0_{\small M}, -_{\small M})$ が可換群であるとは, 以下の条件を満たすことをいう.
 
@@ -126,6 +140,10 @@ $(M, +_{\small M}, 0_{\small M}, -_{\small M})$ が可換群であるとは, 以
 - (加法逆元の存在) 各 $x \in M$ にその加法逆元を与える単項演算 $-_{\small M} : M \to M$ が定まっていて, 任意の $x \in M$ に対し, $(-_{\small M} x) +_{\small M} x = 0_{\small M}$ を満たす. この $-_{\small M} x$ を $x$ の 逆元 という.
 
 - (加法の可換性) $\forall x, y \in M, \ x +_{\small M} y = y +_{\small M} x$.
+
+</div>
+
+<div class="folding" data-summary="係数環が単位的環であることの条件">
 
 $(R, +_{\small R},0,-_{\small R}, \cdot_{\small R}, 1_{\small R})$ が単位的環であるとは, 以下の条件を満たすことをいう.
 
@@ -183,6 +201,10 @@ $$
 \begin{align*} \forall a, b, c \in R,\ (a +_{\small R} b)\cdot_{\small R} c = a\cdot_{\small R} c +_{\small R} b\cdot_{\small R} c \end{align*}
 $$
 
+</div>
+
+<div class="folding" data-summary="環作用であることの条件">
+
 写像 $\mathbin{.}: M \times R \to M$ が単位的環作用であるということは以下の条件を満たすことをいう.
 
 - $\forall a, b \in R, \ \forall x \in M$ に対し, $x.(a \cdot b) = (x.a).b$
@@ -193,7 +215,11 @@ $$
 
 - $\forall a \in R, \ \forall x, y \in M$ に対し, $(x +_{\small M} y).a = x.a +_{\small M} y.a$
 
-定義 3 (両側(R,S)加群) $R, S$を単位的環とする. 集合$M$と環$R, S$ の組$((M, +_{\small M}, 0_{\small M}, -_{\small M}), (R, +_{\small R},0_{\small R}, -_{\small R}, \cdot_{\small R}, 1_{\small R}), (S, +_{\small S},0_{\small S}, -_{\small S}, \cdot_{\small S}, 1_{\small S}), \mathbin{._l}, \mathbin{._r})$ が以下の条件を満たすとき, $M$ を 両側$(R,S)$加群と呼ぶ.
+</div>
+
+定義 3 (両側(R,S)加群) $R, S$を単位的環とする. 集合$M$と環$R, S$ の組$((M, +_{\small M}, 0_{\small M}, -_{\small M}), (R, +_{\small R},0_{\small R}, -_{\small R}, \cdot_{\small R}, 1_{\small R}), (S, +_{\small S},0_{\small S}, -_{\small S}, \cdot_{\small S}, 1_{\small S}), \mathbin{._l}, \mathbin{._r})$ が以下の条件を満たすとき, $M$ を **両側$(R,S)$加群**と呼ぶ.
+
+<div class="folding" data-summary="加法群であることの条件">
 
 $(M, +_{\small M}, 0_{\small M}, -_{\small M})$ が可換群であるとは, 以下の条件を満たすことをいう.
 
@@ -206,6 +232,10 @@ $(M, +_{\small M}, 0_{\small M}, -_{\small M})$ が可換群であるとは, 以
 - (加法逆元の存在) 各 $x \in M$ にその加法逆元を与える単項演算 $-_{\small M} : M \to M$ が定まっていて, 任意の $x \in M$ に対し, $(-_{\small M} x) +_{\small M} x = 0_{\small M}$ を満たす. この $-_{\small M} x$ を $x$ の 逆元 という.
 
 - (加法の可換性) $\forall x, y \in M, \ x +_{\small M} y = y +_{\small M} x$.
+
+</div>
+
+<div class="folding" data-summary="係数環が単位的環であることの条件">
 
 $(R, +_{\small R},0_{\small R}, -_{\small R}, \cdot_{\small R}, 1_{\small R})$が単位的環であるとは, それぞれ以下の条件を満たすことをいう. $(S, +_{\small S},0_{\small S}, -_{\small S}, \cdot_{\small S}, 1_{\small S})$についても全く同様の条件を満たす.
 
@@ -263,6 +293,10 @@ $$
 \begin{align*} \forall a, b, c \in R,\ (a +_{\small R} b)\cdot_{\small R} c = a\cdot_{\small R} c +_{\small R} b\cdot_{\small R} c \end{align*}
 $$
 
+</div>
+
+<div class="folding" data-summary="環作用であることの条件">
+
 写像 $\mathbin{._l}: R \times M \to M$ が単位的環作用であるということは以下の条件を満たすことをいう.
 
 - $\forall a, b \in R, \ \forall x \in M$ に対し, $(a \cdot_{\small R} b)._l x = a._l (b._l x)$
@@ -272,6 +306,10 @@ $$
 - $\forall a, b \in R, \ \forall x \in M$ に対し, $(a +_{\small R} b)._l x = a._l x +_{\small M} b._l x$
 
 - $\forall a \in R, \ \forall x, y \in M$ に対し, $a._l (x +_{\small M} y) = a._l x +_{\small M} a._l y$
+
+</div>
+
+<div class="folding" data-summary="環作用であることの条件">
 
 写像 $\mathbin{._r}: M \times S \to M$ が単位的環作用であるということは以下の条件を満たすことをいう.
 
@@ -284,6 +322,8 @@ $$
 - $\forall c \in S, \ \forall x, y \in M$ に対し, $(x +_{\small M} y)._r c = x._r c +_{\small M} y._r c$
 
 $\forall a \in R, \ \forall c \in S, \ \forall x \in M,\ (a ._l x) ._r c = a ._l (x ._r c)$
+
+</div>
 
 ## 右加群, 両側加群の左加群への帰着
 
@@ -333,15 +373,15 @@ $$
 
 命題 4 $R$を環, $M$を左$R$加群とするとき次が成り立つ.
 
-- 任意の$a\in R$に対し, $a0=0$.
+1. 任意の$a\in R$に対し, $a0=0$.
 
-- 任意の$x\in M$に対し, $0x=0$.
+2. 任意の$x\in M$に対し, $0x=0$.
 
 証明.
 
-- $a0=a(0+0)=a0+a0$であるから, この両辺に$-(a0)$を加えることで$0=a0$を得る.
+1. $a0=a(0+0)=a0+a0$であるから, この両辺に$-(a0)$を加えることで$0=a0$を得る.
 
-- $0x=(0+0)x=0x+0x$であるから, この両辺に$-(0x)$を加えることで$0=0x$を得る.
+2. $0x=(0+0)x=0x+0x$であるから, この両辺に$-(0x)$を加えることで$0=0x$を得る.
 
 ◻
 
@@ -356,9 +396,9 @@ $$
 
 命題 5 任意の$a\in R$, $x\in M$に対して, 以下が成り立つ.
 
-- $(-a)x=-(ax)$
+1. $(-a)x=-(ax)$
 
-- $a(-x)=-(ax)$
+2. $a(-x)=-(ax)$
 
 証明.
 
