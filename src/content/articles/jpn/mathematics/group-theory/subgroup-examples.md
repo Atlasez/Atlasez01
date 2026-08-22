@@ -45,13 +45,15 @@ $$
 
 例 5 ($\mathbb{Z}$の部分群). 加法群$(\mathbb{Z},+)$部分群$H$は, ある$m\in\mathbb{Z}$を用いて$H=m\mathbb{Z}=\{mx\mid x\in\mathbb{Z}\}$と表される.
 
-証明. $H$を$\mathbb{Z}$の部分群とする. $H=\{0\}$なら$H=0\mathbb{Z}$なので$H\neq \{0\}$としておく. $H$の元で正のもののうち最小のものが存在するのでそれを$m$をする. 任意の$n\in H$に対して$n$を$m$で割った余りを考えれば
+:::proof
+$H$を$\mathbb{Z}$の部分群とする. $H=\{0\}$なら$H=0\mathbb{Z}$なので$H\neq \{0\}$としておく. $H$の元で正のもののうち最小のものが存在するのでそれを$m$をする. 任意の$n\in H$に対して$n$を$m$で割った余りを考えれば
 
 $$
 \begin{align*} n=mx+r,\quad(x,r\in\mathbb{Z},\,0\leq r<m) \end{align*}
 $$
 
 となる$x,r$が存在する. すると$n,m\in H$より$r=n-mx\in H$であるが, 条件$0\leq r<m$と$m$の最小性よりこれを満たす$r$は$r=0$に限られる. 以上より任意の$n\in H$に対してある$x\in \mathbb{Z}$を用いて$n=mx$と書けることが分かったので$H=m\mathbb{Z}$. ◻
+:::
 
 例 6 ($\mathbb{C}^{\times}$の部分群). 乗法群$\mathbb{C}^{\times}$([群の例:例 7])の部分群を考える. 複素平面上の単位円
 

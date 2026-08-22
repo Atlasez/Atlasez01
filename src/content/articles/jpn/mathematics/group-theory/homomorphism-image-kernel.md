@@ -37,7 +37,8 @@ references: []
 
 4. $f^{-1}(N_2)$は$G_1$の正規部分群.
 
-証明. まず準同型写像によって単位元は単位元に移されることより$e_{G_2}\in f(H_1),f(N_1)$と$e_{G_1}\in f^{-1}(H_2),f^{-1}(N_2)$が言える. このことから$f(H_1),f^{-1}(H_2),f(N_1),f^{-1}(N_2)$はいずれも空でない.
+:::proof
+まず準同型写像によって単位元は単位元に移されることより$e_{G_2}\in f(H_1),f(N_1)$と$e_{G_1}\in f^{-1}(H_2),f^{-1}(N_2)$が言える. このことから$f(H_1),f^{-1}(H_2),f(N_1),f^{-1}(N_2)$はいずれも空でない.
 
 - 任意の$x,y\in f(H_1)$をとる. このときある$x',y'\in H_1$が存在して$x=f(x'),y=f(y')$と表せる. すると$f$は準同型なので
 
@@ -78,10 +79,12 @@ $$
 であって$f(n)\in N_2, f(x)\in G_2$であるから$N_2$が$G_2$の正規部分群より$f(x)f(n)f(x)^{-1}\in N_2$. よって$xnx^{-1}\in f^{-1}(N_2)$なので$f^{-1}(N_2)$は$G_1$の正規部分群.
 
 ◻
+:::
 
 上の結果から$f$が全射の場合は$f(N_1)$は$G_2$の正規部分群となることが分かる. しかし一般に$f(N_1)$は必ずしも$G_2$の正規部分群になるとは限らない. 実際に次の例がある.
 
-補足 2次対称群$S_2$から3次対称群$S_3$への準同型写像$f$を
+:::supp
+2次対称群$S_2$から3次対称群$S_3$への準同型写像$f$を
 
 $$
 \begin{align*} \sigma\mapsto \begin{cases} f(\sigma)(1)=\sigma(1) \\ f(\sigma)(2)=\sigma(2) \\ f(\sigma)(3)=3 \end{cases} \end{align*}
@@ -93,6 +96,7 @@ $$
 \begin{align*} \begin{pmatrix} 1 & 2 & 3 \\ 2 & 3 & 1 \end{pmatrix} f( \begin{pmatrix} 1 & 2 \\ 2 & 1 \end{pmatrix} ) \begin{pmatrix} 1 & 2 & 3 \\ 2 & 3 & 1 \end{pmatrix}^{-1} =\begin{pmatrix} 1 & 2 & 3 \\ 1 & 3 & 2 \end{pmatrix} \not\in f(S_2) \end{align*}
 $$
 
+:::
 ## 準同型写像の像と核
 
 定義 2 (像, 核). $\varphi\colon G_1\to G_2$を群$G_1$から$G_2$への群準同型とする. $e_2$を$G_2$の単位元として
@@ -113,9 +117,11 @@ $$
 \begin{align*} \varphi\text{が単射}\iff \mathop{\mathrm{Ker}}\varphi=\{e_1\} \end{align*}
 $$
 
-証明. $\varphi$が単射であると仮定する. $x\in \mathop{\mathrm{Ker}}\varphi$とすると$G_2$の単位元を$e_2$として$\varphi(x)=e_2=\varphi(e_1)$が成り立つ. $\varphi$は単射なので$x=e_1$が分かる.
+:::proof
+$\varphi$が単射であると仮定する. $x\in \mathop{\mathrm{Ker}}\varphi$とすると$G_2$の単位元を$e_2$として$\varphi(x)=e_2=\varphi(e_1)$が成り立つ. $\varphi$は単射なので$x=e_1$が分かる.
 
 次に$\mathop{\mathrm{Ker}}\varphi=\{e_1\}$と仮定する. $x,y\in G_1$として$\varphi(x)=\varphi(y)$とすると, $\varphi(x)\varphi(y)^{-1}=\varphi(xy^{-1})=e_2$である. このことから$xy^{-1}\in\mathop{\mathrm{Ker}}\varphi$が分かるので, 仮定より$xy^{-1}=e_2$すなわち$x=y$が分かる. 以上より$\varphi$は単射である. ◻
+:::
 
 ## 生成系の像
 
@@ -125,10 +131,12 @@ $$
 \begin{align*} \varphi(\langle S\rangle)=\langle \varphi(S)\rangle \end{align*}
 $$
 
-証明. $\varphi(S)\subset \varphi(\langle S\rangle)$であるから$\langle \varphi(S)\rangle\subset \varphi(\langle S\rangle)$が成り立つ. 逆に$\varphi(\langle S\rangle)$の任意の元は
+:::proof
+$\varphi(S)\subset \varphi(\langle S\rangle)$であるから$\langle \varphi(S)\rangle\subset \varphi(\langle S\rangle)$が成り立つ. 逆に$\varphi(\langle S\rangle)$の任意の元は
 
 $$
 \begin{align*} \varphi(s_1^{\pm 1}s_2^{\pm 1}\cdots s_n^{\pm 1})=\varphi(s_1)^{\pm 1}\varphi(s_2)^{\pm 1}\cdots \varphi(s_n)^{\pm 1} \end{align*}
 $$
 
 と表されるので$\varphi(\langle S\rangle)\subset \langle \varphi(S)\rangle$も成り立つ. よって$\varphi(\langle S\rangle)=\langle \varphi(S)\rangle$が成り立つ. ◻
+:::

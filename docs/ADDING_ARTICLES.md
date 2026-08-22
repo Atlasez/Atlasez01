@@ -154,6 +154,29 @@ public/images/math/group-examples/dihedral-symmetry-axes.svg
 
 Markdown の表がそのまま使えます。ヘッダ行を必ず付けてください。
 
+### 証明・折りたたみ・注釈
+
+数学ブロックはHTMLを直接書かず、コンテナdirectiveで開始と終了を明示します。
+使える名前は`proof`、`folding`、`supp`、`rem`です。1個・2個・5個以上のコロンは
+既存本文との衝突や過剰な入れ子を避けるため有効にせず、`:::`または`::::`だけを使います。
+
+```markdown
+:::proof
+証明本文. ◻
+:::
+
+:::folding[条件を見る]
+折りたたむ本文
+:::
+
+:::rem[注釈]
+注釈本文
+:::
+```
+
+入れ子では外側のコロンを長くします。公開前に
+`npm run check:math-directives`を実行すると、旧記法や移行漏れを検出できます。
+
 ---
 
 ## 概念とのつなぎ方

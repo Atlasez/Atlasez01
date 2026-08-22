@@ -51,7 +51,9 @@ $\{X_i\}_{i\in I}$上の関係であることが文脈上明らかで誤解が�
 
 定義 6 (関係の和集合・共通部分). 2つの$\{X_i\}_{i\in I}$上の関係$R,S$に対し, これらの和集合$R\cup S$, 共通部分$R\cap S$も$\{X_i\}_{i\in I}$上の関係である.
 
-証明. $R,S\subset \prod_{i\in I}X_i$なので、部分集合の性質より$R\cup S\subset \prod_{i\in I}X_i,\ R\cap S\subset \prod_{i\in I}X_i$。よって関係の定義より、$R\cup S,\,R\cap S$は$\{X_i\}_{i\in I}$上の関係である. ◻
+:::proof
+$R,S\subset \prod_{i\in I}X_i$なので、部分集合の性質より$R\cup S\subset \prod_{i\in I}X_i,\ R\cap S\subset \prod_{i\in I}X_i$。よって関係の定義より、$R\cup S,\,R\cap S$は$\{X_i\}_{i\in I}$上の関係である. ◻
+:::
 
 ## 関係の射影・拡張
 

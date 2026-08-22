@@ -51,11 +51,15 @@ $$
 
 命題 3. 上方集合の補集合$U^c=P\setminus U$は下方集合であり、下方集合の補集合$D^c=P\setminus D$は上方集合である。
 
-証明. 背理法で示す。$y \in U^c$ と $x \le y$ をとる。 $x \in U$ と仮定すると、$U$ は上方集合であるため、$x \le y$ より $y \in U$ となり、$y \in U^c$ に矛盾する。したがって $x \notin U$、すなわち $x \in U^c$ である。よって定義から、$U^c$ は下方集合である。後半部分は下方集合は双対順序集合における上方集合であることから従う。 ◻
+:::proof
+背理法で示す。$y \in U^c$ と $x \le y$ をとる。 $x \in U$ と仮定すると、$U$ は上方集合であるため、$x \le y$ より $y \in U$ となり、$y \in U^c$ に矛盾する。したがって $x \notin U$、すなわち $x \in U^c$ である。よって定義から、$U^c$ は下方集合である。後半部分は下方集合は双対順序集合における上方集合であることから従う。 ◻
+:::
 
 命題 4. 前順序集合$P$の上方集合の族$\{U_i\}_{i\in I}$に対し、その共通部分$\bigcap_{i\in I}U_i$と和$\bigcup_{i\in I}U_i$は$P$の上方集合である。下方集合の族の共通部分と和は下方集合である。
 
-証明. $x\in \bigcap_{i\in I}U_i$ と $x\le y$ をとる。このとき任意の $i\in I$ について $x\in U_i$ であり， 各 $U_i$ は上方集合なので $y\in U_i$ が従う。よって $y\in\bigcap_{i\in I}U_i$。 したがって $\bigcap_{i\in I}U_i$ は上方集合である。 $x\in \bigcup_{i\in I}U_i$ と $x\le y$ をとる。このときある $j\in I$ が存在して $x\in U_j$。 $U_j$ は上方集合なので $y\in U_j\subset\bigcup_{i\in I}U_i$。 よって $\bigcup_{i\in I}U_i$ は上方集合である。 下方集合についても下方集合は双対順序集合における上方集合であることから従う。 ◻
+:::proof
+$x\in \bigcap_{i\in I}U_i$ と $x\le y$ をとる。このとき任意の $i\in I$ について $x\in U_i$ であり， 各 $U_i$ は上方集合なので $y\in U_i$ が従う。よって $y\in\bigcap_{i\in I}U_i$。 したがって $\bigcap_{i\in I}U_i$ は上方集合である。 $x\in \bigcup_{i\in I}U_i$ と $x\le y$ をとる。このときある $j\in I$ が存在して $x\in U_j$。 $U_j$ は上方集合なので $y\in U_j\subset\bigcup_{i\in I}U_i$。 よって $\bigcup_{i\in I}U_i$ は上方集合である。 下方集合についても下方集合は双対順序集合における上方集合であることから従う。 ◻
+:::
 
 ## 上方閉包
 
@@ -81,7 +85,9 @@ $$
 
 で与えられる。
 
-証明. まず主上方集合の定義より、$x\in {\uparrow x}$なので、$A\subset\bigcup_{x\in A}\uparrow x$である。また$\uparrow x$は上方集合であり、上方集合の和集合は上方集合であるので、$\bigcup_{x\in A}\uparrow x$は上方集合である。定義より$\uparrow A$は$A$を含む最小の上方集合であるので、$\uparrow A\subset\bigcup_{x\in A}\uparrow x$となる。 また、定義より$A\subset{\uparrow A}$であるので、任意の$x\in A$に対して$x\in{\uparrow A}$である。$\uparrow A$は上方集合なので、$\uparrow x$の最小性から$\uparrow x\subset{\uparrow A}$となる。これが任意の$x\in A$に対して成り立つことから、その和集合も$\uparrow A$に含まれる、すなわち$\bigcup_{x\in A}\uparrow x\subset{\uparrow A}$が従う。 以上より、$\uparrow A=\bigcup_{x\in A}\uparrow x$が導かれる。 最後に、主上方集合が$\{y\in P\mid x\leq y\}$によって与えられることを示す。まず、反射律$x \le x$ より、$x \in \{y\in P\mid x\leq y\}$ である。そして$z \in \{y\in P\mid x\leq y\}$ かつ $z \le w$ とすると、定義より $x \le z$ であり、推移律より $x \le w$ となる。よって $w \in \{y\in P\mid x\leq y\}$ が従い、$\{y\in P\mid x\leq y\}$は$x$を含む上方集合である。 任意の$x$を含む上方集合$U$をとる。定義より$x \in U$ かつ $x \le y$ ならば $y \in U$ であるので、$\{y\in P\mid x\leq y\}$ のすべての要素は $U$ に属する、すなわち$\{y\in P\mid x\leq y\} \subseteq U$ が従う。これが任意の$U$に対して成り立つので、$\{y\in P\mid x\leq y\}$は$x$を含む最小の上方集合であること、すなわち$\uparrow x=\{y\in P\mid x\leq y\}$が導かれる。 ◻
+:::proof
+まず主上方集合の定義より、$x\in {\uparrow x}$なので、$A\subset\bigcup_{x\in A}\uparrow x$である。また$\uparrow x$は上方集合であり、上方集合の和集合は上方集合であるので、$\bigcup_{x\in A}\uparrow x$は上方集合である。定義より$\uparrow A$は$A$を含む最小の上方集合であるので、$\uparrow A\subset\bigcup_{x\in A}\uparrow x$となる。 また、定義より$A\subset{\uparrow A}$であるので、任意の$x\in A$に対して$x\in{\uparrow A}$である。$\uparrow A$は上方集合なので、$\uparrow x$の最小性から$\uparrow x\subset{\uparrow A}$となる。これが任意の$x\in A$に対して成り立つことから、その和集合も$\uparrow A$に含まれる、すなわち$\bigcup_{x\in A}\uparrow x\subset{\uparrow A}$が従う。 以上より、$\uparrow A=\bigcup_{x\in A}\uparrow x$が導かれる。 最後に、主上方集合が$\{y\in P\mid x\leq y\}$によって与えられることを示す。まず、反射律$x \le x$ より、$x \in \{y\in P\mid x\leq y\}$ である。そして$z \in \{y\in P\mid x\leq y\}$ かつ $z \le w$ とすると、定義より $x \le z$ であり、推移律より $x \le w$ となる。よって $w \in \{y\in P\mid x\leq y\}$ が従い、$\{y\in P\mid x\leq y\}$は$x$を含む上方集合である。 任意の$x$を含む上方集合$U$をとる。定義より$x \in U$ かつ $x \le y$ ならば $y \in U$ であるので、$\{y\in P\mid x\leq y\}$ のすべての要素は $U$ に属する、すなわち$\{y\in P\mid x\leq y\} \subseteq U$ が従う。これが任意の$U$に対して成り立つので、$\{y\in P\mid x\leq y\}$は$x$を含む最小の上方集合であること、すなわち$\uparrow x=\{y\in P\mid x\leq y\}$が導かれる。 ◻
+:::
 
 定義 8 (共終部分集合・共始部分集合). 前順序集合$P$の部分集合$A$について考える。
 
