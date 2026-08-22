@@ -33,7 +33,8 @@ $\mathop{\mathrm{Sym}}(X)$の元は<strong>置換(permutation)</strong>とよぶ
 
 命題 2. $|X|\leq |Y|$ならば, $\mathop{\mathrm{Sym}}(X)$と同型な$\mathop{\mathrm{Sym}}(Y)$の部分群が存在する.
 
-証明. 仮定より, 単射$f\colon X\to Y$が存在する. この$f$を一つ固定して, $\phi_f\colon S(X)\to S(Y)$を次のように定める. まず$y\in f(X)$であるとき, $f$が単射なので$y=f(x)$となる$x$がただ一つ存在するので$\phi_f(\sigma)(y)=f(\sigma(x))$とする. $y\not\in f(X)$であるとき, $\phi_f(\sigma)(y)=y$とする. 次の計算によって$\phi_f$が準同型写像であることが分かる.
+:::proof
+仮定より, 単射$f\colon X\to Y$が存在する. この$f$を一つ固定して, $\phi_f\colon S(X)\to S(Y)$を次のように定める. まず$y\in f(X)$であるとき, $f$が単射なので$y=f(x)$となる$x$がただ一つ存在するので$\phi_f(\sigma)(y)=f(\sigma(x))$とする. $y\not\in f(X)$であるとき, $\phi_f(\sigma)(y)=y$とする. 次の計算によって$\phi_f$が準同型写像であることが分かる.
 
 $$
 \begin{align*} \phi_f(\sigma)\phi_f(\tau)(y)&= \begin{cases} f(\sigma(\tau(x))) & (y=f(x)\in f(X)) \\ y & (y\not\in f(X)) \end{cases} \\ &=\phi_f(\sigma\tau)(y),\quad (\sigma,\tau\in S(X)) \end{align*}
@@ -48,12 +49,14 @@ $$
 $f$は単射なので$\sigma(x)=\tau(x)$が成り立つ. つまり$\sigma=\tau$なので$\phi_f$は単射であることが分かる.
 
 以上より$\mathop{\mathrm{Sym}}(X)$の$\phi_f$による像は$\mathop{\mathrm{Sym}}(X)$と同型で, $\mathop{\mathrm{Sym}}(Y)$の部分群となる. ◻
+:::
 
 対称群は元となる集合の濃度によって特徴づけられる.
 
 命題 3. 集合$X$, $Y$に対して$|X|=|Y|$ならば$\mathop{\mathrm{Sym}}(X)\cong \mathop{\mathrm{Sym}}(Y)$が成り立つ.
 
-証明. 仮定より全単射$f\colon X\to Y$が存在する. この$f$を一つ固定して, $f$の逆写像$f^{-1}\colon Y\to X$を用いて
+:::proof
+仮定より全単射$f\colon X\to Y$が存在する. この$f$を一つ固定して, $f$の逆写像$f^{-1}\colon Y\to X$を用いて
 
 $$
 \begin{align*} \phi_f\colon S(X)\to S(Y),\quad \sigma\mapsto f\sigma f^{-1} \end{align*}
@@ -78,6 +81,7 @@ $$
 $$
 
 より$\phi_f$は全射であることも分かる. ◻
+:::
 
 ## Cayleyの定理
 
@@ -85,7 +89,8 @@ $$
 
 定理 4 (Cayleyの定理). 群$G$に対して, $G$と同型な$\mathop{\mathrm{Sym}}(G)$の部分群が存在する.
 
-証明. 写像$\rho\colon G\to \mathop{\mathrm{Sym}}(G);\,g\mapsto \rho(g)$を次で定める.
+:::proof
+写像$\rho\colon G\to \mathop{\mathrm{Sym}}(G);\,g\mapsto \rho(g)$を次で定める.
 
 $$
 \begin{align*} \rho(g)\colon G\longrightarrow G;\quad h\mapsto gh \end{align*}
@@ -100,6 +105,7 @@ $$
 となるので, $\rho$は準同型写像である.
 
 $\rho(g)\colon h\mapsto gh$が恒等写像になるのは$g=e$に限られるので, [準同型写像の像と核:命題 3]より$\rho$は単射. よって$\rho(G)$は$G$と同型であって, $\rho(G)$は$\mathop{\mathrm{Sym}}(G)$の部分群である. ◻
+:::
 
 ## $n$次対称群
 
@@ -171,7 +177,8 @@ $$
 
 2. $(i_1,i_2,\ldots ,i_m)$の位数は$m$である.
 
-証明. 長さ$m$の巡回置換$(i_1,i_2,\ldots ,i_m)$を$\sigma$とおく. $\sigma$は$i_1,i_2,\ldots ,i_m$のみを動かす.
+:::proof
+長さ$m$の巡回置換$(i_1,i_2,\ldots ,i_m)$を$\sigma$とおく. $\sigma$は$i_1,i_2,\ldots ,i_m$のみを動かす.
 
 - $(i_m,i_{m-1},\ldots ,i_1)$を$\tau$とおいて$\tau\sigma=\sigma\tau=e$を示す. 任意の$1\leq k\leq m$に対して, $\tau$は$\tau(i_k)=i_{k-1}$となる巡回置換なので
 
@@ -190,6 +197,7 @@ $$
 なので$\sigma^m=e$である. このとき$i_1,i_2,\ldots i_m$が相異なることから, $1\leq r< m$において$\sigma^r\neq e$である. すなわち$\sigma$の位数は$m$である.
 
 ◻
+:::
 
 ## 巡回置換の共役
 
@@ -201,7 +209,8 @@ $$
 
 が成り立つ. つまり$\tau$とその共役$\sigma\tau\sigma^{-1}$は同じ長さの巡回置換である.
 
-証明. $I_m:=\{i_1,i_2,\ldots ,i_m\}$とする. 示すべき式の右辺の巡回置換を$\mu$として, $(\sigma\tau\sigma^{-1})(i)=\mu(i)\,(1\leq i\leq n)$を示す.
+:::proof
+$I_m:=\{i_1,i_2,\ldots ,i_m\}$とする. 示すべき式の右辺の巡回置換を$\mu$として, $(\sigma\tau\sigma^{-1})(i)=\mu(i)\,(1\leq i\leq n)$を示す.
 
 - $\sigma^{-1}(i)\in I_m$のとき. ある$i_k\in I_m$で$i=\sigma(i_k)$と表される. すると
 
@@ -220,3 +229,4 @@ $$
 となり成り立つ.
 
 ◻
+:::

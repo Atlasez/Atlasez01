@@ -2,9 +2,11 @@
 import { defineConfig } from "astro/config";
 import sitemap from "@astrojs/sitemap";
 import { unified } from "@astrojs/markdown-remark";
+import remarkDirective from "remark-directive";
 import remarkMath from "remark-math";
 import rehypeRaw from "rehype-raw";
 import rehypeMathjax from "rehype-mathjax/svg";
+import { renderArticleDirectives } from "./src/lib/markdown-directives.mjs";
 
 /**
  * 旧記事には Pandoc が出力した `<span class="math inline">\(...\)</span>`
@@ -263,7 +265,7 @@ export default defineConfig({
   ],
   markdown: {
     processor: unified({
-      remarkPlugins: [remarkMath],
+      remarkPlugins: [remarkMath, remarkDirective, renderArticleDirectives],
       rehypePlugins: [
         // Preserve legacy theorem/folding HTML and authored links before the
         // MathJax pass. Content is repository-controlled Markdown/HTML.

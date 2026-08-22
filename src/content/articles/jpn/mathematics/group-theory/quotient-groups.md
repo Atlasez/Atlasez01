@@ -55,7 +55,8 @@ $$
 
 がwell-definedに定まるとき$H$は$G$の正規部分群である.
 
-証明. $g\in G$に対する逆元$g^{-1}\in G$に関して
+:::proof
+$g\in G$に対する逆元$g^{-1}\in G$に関して
 
 $$
 \begin{align*} (gH)\cdot(g^{-1}H)=e_GH=H \end{align*}
@@ -68,6 +69,7 @@ $$
 $$
 
 よって任意の$g\in G,h\in H$に対して$ghg^{-1}\in H$が成り立つので$H$は正規部分群である. ◻
+:::
 
 ## 自然な射影
 
@@ -79,7 +81,8 @@ $$
 
 は全射準同型写像である. 特に$\mathop{\mathrm{Ker}}\pi =N$である.
 
-証明. 任意の$g_1,g_2\in G$に対して
+:::proof
+任意の$g_1,g_2\in G$に対して
 
 $$
 \begin{align*} \pi(g_1g_2)=(g_1g_2)N=(g_1N)(g_2N)=\pi(g_1)\pi(g_2) \end{align*}
@@ -94,6 +97,7 @@ $$
 $$
 
 である. ◻
+:::
 
 ## 部分群の対応定理
 
@@ -105,7 +109,8 @@ $$
 
 は互いに逆写像である.
 
-証明. 準同型写像$\pi$による像と逆像は部分群になる([準同型写像の像と核:命題 1]). 特に$H\in \mathbb{X}$に対して$\varphi(H)=\pi^{-1}(H)\in \mathbb{Y}$, すなわち$\pi^{-1}(H)$が$N$を含むことを示す. 任意の$n\in N$に対して$\pi(n)=nN=e_{G/N}\in H$であるから$n\in \pi^{-1}(H)$である. よって$N\subset \pi^{-1}(H)$である.
+:::proof
+準同型写像$\pi$による像と逆像は部分群になる([準同型写像の像と核:命題 1]). 特に$H\in \mathbb{X}$に対して$\varphi(H)=\pi^{-1}(H)\in \mathbb{Y}$, すなわち$\pi^{-1}(H)$が$N$を含むことを示す. 任意の$n\in N$に対して$\pi(n)=nN=e_{G/N}\in H$であるから$n\in \pi^{-1}(H)$である. よって$N\subset \pi^{-1}(H)$である.
 
 次に$\varphi$と$\psi$が互いに逆写像であることを示す. $H\in \mathbb{X}$に対して
 
@@ -122,6 +127,7 @@ $$
 $$
 
 である. 一般に$K \subseteq \pi^{-1}(\pi(K))$が成り立つ. 逆に$x\in \pi^{-1}(\pi(K))$をとると, $\pi(x)\in \pi(K)$であるから, ある$k\in K$に対して$\pi(x)=\pi(k)$となる. よって$k^{-1}x\in N$である. ここで$N\subset K$であるから$k^{-1}x\in K$であり, $x=k(k^{-1}x)\in K$となる. 以上より$\pi^{-1}(\pi(K))=K$である. ◻
+:::
 
 さらに部分群の対応定理における対応は包含関係や正規性を保つ. つまり次のことが成り立つ.
 
@@ -131,9 +137,11 @@ $$
 \begin{align*} H_1\subset H_2\iff H_1/N\subset H_2/N \end{align*}
 $$
 
-証明. $H_1\subset H_2$ならば, 任意の$h_1N\in H_1/N$に対して$h_1\in H_2$であるから$h_1N\in H_2/N$であり, $H_1/N\subset H_2/N$である.
+:::proof
+$H_1\subset H_2$ならば, 任意の$h_1N\in H_1/N$に対して$h_1\in H_2$であるから$h_1N\in H_2/N$であり, $H_1/N\subset H_2/N$である.
 
 逆に$H_1/N\subset H_2/N$ならば, 任意の$h_1\in H_1$に対して$h_1N\in H_1/N\subset H_2/N$である. すなわちある$h_2\in H_2$に対して$h_1N=h_2N$となる. よって$h_2^{-1}h_1\in N\subset H_2$であるから$h_1=h_2(h_2^{-1}h_1)\in H_2$であり, $H_1\subset H_2$である. ◻
+:::
 
 命題 6 (部分群の対応における正規性の保存). $G$を群, $N$をその正規部分群とする. また, $H$を$G$の部分群で$N$を含むものとする. このとき
 
@@ -141,6 +149,8 @@ $$
 \begin{align*} H\vartriangleleft G\iff H/N\vartriangleleft G/N \end{align*}
 $$
 
-証明. $\pi\colon G\to G/N$を自然な射影とする. $H\vartriangleleft G$とする. $H/N=\pi(H)$は$\pi$が全射であるので, [準同型写像の像と核:命題 1]より$H/N$は$G/N$の正規部分群である.
+:::proof
+$\pi\colon G\to G/N$を自然な射影とする. $H\vartriangleleft G$とする. $H/N=\pi(H)$は$\pi$が全射であるので, [準同型写像の像と核:命題 1]より$H/N$は$G/N$の正規部分群である.
 
 $H/N\vartriangleleft G/N$とする. $H=\pi^{-1}(H/N)$について, 逆像は正規性を保つ([準同型写像の像と核:命題 1])ことより$H$は$G$の正規部分群である. ◻
+:::

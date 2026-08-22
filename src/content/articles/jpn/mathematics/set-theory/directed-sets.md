@@ -43,11 +43,13 @@ references: []
 
 2. $P$が下有向集合$\iff\forall x,y\in P,\;\exists z\in P\ (z\leq x \land z\leq y)$
 
-証明. $P$が上有向集合であると仮定する。任意に$x,y\in P$をとると$\{x,y\}$は$P$の有限部分集合であるから、仮定より$A$の上界$z\in P$が存在する。すなわち$x\leq z$かつ$y\leq z$である。
+:::proof
+$P$が上有向集合であると仮定する。任意に$x,y\in P$をとると$\{x,y\}$は$P$の有限部分集合であるから、仮定より$A$の上界$z\in P$が存在する。すなわち$x\leq z$かつ$y\leq z$である。
 
 次に$\forall x,y\in P\;\exists z\in P\ (x\leq z \land y\leq z)$を仮定し、任意の有限部分集合$A\subseteq P$に対して$A$の上界が存在することを示す。 $A=\varnothing$なら、任意の$z\in P$は$\forall a\in A,\ a\leq z$を満たすので上界である。 $A\neq\varnothing$とし、$A=\{a_1,\dots,a_n\}$（$n\ge1$）と書く。 仮定を用いて帰納的に$z_1,\dots,z_n\in P$を次で定める： $z_1:=a_1$、および$k\ge2$に対し $a_k\le z_k$かつ$z_{k-1}\le z_k$を満たす$z_k\in P$を取る。 このとき各$k$について、$a_1,\dots,a_k\le z_k$が成り立つことを$k$についての帰納法で示せる。 よって$a_i\le z_n$（$i=1,\dots,n$）であり、$z_n$は$A$の上界である。以上より$P$は上有向集合である。
 
 下有向集合についても同様にして示される。 ◻
+:::
 
 定義 3 (有向部分集合). 前順序集合$P$に対し、その部分集合$A\subset P$が$P$の順序によって(上/下)有向集合となるとき、$A$を(上/下)有向部分集合という。
 

@@ -33,7 +33,8 @@ references: []
 
 命題 2. $G_1\cong G_2$ならば$\operatorname{Aut}(G_1)\cong \operatorname{Aut}(G_2)$である.
 
-証明. 仮定より同型写像$f\colon G_1\to G_2$が存在する. このとき$f$は逆写像$f^{-1}$を持つ. 写像
+:::proof
+仮定より同型写像$f\colon G_1\to G_2$が存在する. このとき$f$は逆写像$f^{-1}$を持つ. 写像
 
 $$
 \begin{align*} \Phi\colon \operatorname{Aut}(G_1)\to \operatorname{Aut}(G_2),\quad \varphi\mapsto f\varphi f^{-1} \end{align*}
@@ -54,12 +55,14 @@ $$
 $$
 
 であるから$\varphi=\mathrm{id}_{G_1}$となる. よって$\Phi$は単射である. 次に$\psi\in \operatorname{Aut}(G_2)$をとると, $\varphi:=f^{-1}\psi f\in \operatorname{Aut}(G_1)$とすれば$\Phi(\varphi)=\psi$であるから$\Phi$は全射である. 以上より$\operatorname{Aut}(G_1)\cong \operatorname{Aut}(G_2)$が成り立つ. ◻
+:::
 
 ## 自己同型群の例:無限巡回群
 
 命題 3 (無限巡回群の自己同型群). 加法群$(\mathbb{Z},+)$の自己同型群について$\operatorname{Aut}(\mathbb{Z})\cong \mathbb{Z}/2\mathbb{Z}$である.
 
-証明. $f\in \operatorname{Aut}(\mathbb{Z})$とすると$f$は$\mathbb{Z}$の生成元$1,-1$によって決定される. さらに$f$は全射準同型なので
+:::proof
+$f\in \operatorname{Aut}(\mathbb{Z})$とすると$f$は$\mathbb{Z}$の生成元$1,-1$によって決定される. さらに$f$は全射準同型なので
 
 $$
 \begin{align*} f(\mathbb{Z})=f(\langle 1\rangle)=\langle f(1)\rangle=\mathbb{Z} \end{align*}
@@ -84,12 +87,14 @@ $$
 となる. この準同型写像を$f_-$とおく. ここで$f_-\neq e$かつ$f_-^2=f_-$である.
 
 以上より$\operatorname{Aut}(\mathbb{Z})=\{e,f_-\}\cong \mathbb{Z}/2\mathbb{Z}$が分かる. ◻
+:::
 
 ## 自己同型群の例:有限巡回群
 
 命題 4 (有限巡回群の自己同型群). $G$を位数$n$の巡回群とするとき$\operatorname{Aut}(G)\cong (\mathbb{Z}/n\mathbb{Z})^{\times}$である.
 
-証明. $G=\langle a\rangle$とする. このとき$f\in \operatorname{Aut}(G)$は生成元の行先$f(a)$を定めることで決定されることに注意する. $\varphi\colon (\mathbb{Z}/n\mathbb{Z})^{\times}\to \operatorname{Aut}(G)$を$\overline{k}\mapsto f_k$, $f_k(a):=a^k$で定める. このとき以下を確かめることで題意が示される.
+:::proof
+$G=\langle a\rangle$とする. このとき$f\in \operatorname{Aut}(G)$は生成元の行先$f(a)$を定めることで決定されることに注意する. $\varphi\colon (\mathbb{Z}/n\mathbb{Z})^{\times}\to \operatorname{Aut}(G)$を$\overline{k}\mapsto f_k$, $f_k(a):=a^k$で定める. このとき以下を確かめることで題意が示される.
 
 1. $\varphi$はwell-definedである. つまり代表元によらず定まり, $f_k\in \operatorname{Aut}(G)$.
 
@@ -118,6 +123,7 @@ $$
 であることから分かる. 次に$\varphi$が単射であることを示す. $\overline{k}\in(\mathbb{Z}/n\mathbb{Z})^{\times}$に対して$\varphi(\overline{k})(a)=f_k(a)=a^k=a$, つまり$f_k$が恒等写像であるとすると$\overline{k}=\overline{1}$なので$\mathop{\mathrm{Ker}}\varphi=\{\overline{1}\}$. [準同型写像の像と核:命題 3]より$\varphi$は単射. また, 任意の$f\in\operatorname{Aut}(G)$は$f(a)=a^m\in G,\,(0\leq m<n)$で表されるが$f(a)$は$G$の生成元になっているので$m$は$n$と互いに素である. よって$\overline{m}\in(\mathbb{Z}/n\mathbb{Z})^{\times}$より$\varphi(\overline{m})=f_{m}=g$. すなわち$\varphi$は全射.
 
 以上より$\varphi$が群同型$\operatorname{Aut}(G)\cong (\mathbb{Z}/n\mathbb{Z})^{\times}$を与えることが分かる. ◻
+:::
 
 ## 内部自己同型群と外部自己同型群
 
@@ -133,7 +139,8 @@ $$
 
 命題 6 (内部自己同型群は部分群). 内部自己同型群$\mathop{\mathrm{Inn}}(G)$は$\operatorname{Aut}(G)$の部分群である.
 
-証明. まず恒等写像$\mathrm{id}_G=\operatorname{Ad}_{e}$であるから$\mathrm{id}_G\in \mathop{\mathrm{Inn}}(G)$. 次に$\operatorname{Ad}_{g},\operatorname{Ad}_{h}\in \mathop{\mathrm{Inn}}(G)$とすると任意の$x\in G$に対して
+:::proof
+まず恒等写像$\mathrm{id}_G=\operatorname{Ad}_{e}$であるから$\mathrm{id}_G\in \mathop{\mathrm{Inn}}(G)$. 次に$\operatorname{Ad}_{g},\operatorname{Ad}_{h}\in \mathop{\mathrm{Inn}}(G)$とすると任意の$x\in G$に対して
 
 $$
 \begin{align*} (\operatorname{Ad}_{g}\circ \operatorname{Ad}_{h})(x)=\operatorname{Ad}_{g}(x^h)=x^{hg}=\operatorname{Ad}_{hg}(x) \end{align*}
@@ -146,16 +153,19 @@ $$
 $$
 
 であるから$\operatorname{Ad}_{g}^{-1}=\operatorname{Ad}_{g^{-1}}\in \mathop{\mathrm{Inn}}(G)$. 以上より$\mathop{\mathrm{Inn}}(G)$は$\operatorname{Aut}(G)$の部分群である. ◻
+:::
 
 命題 7 (内部自己同型群は正規部分群). 群$G$の内部自己同型群$\mathop{\mathrm{Inn}}(G)$は自己同型群$\operatorname{Aut}(G)$の正規部分群である.
 
-証明. $\mathop{\mathrm{Inn}}(G)$が$\operatorname{Aut}(G)$の部分群であることは[自己同型群:命題 6]より分かる. $\varphi\in \operatorname{Aut}(G),\ \operatorname{Ad}_g\in \mathop{\mathrm{Inn}}(G)$とする. 任意の$x\in G$に対して
+:::proof
+$\mathop{\mathrm{Inn}}(G)$が$\operatorname{Aut}(G)$の部分群であることは[自己同型群:命題 6]より分かる. $\varphi\in \operatorname{Aut}(G),\ \operatorname{Ad}_g\in \mathop{\mathrm{Inn}}(G)$とする. 任意の$x\in G$に対して
 
 $$
 \begin{align*} (\varphi\circ \operatorname{Ad}_g\circ \varphi^{-1})(x) &= \varphi(\operatorname{Ad}_g(\varphi^{-1}(x))) \\ &= \varphi(g^{-1}\varphi^{-1}(x)g) \\ &= \varphi(g)^{-1}x\varphi(g) \\ &= x^{\varphi(g)} \\ &= \operatorname{Ad}_{\varphi(g)}(x) \end{align*}
 $$
 
 であるから$\varphi\circ \operatorname{Ad}_g\circ \varphi^{-1}=\operatorname{Ad}_{\varphi(g)}\in \mathop{\mathrm{Inn}}(G)$. よって$\mathop{\mathrm{Inn}}(G)$は$\operatorname{Aut}(G)$の正規部分群である. ◻
+:::
 
 [自己同型群:命題 7]より剰余群$\operatorname{Aut}(G)/\mathop{\mathrm{Inn}}(G)$が定義できる.
 
@@ -165,13 +175,16 @@ $$
 
 命題 9 (内部自己同型群と中心の関係). 群$G$の中心$Z(G)$と内部自己同型群$\mathop{\mathrm{Inn}}(G)$について$\mathop{\mathrm{Inn}}(G)\cong G/Z(G)$が成り立つ.
 
-証明. 共役作用の置換表現$\operatorname{Ad}\colon G\to \mathop{\mathrm{Inn}}(G),\,g\mapsto \operatorname{Ad}_g$を考える. $\operatorname{Ad}$の核を求めると, $g\in \mathop{\mathrm{Ker}}\operatorname{Ad}$ならば任意の$x\in G$に対して$x^g=x$が成り立つので$g\in Z(G)$. 逆に$g\in Z(G)$ならば任意の$x\in G$に対して$x^g=x$であるから$g\in \mathop{\mathrm{Ker}}\operatorname{Ad}$. よって$\mathop{\mathrm{Ker}}\operatorname{Ad}=Z(G)$が分かる. また$\operatorname{Ad}$は全射であるから, 準同型定理([準同型定理と例:定理 1])から$\mathop{\mathrm{Inn}}(G)\cong G/Z(G)$が従う. ◻
+:::proof
+共役作用の置換表現$\operatorname{Ad}\colon G\to \mathop{\mathrm{Inn}}(G),\,g\mapsto \operatorname{Ad}_g$を考える. $\operatorname{Ad}$の核を求めると, $g\in \mathop{\mathrm{Ker}}\operatorname{Ad}$ならば任意の$x\in G$に対して$x^g=x$が成り立つので$g\in Z(G)$. 逆に$g\in Z(G)$ならば任意の$x\in G$に対して$x^g=x$であるから$g\in \mathop{\mathrm{Ker}}\operatorname{Ad}$. よって$\mathop{\mathrm{Ker}}\operatorname{Ad}=Z(G)$が分かる. また$\operatorname{Ad}$は全射であるから, 準同型定理([準同型定理と例:定理 1])から$\mathop{\mathrm{Inn}}(G)\cong G/Z(G)$が従う. ◻
+:::
 
 ## 直積群の自己同型群
 
 命題 10 (直積群の内部自己同型群). 群$G_1,G_2$の直積群$G_1\times G_2$の内部自己同型群について $\mathop{\mathrm{Inn}}(G_1\times G_2)\cong \mathop{\mathrm{Inn}}(G_1)\times \mathop{\mathrm{Inn}}(G_2)$が成り立つ.
 
-証明. [自己同型群:命題 9]より
+:::proof
+[自己同型群:命題 9]より
 
 $$
 \begin{align*} \mathop{\mathrm{Inn}}(G_1\times G_2)\cong (G_1\times G_2)/Z(G_1\times G_2) \end{align*}
@@ -190,12 +203,14 @@ $$
 $$
 
 が成り立つ. ◻
+:::
 
 一方, 自己同型群について$\operatorname{Aut}(G_1\times G_2)\cong \operatorname{Aut}(G_1)\times \operatorname{Aut}(G_2)$は限られた場合のみ成り立つ.
 
 命題 11. 有限群$G_1,G_2$の位数が互いに素であるとき$\operatorname{Aut}(G_1\times G_2)\cong \operatorname{Aut}(G_1)\times \operatorname{Aut}(G_2)$が成り立つ.
 
-証明. 任意の$\varphi\in \operatorname{Aut}(G_1\times G_2)$に対して, 射影$\pi_1,\pi_2$, および包含写像$\iota_1,\iota_2$を用いて
+:::proof
+任意の$\varphi\in \operatorname{Aut}(G_1\times G_2)$に対して, 射影$\pi_1,\pi_2$, および包含写像$\iota_1,\iota_2$を用いて
 
 $$
 \begin{align*} \varphi_1=\pi_1\circ\varphi\circ\iota_1\colon G_1&\to G_1 \\ \varphi_2=\pi_2\circ\varphi\circ\iota_2\colon G_2&\to G_2 \end{align*}
@@ -242,6 +257,7 @@ $$
 で定めると$\varphi\in \operatorname{Aut}(G_1\times G_2)$かつ$\Phi(\varphi)=(\psi_1,\psi_2)$であるから$\Phi$は全射.
 
 以上より$\operatorname{Aut}(G_1\times G_2)\cong \operatorname{Aut}(G_1)\times \operatorname{Aut}(G_2)$が成り立つ. ◻
+:::
 
 例 12. $G_1=G_2=\mathbb{Z}/2\mathbb{Z}$のとき$\operatorname{Aut}(G_1)\cong \operatorname{Aut}(G_2)\cong \{e\}$である. 一方で$\operatorname{Aut}(G_1\times G_2)$で自明でないものが存在する. $\sigma\in \operatorname{Aut}(G_1\times G_2)$を
 

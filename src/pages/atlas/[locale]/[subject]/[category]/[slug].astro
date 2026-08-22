@@ -1094,7 +1094,7 @@ const structuredData = {
     border-inline-end: 0;
   }
   .proof-toggle {
-    position: static;
+    position: sticky;
     /* ブロック幅を確保して auto マージンで右端へ寄せつつ、
        flex の中央揃えでラベルが常にボタン中央に来るようにする。 */
     display: flex;
@@ -1102,7 +1102,7 @@ const structuredData = {
     justify-content: center;
     box-sizing: border-box;
     width: fit-content;
-    margin: 0.75rem 0 1rem auto;
+    margin: 4pt 4pt 4pt auto;
     min-height: 2.6rem;
     min-width: 8.5rem;
     padding: 0.55rem 0.95rem;
@@ -1202,26 +1202,29 @@ const structuredData = {
   .article-body :global(.supp-details) { border-bottom: 0; }
   .article-body :global(.supp-details-inner) { border: 1px solid var(--border-default); border-top: 0; border-bottom: 0; border-radius: 0; padding: 0.8rem 1rem; }
   .article-body :global(.rem) { background: color-mix(in srgb, var(--background-secondary) 75%, transparent); border: 1px solid var(--border-default); border-left: 4px solid var(--border-strong); border-radius: 0.35rem; color: var(--text-secondary); margin-block: 1.2rem; padding: 0.7rem 0.9rem; }
+  .article-body :global(.rem-title) { color: var(--text-primary); font-weight: 800; margin: 0 0 0.35rem; }
+  .article-body :global(.rem > :last-child) { margin-bottom: 0; }
   /* folding の外枠は証明本文の左ガイド線と二重になるため持たせない。
      .proof-details-inner.folding-content の左borderは別ルールで維持する。 */
   .article-body :global(details.folding) { border: 0; border-radius: 0.45rem; margin-block: 1rem; overflow: hidden; }
   .article-body :global(details.folding > summary) { background: var(--background-secondary); cursor: pointer; list-style: none; padding: 0.55rem 0.8rem 0.55rem 2rem; position: relative; }
   .article-body :global(details.folding > summary::-webkit-details-marker) { display: none; }
-  /* 折りたたみの矢印は CSS の山形ではなく ▶ / ▼ の文字にする。
+  /* 折りたたみの矢印は CSS の山形ではなく ▼ の文字を回転して示す。
      top を固定するとボタンの高さに追随せず中央から外れるため、
      50% と translateY で常に縦中央へ置く。 */
   .article-body :global(details.folding > summary::before) {
     color: var(--text-secondary);
-    content: "▶";
+    content: "▼";
     font-size: 0.8em;
     left: 0.8rem;
     line-height: 1;
     position: absolute;
     top: 50%;
-    transform: translateY(-50%);
+    transform: translateY(-50%) rotate(-90deg);
   }
   .article-body :global(details.folding[open] > summary::before) {
     content: "▼";
+    transform: translateY(-50%) rotate(0deg);
   }
   .article-body :global(.folding-content) { padding: 0.8rem 1rem; }
   .article-refs,
@@ -1402,12 +1405,10 @@ const structuredData = {
     }
   }
   @media (max-width: 767px) {
-    /* スマホでは本文の流れに置き、スクロールに追従させる。 */
+    /* sticky の基準は記事カラムのまま、狭い画面でも右端へ置く。 */
     .proof-toggle {
-      position: static;
       display: flex;
       width: fit-content;
-      margin: 0.75rem 0 1rem auto;
     }
     /* 別行立ての数式は画面幅を超えるので、その式だけ横に送れるようにする */
     .article-body :global(.katex-display),
@@ -1849,7 +1850,10 @@ const structuredData = {
       const isMathBlock = (node: Element) => node.matches(
         ".defi,.prop,.thm,.lemma,.cor,.example,.math-definition,.math-theorem,.proof,.proof-details,.folding,.supp,.supp-details",
       );
-      const isProofNode = (node: Element) => node.matches(".proof") || isProofLead(node);
+      // 新しい原稿の証明境界は :::proof がビルド時に details へ変換する。
+      // ブラウザでは、旧HTMLが明示した .proof だけを後方互換で扱い、
+      // 「証明.」という文面から終端を推測しない。
+      const isProofNode = (node: Element) => node.matches(".proof");
       // 証明は「◻」「□」「∎」で閉じる。証明の後に続く本文まで枠へ
       // 取り込まないよう、終止記号を見つけた時点で取り込みを打ち切る。
       const qedLead = /[◻□∎]\s*$/u;
@@ -1857,9 +1861,6 @@ const structuredData = {
       // MathJax が本文末尾へ挿入する style などは枠の中身にしない。
       const isRenderableBlock = (node: Element) =>
         !["STYLE", "SCRIPT", "LINK", "TEMPLATE", "META"].includes(node.tagName);
-      const suppLead = /^補足(?:\s|[．。\.:：]|$)/u;
-      const isSuppLead = (node: Element) =>
-        node.tagName === "P" && suppLead.test((node.textContent ?? "").trim());
       const legacyDetails = (node: HTMLElement) => {
         const isSupplement = node.classList.contains("supp");
         const details = document.createElement("details");
@@ -1893,51 +1894,6 @@ const structuredData = {
         if (node.closest("details.folding,details.supp-details")) return;
         legacyDetails(node);
       });
-      // 本文の「補足 …」は旧記事の div.supp と同じ補足ブロックである。
-      // 記事ごとに書き方が違っても同じ折りたたみになるよう、ここで
-      // details.supp-details へ揃える。次の見出し・定理枠・証明までを中身にする。
-      const buildSupplement = (node: HTMLElement) => {
-        const details = document.createElement("details");
-        details.className = "supp-details";
-        const summary = document.createElement("summary");
-        summary.className = "supp-details-summary";
-        summary.textContent = "補足.";
-        const inner = document.createElement("div");
-        inner.className = "supp-details-inner";
-        node.parentNode?.insertBefore(details, node);
-        details.append(summary, inner);
-        const firstText = [...node.childNodes].find(
-          (child) => child.nodeType === Node.TEXT_NODE && (child.textContent ?? "").trim(),
-        );
-        if (firstText) {
-          firstText.textContent = (firstText.textContent ?? "").replace(/^\s*補足[．。\.:：]?\s*/u, "");
-        }
-        inner.append(node);
-        // 補足が証明の続きを担うことがある。証明と同じく終止記号で
-        // 取り込みを打ち切り、その後の本文を補足の外へ残す。
-        let closed = closesProof(node);
-        let next = details.nextElementSibling;
-        while (
-          !closed &&
-          next &&
-          isRenderableBlock(next) &&
-          !isHeading(next) &&
-          !isMathBlock(next) &&
-          !isTheoremLead(next) &&
-          !isProofLead(next) &&
-          !isSuppLead(next)
-        ) {
-          const following = next.nextElementSibling;
-          inner.append(next);
-          closed = closesProof(next);
-          next = following;
-        }
-      };
-      for (const node of [...mathBody.children] as HTMLElement[]) {
-        if (!isSuppLead(node)) continue;
-        if (node.closest("details.supp-details")) continue;
-        buildSupplement(node);
-      }
       const normalizeTheoremLabel = (value: string) => {
         const trimmed = value.trim().replace(/[.．。:：]+$/u, "");
         return trimmed ? `${trimmed}.` : trimmed;
@@ -1983,7 +1939,7 @@ const structuredData = {
         let sawDisplayMath = false;
         while (next) {
           if (!isRenderableBlock(next)) break;
-          if (isHeading(next) || isMathBlock(next) || isTheoremLead(next) || isProofLead(next) || isSuppLead(next)) break;
+          if (isHeading(next) || isMathBlock(next) || isTheoremLead(next) || isProofLead(next)) break;
           if (isDisplayMath(next)) {
             const following = next.nextElementSibling;
             wrapper.append(next);
@@ -2050,8 +2006,7 @@ const structuredData = {
           !isHeading(next) &&
           !isMathBlock(next) &&
           !isTheoremLead(next) &&
-          !isProofNode(next) &&
-          !isSuppLead(next)
+          !isProofNode(next)
         ) {
           const following = next.nextElementSibling;
           inner.append(next);

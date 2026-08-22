@@ -298,7 +298,8 @@ test.describe("学習サイト", () => {
 
     await page.setViewportSize({ width: 390, height: 844 });
     await page.reload();
-    await expect(toggle).toHaveCSS("position", "static");
+    await expect(toggle).toHaveCSS("position", "sticky");
+    await expect(toggle).toHaveCSS("margin-right", "5.33333px");
 
     // 証明のない記事ではボタンを出さない。hidden属性がCSSのdisplayに
     // 打ち消されて、押しても何も起きないボタンが残っていた。
@@ -479,7 +480,7 @@ test.describe("学習サイト", () => {
     ).toBeVisible();
   });
 
-  test("折りたたみの矢印は▶と▼で縦中央に置く", async ({ page }) => {
+  test("折りたたみの▼矢印は回転しながら縦中央に置く", async ({ page }) => {
     await page.goto("atlas/ja/mathematics/group-theory/subgroups/");
     const summary = page.locator("details.proof-details > summary").first();
     const marker = () =>
@@ -489,6 +490,7 @@ test.describe("学習サイト", () => {
         const box = el.getBoundingClientRect();
         return {
           content: cs.content.replace(/"/gu, ""),
+          transform: cs.transform,
           // top:50% + translateY(-50%) で、ボタンの高さが変わっても中央に残る。
           // top はボーダーを除いたパディングボックス基準で解決される。
           centered:
@@ -501,9 +503,33 @@ test.describe("学習サイト", () => {
             ) < 0.5 && cs.transform.includes("-"),
         };
       });
-    expect(await marker()).toEqual({ content: "▶", centered: true });
+    const closed = await marker();
+    expect(closed.content).toBe("▼");
+    expect(closed.centered).toBe(true);
+    expect(closed.transform).toMatch(/^matrix\(0, -1, 1, 0,/u);
     await summary.click();
-    expect(await marker()).toEqual({ content: "▼", centered: true });
+    const open = await marker();
+    expect(open.content).toBe("▼");
+    expect(open.centered).toBe(true);
+    expect(open.transform).toMatch(/^matrix\(1, 0, 0, 1,/u);
+  });
+
+  test("環の定義でfoldingとrem directiveを表示する", async ({ page }) => {
+    await page.goto("atlas/ja/mathematics/ring-theory/ring-definition/");
+    const folding = page
+      .locator("details.folding")
+      .filter({ hasText: "環の公理" });
+    await expect(folding).toHaveCount(1);
+    await expect(folding.locator(".folding-content")).not.toBeVisible();
+    await folding.locator("summary").click();
+    await expect(folding.locator(".folding-content")).toContainText(
+      "右分配法則",
+    );
+    const annotation = page.locator("aside.rem");
+    await expect(annotation).toHaveAttribute("role", "note");
+    await expect(annotation.locator(".rem-title")).toHaveText(
+      "単位的環について",
+    );
   });
 
   test("補足ブロックは下辺の枠線を持たない", async ({ page }) => {
@@ -720,7 +746,25 @@ test.describe("学習サイト", () => {
       .poll(async () =>
         Number((await zoomLevel.textContent())?.replace("%", "")),
       )
-      .toBeGreaterThan(initialZoom);
+      .toBe(initialZoom + 5);
+
+    const mapCanvas = page.locator("#learning-map");
+    await mapCanvas.hover();
+    await page.mouse.wheel(0, -1);
+    await expect
+      .poll(async () =>
+        Number((await zoomLevel.textContent())?.replace("%", "")),
+      )
+      .toBeGreaterThan(initialZoom + 5);
+    const firstWheelZoom = Number(
+      (await zoomLevel.textContent())?.replace("%", ""),
+    );
+    await page.mouse.wheel(0, -1);
+    await expect
+      .poll(async () =>
+        Number((await zoomLevel.textContent())?.replace("%", "")),
+      )
+      .toBe(firstWheelZoom + 5);
 
     // 共通検索は記事検索、地図内検索は概念検索として役割を明示する。
     await expect(page.getByLabel("地図上の概念を検索")).toBeVisible();

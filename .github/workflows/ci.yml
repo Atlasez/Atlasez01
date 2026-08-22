@@ -37,6 +37,8 @@ jobs:
         run: npm run validate:media
       - name: 数式のKaTeX描画検査
         run: npm run audit:math
+      - name: 数学記事directive境界検査
+        run: npm run check:math-directives
       - name: TypeScriptチェック
         run: npx astro check
       - name: Lint

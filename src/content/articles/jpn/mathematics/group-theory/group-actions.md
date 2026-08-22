@@ -67,7 +67,8 @@ $$
 
 ただし$\rho_{\alpha}(g)\colon x\longmapsto \alpha(g,x)$である.
 
-証明. 簡単のために$\alpha(g,x)$は$g.x$と表記する. まず$\Phi$がwell-definedであること, つまり$\rho_{\alpha}\in\mathop{\mathrm{Hom}}(G,\mathop{\mathrm{Sym}}(X))$であることを示す. $\rho_{\alpha}(g)\colon G\to G$は逆写像$\rho_{\alpha}(g^{-1})\colon G\to G$を持つことが次の式から分かる.
+:::proof
+簡単のために$\alpha(g,x)$は$g.x$と表記する. まず$\Phi$がwell-definedであること, つまり$\rho_{\alpha}\in\mathop{\mathrm{Hom}}(G,\mathop{\mathrm{Sym}}(X))$であることを示す. $\rho_{\alpha}(g)\colon G\to G$は逆写像$\rho_{\alpha}(g^{-1})\colon G\to G$を持つことが次の式から分かる.
 
 $$
 \begin{align*} (\rho_{\alpha}(g)\circ \rho_{\alpha}(g^{-1}))(x) &= g.(g^{-1}. x) = (gg^{-1}). x = e. x = x \\ (\rho_{\alpha}(g^{-1})\circ \rho_{\alpha}(g))(x) &= g^{-1}.(g. x) = (g^{-1}g). x = e. x = x \end{align*}
@@ -102,6 +103,7 @@ $$
 $$
 
 なので$\Phi\circ\Psi=\mathrm{id}_{\mathop{\mathrm{Hom}}(G,\mathop{\mathrm{Sym}}(X))}$かつ$\Psi\circ \Phi=\mathrm{id}_{\mathcal{A}}$である. 以上より$\Phi\colon \mathcal{A}\to \mathop{\mathrm{Hom}}(G,\mathop{\mathrm{Sym}}(X))$は全単射である. ◻
+:::
 
 同様に$G$の$X$への右作用$\alpha\colon X\times G\to X$に対して, 次の反準同型写像([準同型写像の定義:定義 4])$\rho\colon G\to \mathop{\mathrm{Sym}}(X)$を対応させることで一対一対応する.
 

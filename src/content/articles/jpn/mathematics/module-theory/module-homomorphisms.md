@@ -57,13 +57,15 @@ $R$準同型写像$f\colon M\to N$と言えば$M,N$が左$R$加群, 右$R$加群
 
 命題 5 $R$準同型写像$f\colon M_1\to M_2$, $g\colon M_2\to M_3$の合成$g\circ f\colon M_1\to M_3$は$R$準同型写像である.
 
-証明. 合成$g\circ f$について任意の$x,y\in M_1$に対し
+:::proof
+合成$g\circ f$について任意の$x,y\in M_1$に対し
 
 $$
 \begin{align*} (g\circ f)(x+y)&=g(f(x+y))=g(f(x)+f(y))=(g\circ f)(x)+(g\circ f)(y)\\ (g\circ f)(ax)&=g(f(ax))=g(af(x))=a g(f(x))=a(g\circ f)(x) \end{align*}
 $$
 
 が成り立つので$g\circ f$は$R$準同型写像である. ◻
+:::
 
 ## 同型写像
 
@@ -89,13 +91,15 @@ $$
 
 命題 7 $R$準同型写像$f\colon M_1\to M_2$が同型写像であることは, $f\colon M_1\to M_2$が全単射であることと同値である.
 
-証明. 同型写像ならば全単射であることは定義から直ちに従う. 逆に$f\colon M_1\to M_2$が全単射であると仮定する. このとき逆写像$f^{-1}\colon M_2\to M_1$が存在する. さらに, $f\colon M_1\to M_2$は$R$準同型写像であるから, 任意の$x,y\in M_2$と$a\in R$に対して
+:::proof
+同型写像ならば全単射であることは定義から直ちに従う. 逆に$f\colon M_1\to M_2$が全単射であると仮定する. このとき逆写像$f^{-1}\colon M_2\to M_1$が存在する. さらに, $f\colon M_1\to M_2$は$R$準同型写像であるから, 任意の$x,y\in M_2$と$a\in R$に対して
 
 $$
 \begin{align*} f(f^{-1}(x)+f^{-1}(y))&=f(f^{-1}(x))+f(f^{-1}(y))=x+y\\ f(a f^{-1}(x))&=a f(f^{-1}(x))=ax \end{align*}
 $$
 
 が成り立つので$f^{-1}\colon M_2\to M_1$も$R$準同型写像である. ◻
+:::
 
 ## 同型は同値関係
 
@@ -107,7 +111,7 @@ $$
 
 3. $M_1\cong M_2,M_2\cong M_3\implies M_1\cong M_3$
 
-証明.
+:::proof
 
 1. 恒等写像$M_1\to M_1$は全単射な$R$準同型写像なので$M_1\cong M_1$である.
 
@@ -116,3 +120,4 @@ $$
 3. $M_1\cong M_2,M_2\cong M_3$とすると2つの全単射な$R$準同型写像$f\colon M_1\to M_2$, $g\colon M_2\to M_3$が存在する. このとき[加群の準同型写像:命題 5]より合成写像$g\circ f\colon M_1\to M_3$は$R$準同型写像で全単射である. よって$M_1\cong M_3$である.
 
 ◻
+:::
