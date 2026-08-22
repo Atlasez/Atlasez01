@@ -696,11 +696,13 @@ test.describe("学習サイト", () => {
         has: page.getByRole("link", { name: "群の定義", exact: true }),
       }),
     ).toHaveCSS("position", "relative");
-    const groupDefinition = page
-      .locator(".article-item")
-      .filter({ has: page.getByRole("link", { name: "群の定義", exact: true }) });
+    const groupDefinition = page.locator(".article-item").filter({
+      has: page.getByRole("link", { name: "群の定義", exact: true }),
+    });
     await expect(groupDefinition.locator(".article-updated")).toBeVisible();
-    await expect(groupDefinition.locator(".article-updated")).toContainText("最終更新");
+    await expect(groupDefinition.locator(".article-updated")).toContainText(
+      "最終更新",
+    );
     await expect(groupDefinition.locator(".article-updated")).toHaveCSS(
       "border-top-width",
       "0px",
