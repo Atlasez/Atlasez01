@@ -211,6 +211,7 @@ test.describe("学習サイト", () => {
       .filter({ hasText: "集合族" });
     await expect(planned).toBeVisible();
     await expect(planned).toContainText("準備中");
+    await expect(planned).not.toContainText("目次に予定されている");
     // 本文が無い準備中項目は、公開側から管理サイトへ直接誘導しない。
     await expect(planned.getByRole("link")).toHaveCount(0);
   });
@@ -266,6 +267,12 @@ test.describe("学習サイト", () => {
     await page.goto("atlas/ja/mathematics/group-theory/group-definition/");
     await expect(page.locator("h1")).toContainText("群の定義");
     await expect(page.getByRole("navigation", { name: "目次" })).toBeVisible();
+    const tocSummary = page.locator(".toc-details > summary");
+    expect(
+      await tocSummary.evaluate((element) =>
+        getComputedStyle(element, "::before").content.replaceAll('"', ""),
+      ),
+    ).toBe("▾");
     await expect(page.getByText("前提記事")).toBeVisible();
     await expect(page.getByText("査読状況", { exact: true })).toHaveCount(0);
     await expect(page.getByText("未査読", { exact: true })).toHaveCount(0);
@@ -277,6 +284,7 @@ test.describe("学習サイト", () => {
     await expect(
       page.getByRole("button", { name: "報告を送信" }),
     ).toBeVisible();
+    await expect(page.getByText("目次へ戻る")).toHaveCount(0);
   });
 
   test("数学記事の証明を一括で開閉できる", async ({ page }) => {
@@ -285,6 +293,14 @@ test.describe("学習サイト", () => {
     const proofs = page.locator("details.proof-details");
     const openProofs = page.locator("details.proof-details[open]");
     await expect(toggle).toBeVisible();
+    await expect(toggle).toHaveCSS("position", "fixed");
+    const [headerBox, toggleBox] = await Promise.all([
+      page.locator(".atlas-header").boundingBox(),
+      toggle.boundingBox(),
+    ]);
+    expect(toggleBox?.y ?? 0).toBeGreaterThanOrEqual(
+      (headerBox?.y ?? 0) + (headerBox?.height ?? 0),
+    );
     await expect(proofs).not.toHaveCount(0);
     await expect(openProofs).toHaveCount(0);
     await expect(toggle.locator("[data-proof-indicator]")).toHaveText("▶");
@@ -432,13 +448,7 @@ test.describe("学習サイト", () => {
     const moduleFolding = page
       .locator("details.folding")
       .filter({ hasText: "右加群は反対環上の左加群として扱うことができ" });
-    await expect(moduleFolding).toHaveCount(1);
-    await expect(moduleFolding.locator(".folding-content")).toContainText(
-      "右加群は反対環上の左加群として扱うことができ",
-    );
-    for (const side of ["top", "right", "bottom", "left"] as const) {
-      await expect(moduleFolding).toHaveCSS("border-" + side + "-width", "0px");
-    }
+    await expect(moduleFolding).toHaveCount(0);
 
     await page.goto("atlas/ja/mathematics/linear-algebra/vector-space/");
     await expect(page.locator(".article-body ol").first()).toHaveCSS(
@@ -686,6 +696,17 @@ test.describe("学習サイト", () => {
         has: page.getByRole("link", { name: "群の定義", exact: true }),
       }),
     ).toHaveCSS("position", "relative");
+    const groupDefinition = page.locator(".article-item").filter({
+      has: page.getByRole("link", { name: "群の定義", exact: true }),
+    });
+    await expect(groupDefinition.locator(".article-updated")).toBeVisible();
+    await expect(groupDefinition.locator(".article-updated")).toContainText(
+      "最終更新",
+    );
+    await expect(groupDefinition.locator(".article-updated")).toHaveCSS(
+      "border-top-width",
+      "0px",
+    );
 
     await page.getByRole("tab", { name: "学習地図" }).click();
     await expect(page.locator("[data-map-view-panel]")).toBeVisible();

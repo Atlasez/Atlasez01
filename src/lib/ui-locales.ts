@@ -250,11 +250,6 @@ export const UI_DICTIONARY: Record<
     zh: "在 GitHub 查看编辑历史",
     ko: "GitHub에서 편집 이력 보기",
   },
-  "↑ 目次へ戻る": {
-    en: "↑ Back to contents",
-    zh: "↑ 返回目录",
-    ko: "↑ 목차로 돌아가기",
-  },
   読んだ: { en: "Read", zh: "已读", ko: "읽음" },
   理解した: { en: "Understood", zh: "已理解", ko: "이해함" },
   未記録: { en: "Not recorded", zh: "未记录", ko: "기록 없음" },
