@@ -175,12 +175,6 @@ const items = articles.map((a) => ({
             </h2>
             <p class="article-summary">{a.data.summary}</p>
             <p class="article-badges">
-              <span class="badge">
-                {t(locale, "updatedAt")}:
-                <time datetime={a.data.updatedAt.toISOString().slice(0, 10)}>
-                  {formatDate(a.data.updatedAt, locale)}
-                </time>
-              </span>
               <span class="badge" title={t(locale, "exercisePreparing")}>
                 {t(locale, "preExercise")}（{t(locale, "preparing")}）
               </span>
@@ -194,6 +188,12 @@ const items = articles.map((a) => ({
                 {prereqNames.join("、")}
               </p>
             )}
+            <time
+              class="article-updated"
+              datetime={a.data.updatedAt.toISOString().slice(0, 10)}
+            >
+              {t(locale, "updatedAt")}: {formatDate(a.data.updatedAt, locale)}
+            </time>
           </li>
         ))
       }
@@ -220,11 +220,6 @@ const items = articles.map((a) => ({
               </span>
             </p>
             <h2 class="article-title">{plannedArticleTitle(item, locale)}</h2>
-            <p class="article-summary">
-              {locale === "ja"
-                ? "目次に予定されている、本文準備中の記事です。"
-                : "This article is planned; the text is still being prepared."}
-            </p>
           </li>
         ))
       }
@@ -373,6 +368,12 @@ const items = articles.map((a) => ({
     font-size: calc(0.85rem * var(--text-scale));
     color: var(--text-secondary);
   }
+  .article-updated {
+    align-self: flex-end;
+    margin-top: auto;
+    color: var(--text-secondary);
+    font-size: calc(0.78rem * var(--text-scale));
+  }
   /* リスト表示: 情報密度の高い一行表示 */
   .article-collection[data-view="list"] {
     display: flex;
@@ -384,7 +385,8 @@ const items = articles.map((a) => ({
     grid-template-areas:
       "title badges"
       "summary badges"
-      "prereqs badges";
+      "prereqs badges"
+      ". updated";
     gap: var(--space-1) var(--space-3);
     border: 0;
     border-bottom: 1px solid var(--border-default);
@@ -404,13 +406,16 @@ const items = articles.map((a) => ({
   .article-collection[data-view="list"] .article-prereqs {
     grid-area: prereqs;
   }
+  .article-collection[data-view="list"] .article-updated {
+    grid-area: updated;
+  }
   .article-item[hidden] {
     display: none;
   }
   @media (max-width: 767px) {
     .article-collection[data-view="list"] .article-item {
       grid-template-columns: 1fr;
-      grid-template-areas: "title" "summary" "badges" "prereqs";
+      grid-template-areas: "title" "summary" "badges" "prereqs" "updated";
     }
     .view-tabs {
       width: 100%;

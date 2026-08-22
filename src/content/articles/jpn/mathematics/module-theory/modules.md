@@ -12,7 +12,7 @@ authors:
 reviewers: []
 status: published
 createdAt: 2024-01-01
-updatedAt: 2026-07-22
+updatedAt: 2026-08-22
 summary: 「環上の加群の定義」の定義と基本性質を、式や命題を通して確認する数学記事です。
 difficulty: intermediate
 estimatedMinutes: 45
@@ -384,11 +384,6 @@ $$
 2. $0x=(0+0)x=0x+0x$であるから, この両辺に$-(0x)$を加えることで$0=0x$を得る.
 
 ◻
-
-<div class="folding" data-summary="右加群・両側加群の補足">
-  <h4 class="folding-title">右加群・両側加群の補足</h4>
-  <p>右加群は反対環上の左加群として扱うことができ、両側加群もテンソル積を用いた左加群として統一的に扱える。</p>
-</div>
 
 注釈 線形空間では$ax=0$ならば$a=0$または$x=0$であった. しかし$R$加群$M$では係数環$R$が零因子を持つ場合や, $M$が捩れを持つ場合があるため成り立たない.
 

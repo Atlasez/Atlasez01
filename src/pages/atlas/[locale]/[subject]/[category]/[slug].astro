@@ -473,16 +473,6 @@ const structuredData = {
         }
       </section>
 
-      {
-        toc.length > 2 && (
-          <p class="back-to-toc">
-            <a href="#article-toc">
-              {locale === "ja" ? "↑ 目次へ戻る" : "↑ Back to contents"}
-            </a>
-          </p>
-        )
-      }
-
       <footer class="article-footer">
         <div class="article-footer-links">
           <section class="issue-report" aria-labelledby="issue-report-heading">
@@ -667,10 +657,6 @@ const structuredData = {
     border-top: 1px solid var(--border-default);
   }
 
-  .back-to-toc {
-    margin-top: var(--space-4);
-    font-size: calc(0.9rem * var(--text-scale));
-  }
   .article-concept-nodes {
     display: grid;
     gap: var(--space-1);
@@ -1094,15 +1080,18 @@ const structuredData = {
     border-inline-end: 0;
   }
   .proof-toggle {
-    position: static;
-    /* ブロック幅を確保して auto マージンで右端へ寄せつつ、
-       flex の中央揃えでラベルが常にボタン中央に来るようにする。 */
+    position: fixed;
+    /* ヘッダーの右側の検索・表示設定と重ならない、ヘッダー直下の上部に置く。 */
+    top: calc(var(--touch-target) + var(--space-3) + var(--space-2));
+    right: var(--space-3);
+    z-index: 45;
+    /* 本文を読んでいる間もすぐ操作できるようPCでは画面上部に固定する。 */
     display: flex;
     align-items: center;
     justify-content: center;
     box-sizing: border-box;
     width: fit-content;
-    margin: 0.75rem 0 1rem auto;
+    margin: 0;
     min-height: 2.6rem;
     min-width: 8.5rem;
     padding: 0.55rem 0.95rem;
@@ -1516,8 +1505,25 @@ const structuredData = {
     .toc-details {
       border: 0;
     }
-    .toc-details summary {
+    .toc-details > summary {
+      display: flex;
+      align-items: center;
+      gap: var(--space-1);
       padding-left: 0;
+      cursor: pointer;
+      font-weight: 700;
+      list-style: none;
+    }
+    .toc-details > summary::-webkit-details-marker {
+      display: none;
+    }
+    .toc-details > summary::before {
+      content: "▾";
+      color: var(--text-secondary);
+      font-size: 0.8em;
+    }
+    .toc-details:not([open]) > summary::before {
+      content: "▸";
     }
     .toc-details[open] > summary {
       border-bottom: 0;

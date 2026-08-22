@@ -1484,6 +1484,9 @@ const categoryMetaJson = JSON.stringify(
       pixelRatio: Math.min(2, Math.max(1, window.devicePixelRatio || 1)),
       minZoom: 0.2,
       maxZoom: 3,
+      // OSやマウスによるdeltaの差で、一度のホイール操作が最小から最大へ
+      // 飛ばないようにする。倍率の範囲は操作ボタン・共有URLと共通のまま。
+      wheelSensitivity: 0.2,
     });
 
     // Cytoscape は CSS 変数を自動追従しないため、表示設定の背景を切り替えた
