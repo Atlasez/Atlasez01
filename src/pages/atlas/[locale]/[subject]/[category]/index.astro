@@ -220,11 +220,6 @@ const items = articles.map((a) => ({
               </span>
             </p>
             <h2 class="article-title">{plannedArticleTitle(item, locale)}</h2>
-            <p class="article-summary">
-              {locale === "ja"
-                ? "目次に予定されている、本文準備中の記事です。"
-                : "This article is planned; the text is still being prepared."}
-            </p>
           </li>
         ))
       }

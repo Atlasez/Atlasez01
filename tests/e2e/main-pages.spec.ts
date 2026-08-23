@@ -211,6 +211,7 @@ test.describe("学習サイト", () => {
       .filter({ hasText: "集合族" });
     await expect(planned).toBeVisible();
     await expect(planned).toContainText("準備中");
+    await expect(planned).not.toContainText("本文準備中の記事です");
     // 本文が無い準備中項目は、公開側から管理サイトへ直接誘導しない。
     await expect(planned.getByRole("link")).toHaveCount(0);
   });
@@ -272,6 +273,7 @@ test.describe("学習サイト", () => {
     await expect(page.getByRole("heading", { name: "参考文献" })).toBeVisible();
     await expect(page.getByText("事前演習（準備中）")).toHaveCount(0);
     await expect(page.getByText("この記事の問題を報告")).toBeVisible();
+    await expect(page.locator(".back-to-toc")).toHaveCount(0);
     await expect(page.getByLabel("報告の種類")).toBeVisible();
     await expect(page.getByLabel("内容")).toBeVisible();
     await expect(
@@ -299,6 +301,7 @@ test.describe("学習サイト", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.reload();
     await expect(toggle).toHaveCSS("position", "sticky");
+    await expect(toggle).toHaveCSS("top", "16px");
     await expect(toggle).toHaveCSS("margin-right", "5.33333px");
 
     // 証明のない記事ではボタンを出さない。hidden属性がCSSのdisplayに
@@ -478,6 +481,16 @@ test.describe("学習サイト", () => {
     await expect(
       page.locator('.math-figure img[alt="準同型定理の可換図式"]'),
     ).toBeVisible();
+
+    await page.goto("atlas/ja/mathematics/group-theory/symmetric-groups/");
+    const symmetricDefinition = page.locator(".defi").first();
+    await expect(symmetricDefinition.locator(".thmtitle")).toHaveText(
+      "定義 1 ((一般の)対称群).",
+    );
+    await expect(symmetricDefinition).toContainText("集合");
+    await expect(symmetricDefinition.locator(".thmtitle")).not.toContainText(
+      "集合",
+    );
   });
 
   test("折りたたみの▼矢印は回転しながら縦中央に置く", async ({ page }) => {
