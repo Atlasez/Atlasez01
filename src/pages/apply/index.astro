@@ -23,6 +23,7 @@ const subjects = [
   ["other", "その他"],
 ] as const;
 const countries = ["日本", "韓国", "台湾", "中国", "米国", "カナダ", "英国", "その他"];
+const prefectures = ["北海道", "青森県", "岩手県", "宮城県", "秋田県", "山形県", "福島県", "茨城県", "栃木県", "群馬県", "埼玉県", "千葉県", "東京都", "神奈川県", "新潟県", "富山県", "石川県", "福井県", "山梨県", "長野県", "岐阜県", "静岡県", "愛知県", "三重県", "滋賀県", "京都府", "大阪府", "兵庫県", "奈良県", "和歌山県", "鳥取県", "島根県", "岡山県", "広島県", "山口県", "徳島県", "香川県", "愛媛県", "高知県", "福岡県", "佐賀県", "長崎県", "熊本県", "大分県", "宮崎県", "鹿児島県", "沖縄県"];
 const timezones = ["Asia/Tokyo", "Asia/Seoul", "Asia/Taipei", "Asia/Shanghai", "UTC", "America/Los_Angeles", "Europe/London"];
 const projects = [
   ["atlas", "学習サイト「アトラス」"],
@@ -71,11 +72,11 @@ const projects = [
         </div>
         <div class="two">
           <label>居住国・地域<input name="country" list="countries" maxlength="100" required autocomplete="country-name" /></label>
-          <label>普段使うタイムゾーン<select name="timezone" required>{timezones.map((zone) => <option value={zone}>{zone}</option>)}</select></label>
+          <label>居住地（都道府県）<select name="residencePrefecture" data-project-answer="residencePrefecture" required><option value="">選択してください</option>{prefectures.map((prefecture) => <option value={prefecture}>{prefecture}</option>)}</select></label>
         </div>
         <div class="two">
           <label>生年月日<input name="birthDate" type="date" required autocomplete="bday" /></label>
-          <label>居住地（都道府県・都市名）<input name="residenceCity" maxlength="160" required autocomplete="address-level1" /></label>
+          <label>居住地（都市名）<input name="residenceCity" maxlength="160" required autocomplete="address-level2" placeholder="例：新宿区、New York City" /></label>
         </div>
         <label>現在参加しているサークル・学生団体等（任意）<textarea name="currentOrganizations" maxlength="1000"></textarea></label>
         <label>このサイト・プロジェクトをどこで知りましたか<input name="referralSource" maxlength="500" required /></label>
