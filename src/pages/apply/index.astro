@@ -146,7 +146,6 @@ const projects = [
       document.querySelector<HTMLElement>('[data-motivation]')!.hidden = !sourceMotivation;
       setRequired('[name="motivationChoice"]', false);
       setRequired('[name="referralChoice"]', false);
-      setRequired('[name="referralChoice"]', true);
       secretariatMotivation.hidden = project !== 'secretariat';
       setRequired('[name="motivationReasons"]', project === 'secretariat');
       setRequired('[name="secretariatRoleChoice"]', false);
