@@ -22,6 +22,8 @@
     "validate:media": "node scripts/validate-article-media.mjs",
     "test": "vitest run",
     "audit:math": "node scripts/audit-math.mjs",
+    "migrate:math-directives": "node scripts/migrate-math-directives.mjs --write",
+    "check:math-directives": "node scripts/migrate-math-directives.mjs --check",
     "test:e2e": "playwright test",
     "astro": "astro",
     "check:i18n": "node --experimental-strip-types scripts/check-ui-translations.mjs"
@@ -36,6 +38,7 @@
     "rehype-katex": "^7.0.0",
     "rehype-mathjax": "^7.1.0",
     "rehype-raw": "^7.0.0",
+    "remark-directive": "^4.0.0",
     "remark-math": "^6.0.0",
     "yaml": "^2.5.0"
   },

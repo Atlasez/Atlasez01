@@ -37,11 +37,13 @@ $$
 \begin{align*} \bigcap_{H\in\mathcal{S}}H \end{align*}
 $$
 
-証明. $H$は$G$の部分群なので[部分群の定義:命題 7]より$\bigcap_{H\in\mathcal{S}}H$は$G$の部分群である.
+:::proof
+$H$は$G$の部分群なので[部分群の定義:命題 7]より$\bigcap_{H\in\mathcal{S}}H$は$G$の部分群である.
 
 また, 任意の$H\in\mathcal{S}$に対して$S\subset H$なので$S\subset \bigcap_{H\in\mathcal{S}}H$であることが分かる.
 
 さらに$\mathcal{S}$の任意の元$H$に対して$\bigcap_{H\in\mathcal{S}}H\subset H$であるから, $\bigcap_{H\in\mathcal{S}}H$は$S$を含む$G$の部分群の中で最小のものである. ◻
+:::
 
 特に$S$が空集合のときは$\langle S\rangle=\{e\}$である. 群$G$の部分集合$S=\{s_1,s_2,\ldots ,s_n\}$により生成される部分群は$\langle\{s_1,s_2,\ldots ,s_n\}\rangle$であるがこれを集合の括弧を省略して, 単に$\langle s_1,s_2,\ldots ,s_n\rangle$と表す. また, $G$の部分集合$S_1,S_2,\ldots , S_n$の和集合により生成される部分群は$\langle S_1,S_2,\ldots ,S_n\rangle$と表す. 同様に任意個の部分集合の族$\{S_{\lambda}\}_{\lambda\in\Lambda}$の場合も$\langle S_{\lambda}\mid \lambda\in\Lambda\rangle$と表す.
 
@@ -55,7 +57,8 @@ $$
 \begin{align*} \langle S\rangle=\{s_1^{\pm 1}s_2^{\pm 1}\cdots s_n^{\pm 1}\mid s_i \in S,n\geq 1\} \end{align*}
 $$
 
-証明. 右辺の集合を$S'$として, $S'$が[群の生成系:定義 1]を満たすことを示す. まず$S'$が$S$を含む部分群であることを示す. $S'$は$S(\neq \emptyset)$を含んでいることは明らかである. 任意の$x,y\in S'$は$x_i\in S,y_i\in S$を用いて
+:::proof
+右辺の集合を$S'$として, $S'$が[群の生成系:定義 1]を満たすことを示す. まず$S'$が$S$を含む部分群であることを示す. $S'$は$S(\neq \emptyset)$を含んでいることは明らかである. 任意の$x,y\in S'$は$x_i\in S,y_i\in S$を用いて
 
 $$
 \begin{align*} x=x_1^{\pm 1}x_2^{\pm 1}\cdots x_n^{\pm 1},\quad y=y_1^{\pm 1}y_2^{\pm 1}\cdots y_n^{\pm 1} \end{align*}
@@ -70,6 +73,7 @@ $$
 となるので[部分群の定義:命題 4]より$S'$は$G$の部分群である.
 
 次に最小性を示す. 示すべきことは, $S$を含む$G$の部分群を$H$としたとき$S'\subset H$となることである. $x\in S'$とすると, $x=x_1^{\pm 1}x_2^{\pm 1}\cdots x_n^{\pm 1}\,(x_i\in S)$と表される. 仮定より$S\subset H$なので各$1\leq i\leq n$に対し$x_i\in H$である. 今, $H$は$G$の部分群なので$1\leq i\leq n$に対して$x_i^{-1}\in H$でもあり, 演算について閉じていることから$x\in H$が言える. 以上より最小性が示された. ◻
+:::
 
 上の表示で$s_1,s_2\ldots$は相異なる元と限らないことに注意する. 例えば$s\in S$に対して$ss^{-1}\in \langle S\rangle$, $ss=s^2\in \langle S\rangle$である.
 
@@ -83,7 +87,7 @@ $$
 
 3. $\langle S\cap T\rangle\subset \langle S\rangle\cap \langle T\rangle$.
 
-証明.
+:::proof
 
 1. $H$は$H$自身を含む$G$の部分群であるから$\langle H\rangle=H$である. また, $H=\langle S\rangle$ととれば$\langle\langle S\rangle\rangle=\langle S\rangle$である.
 
@@ -92,6 +96,7 @@ $$
 3. $S\cap T\subset S$, $S\cap T\subset T$なので2. より$\langle S\cap T\rangle\subset \langle S\rangle$かつ$\langle S\cap T\rangle\subset \langle T\rangle$である. よって$\langle S\cap T\rangle\subset \langle S\rangle\cap \langle T\rangle$である.
 
 ◻
+:::
 
 ## 群の極小生成系
 
@@ -107,8 +112,10 @@ $$
 
 上の例でも分かる通り群の極小生成系は濃度は一意に定まらない. また, 有限生成群に対しては極小生成系が存在することが分かるが, 無限生成群に対しては極小生成系が存在するとは限らない.
 
-補足 極小生成系は線型空間における基底にあたるものである. 群の極小生成系は濃度は一意に定まらないが, 線型空間の基底は濃度が一意に定まる.
+:::supp
+極小生成系は線型空間における基底にあたるものである. 群の極小生成系は濃度は一意に定まらないが, 線型空間の基底は濃度が一意に定まる.
 
+:::
 ## 非生成元
 
 定義 7 (非生成元). 群$G$の元$g$について,
@@ -121,12 +128,14 @@ $$
 
 命題 8 (非生成元は極小生成系に属さない). $g\in G$が非生成元であるならば, $g$は$G$の任意の極小生成系に属さない.
 
-証明. $G$が極小生成系を持たない場合成り立つことは分かるので, $G$が極小生成系を持つときを考える. $g$を非生成元として, $g$が$G$の極小生成系$S$に属すると仮定する. $G=\langle S\rangle$であって, $g$は非生成元であることから
+:::proof
+$G$が極小生成系を持たない場合成り立つことは分かるので, $G$が極小生成系を持つときを考える. $g$を非生成元として, $g$が$G$の極小生成系$S$に属すると仮定する. $G=\langle S\rangle$であって, $g$は非生成元であることから
 
 $$
 \begin{align*} G=\langle S\setminus\{g\}\rangle \end{align*}
 $$
 
 となる. しかし$S\setminus\{g\}\subsetneq S$であるから, これは$S$が極小生成系であることに矛盾する. ◻
+:::
 
 $G$の非生成元全体の集合はFrattini部分群([Frattini部分群:定義 1])と一致し, さらにこれは正規部分群となる([Frattini部分群:命題 2]).

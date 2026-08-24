@@ -29,7 +29,9 @@ references: []
 
 補題 1 (Schurの補題). $V,W$を$G$の既約表現とする. $\varphi\colon V\to W$を$G$準同型とすると$\varphi$は零写像か同型写像である.
 
-証明. まず$\varphi$の核を考えると$\mathop{\mathrm{Ker}}\varphi\subset V$は$G$不変部分空間であるから$V$は既約表現なので$\mathop{\mathrm{Ker}}\varphi=\{0\},V$に限られる. $\mathop{\mathrm{Ker}}\varphi=V$のとき$\varphi$は零写像である. 次に$\mathop{\mathrm{Ker}}\varphi=\{0\}$とすると$\varphi$は単射. $\varphi$の像を考えると$\mathop{\mathrm{Im}}\varphi\subset W$は$G$不変部分空間である. $W$は既約表現なので$\mathop{\mathrm{Im}}\varphi=\{0\},W$となるが$\varphi\neq 0$なので$\mathop{\mathrm{Im}}\varphi=W$すなわち$\varphi$は全射. 以上より$\varphi$は零写像か同型写像である. ◻
+:::proof
+まず$\varphi$の核を考えると$\mathop{\mathrm{Ker}}\varphi\subset V$は$G$不変部分空間であるから$V$は既約表現なので$\mathop{\mathrm{Ker}}\varphi=\{0\},V$に限られる. $\mathop{\mathrm{Ker}}\varphi=V$のとき$\varphi$は零写像である. 次に$\mathop{\mathrm{Ker}}\varphi=\{0\}$とすると$\varphi$は単射. $\varphi$の像を考えると$\mathop{\mathrm{Im}}\varphi\subset W$は$G$不変部分空間である. $W$は既約表現なので$\mathop{\mathrm{Im}}\varphi=\{0\},W$となるが$\varphi\neq 0$なので$\mathop{\mathrm{Im}}\varphi=W$すなわち$\varphi$は全射. 以上より$\varphi$は零写像か同型写像である. ◻
+:::
 
 ## 既約表現上の自己$G$準同型写像
 
@@ -41,7 +43,9 @@ $$
 
 つまり$\operatorname{End}_G(V)\cong \mathbb{K}$である.
 
-証明. $V$は有限次元なので線形写像$\varphi$は最小多項式をもち, $\mathbb{K}$は代数閉体なので最小多項式は$\mathbb{K}$内に根をもつ. よって$\varphi$は固有値$k\in\mathbb{K}$と$0$でない固有ベクトル$v_k$をもつ. このとき$(\varphi-k\cdot\mathrm{id}_V)(v_k)=0$である. また, $\varphi-k\cdot\mathrm{id}_V$は$G$準同型となるからSchurの補題([Schurの補題:補題 1])より$\varphi-k\cdot\mathrm{id}_V$は零写像か同型写像である. ここで$v_k\in\mathop{\mathrm{Ker}}(\varphi-k\cdot\mathrm{id}_V)$なので$\mathop{\mathrm{Ker}}(\varphi-k\cdot\mathrm{id}_V)\neq \{0\}$. よって$\varphi-k\cdot\mathrm{id}_V$は単射ではないため同型写像になり得ない. よって$\varphi-k\cdot\mathrm{id}_V=0$すなわち$\varphi=k\cdot\mathrm{id}_V$. ◻
+:::proof
+$V$は有限次元なので線形写像$\varphi$は最小多項式をもち, $\mathbb{K}$は代数閉体なので最小多項式は$\mathbb{K}$内に根をもつ. よって$\varphi$は固有値$k\in\mathbb{K}$と$0$でない固有ベクトル$v_k$をもつ. このとき$(\varphi-k\cdot\mathrm{id}_V)(v_k)=0$である. また, $\varphi-k\cdot\mathrm{id}_V$は$G$準同型となるからSchurの補題([Schurの補題:補題 1])より$\varphi-k\cdot\mathrm{id}_V$は零写像か同型写像である. ここで$v_k\in\mathop{\mathrm{Ker}}(\varphi-k\cdot\mathrm{id}_V)$なので$\mathop{\mathrm{Ker}}(\varphi-k\cdot\mathrm{id}_V)\neq \{0\}$. よって$\varphi-k\cdot\mathrm{id}_V$は単射ではないため同型写像になり得ない. よって$\varphi-k\cdot\mathrm{id}_V=0$すなわち$\varphi=k\cdot\mathrm{id}_V$. ◻
+:::
 
 系 3 (実線型空間の既約表現上の自己$G$準同型写像). $V$を$\mathbb{R}$上の有限次元線形空間で$G$の既約表現とする. $\varphi\colon V\to V$を$G$準同型とすると
 
@@ -51,13 +55,15 @@ $$
 
 である.
 
-証明. $V$が有限次元線型空間なので$\operatorname{End}_G(V)$は有限次元線型空間である. [G準同型写像と表現の同値:命題 2]より$G$準同型写像の合成は$G$準同型写像なので$\operatorname{End}_G(V)$は写像の合成を積とした環である. $\varphi,\psi\in \operatorname{End}_G(V)$, $k\in \mathbb{R}$とすると$\varphi,\psi$が線形写像であることから
+:::proof
+$V$が有限次元線型空間なので$\operatorname{End}_G(V)$は有限次元線型空間である. [G準同型写像と表現の同値:命題 2]より$G$準同型写像の合成は$G$準同型写像なので$\operatorname{End}_G(V)$は写像の合成を積とした環である. $\varphi,\psi\in \operatorname{End}_G(V)$, $k\in \mathbb{R}$とすると$\varphi,\psi$が線形写像であることから
 
 $$
 \begin{align*} k(\psi\varphi) = (k\psi)\varphi = \psi(k\varphi) \end{align*}
 $$
 
 が成り立つ. つまり$\operatorname{End}_G(V)$は$\mathbb{R}$上の多元環である. さらに$\varphi\in\operatorname{End}_G(V)$で零写像でないとすると, $V$が既約表現であるからSchurの補題([Schurの補題:補題 1])より$\varphi$は同型写像であるから, $\varphi$は逆元を持つ. よって$\operatorname{End}_G(V)$は$\mathbb{R}$上の可除多元環である. Frobeniusの定理より$\mathbb{R}$上の可除多元環は$\mathbb{R}, \mathbb{C}, \mathbb{H}$のいずれかに同型なので$\operatorname{End}_G(V)\cong \mathbb{R},\mathbb{C},\mathbb{H}$である. ◻
+:::
 
 [Schurの補題:補題 2]では$V$が既約表現であることを仮定して, $V$上の自己$G$準同型の構造を明らかにした. 限られた場合のみ, この逆が成立する.
 
@@ -67,7 +73,7 @@ $$
 
 2. $G$がアーベル群のとき, $(\rho,V)$は一次元表現で既約表現である.
 
-証明.
+:::proof
 
 - $G$が有限群であるとする. Maschkeの定理より$U,W$を$V$の$G$不変部分空間として$V=U\oplus W$とできる. ここで$V$から$U$への射影$P_U\colon V\to U$を考え, それを$V$に埋め込む写像$\iota$との合成写像$\varphi:=\iota\circ P_U\colon V\to V$を考える. このとき$\varphi$は$G$準同型写像である. 任意の$v=u+w$に対し, $U,W$が$G$不変部分空間であることから$\rho(g)u\in U,\rho(g)w\in W$となるので
 
@@ -98,6 +104,7 @@ $$
 となることから従う. 以上より$\dim\operatorname{End}_G(V)=\dim\operatorname{End}(V)=(\dim V)^2=1$なので$\dim V=1$. 一次元表現はすべて既約であることから$(\rho,V)$は既約.
 
 ◻
+:::
 
 例 5. [Schurの補題:命題 4]について$G$が非可換無限群の場合は$\dim\operatorname{End}_G(V)=1$でも$(\rho,V)$が既約表現とならないことが以下の例から分かる.
 
