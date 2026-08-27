@@ -1,10 +1,12 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
+  "account_id": "812021e62fa20465950b61be55dfe064",
   "name": "atlasez01",
   "main": "src/worker.ts",
   "compatibility_date": "2026-07-26",
   "vars": {
     "DISCORD_REPORT_SYNC_URL": "https://atlasez-admin.ukyoukay0.workers.dev/internal/article-report-discord",
+    "ADMIN_APPLICATION_INGEST_URL": "https://admin.atlasez.org/api/public/applications",
   },
   "assets": {
     "directory": "./dist",

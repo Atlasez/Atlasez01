@@ -1,0 +1,21 @@
+---
+export function getStaticPaths() {
+  return ["atlas", "thinking-cafe", "seminar-platform", "student-council-exchange", "secretariat"].map((project) => ({ params: { project } }));
+}
+
+const project = Astro.params.project ?? "atlas";
+const target = `/apply/?project=${encodeURIComponent(project)}`;
+---
+
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="refresh" content={`0;url=${target}`} />
+    <title>Atlasez応募フォーム</title>
+  </head>
+  <body>
+    <p><a href={target}>応募フォームを開く</a></p>
+    <script is:inline define:vars={{ target }}>location.replace(target);</script>
+  </body>
+</html>

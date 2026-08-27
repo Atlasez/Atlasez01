@@ -28,6 +28,11 @@ interface Env {
   ASSETS: Fetcher;
   REPORTS: D1Database;
   DISCORD_REPORT_WEBHOOK_URL?: string;
+  /** 応募を運営Workerへ中継するURL。公開変数として設定する。 */
+  ADMIN_APPLICATION_INGEST_URL?: string;
+  /** 応募中継専用。Cloudflare Secretとして設定し、公開コードへ書かない。 */
+  ADMIN_APPLICATION_INGEST_TOKEN?: string;
+  PUBLIC_TURNSTILE_SITE_KEY?: string;
   /** 報告者ハッシュのソルト。Cloudflare の Secret として登録する。 */
   REPORT_IP_HASH_SALT?: string;
 }
@@ -119,6 +124,13 @@ const TRUSTED_REPORT_ORIGINS = new Set([
   "http://127.0.0.1:4321",
 ]);
 
+const TRUSTED_APPLICATION_ORIGINS = new Set([
+  "https://atlasez.org",
+  "https://www.atlasez.org",
+  "http://localhost:4321",
+  "http://127.0.0.1:4321",
+]);
+
 const json = (body: unknown, status = 200) =>
   Response.json(body, {
     status,
@@ -161,6 +173,64 @@ const withCors = (response: Response, request: Request) => {
   headers.set("vary", "origin");
   return new Response(response.body, { status: response.status, headers });
 };
+
+const isTrustedApplicationOrigin = (origin: string | null, requestUrl: URL) =>
+  !origin ||
+  origin === requestUrl.origin ||
+  TRUSTED_APPLICATION_ORIGINS.has(origin);
+
+const publicApplicationConfig = (env: Env): Response =>
+  json({ turnstileSiteKey: env.PUBLIC_TURNSTILE_SITE_KEY ?? "" });
+
+async function forwardMemberApplication(
+  request: Request,
+  env: Env,
+): Promise<Response> {
+  if (
+    request.headers.get("content-type")?.includes("application/json") !== true
+  )
+    return json({ error: "JSON形式で送信してください。" }, 415);
+  if (
+    !isTrustedApplicationOrigin(
+      request.headers.get("origin"),
+      new URL(request.url),
+    )
+  )
+    return json({ error: "この送信元からは受け付けられません。" }, 403);
+
+  const endpoint = env.ADMIN_APPLICATION_INGEST_URL?.trim();
+  const token = env.ADMIN_APPLICATION_INGEST_TOKEN?.trim();
+  if (!endpoint || !token)
+    return json({ error: "応募受付の設定が完了していません。" }, 503);
+
+  let target: URL;
+  try {
+    target = new URL(endpoint);
+  } catch {
+    return json({ error: "応募受付先の設定を確認してください。" }, 503);
+  }
+  if (target.protocol !== "https:")
+    return json({ error: "応募受付先の設定を確認してください。" }, 503);
+
+  const headers = new Headers({
+    "content-type": "application/json",
+    "x-atlasez-application-token": token,
+  });
+  const clientIp = request.headers.get("CF-Connecting-IP");
+  if (clientIp) headers.set("CF-Connecting-IP", clientIp);
+  const upstream = await fetch(target, {
+    method: "POST",
+    headers,
+    body: await request.arrayBuffer(),
+  });
+  const responseHeaders = new Headers(upstream.headers);
+  responseHeaders.set("cache-control", "no-store");
+  return new Response(upstream.body, {
+    status: upstream.status,
+    statusText: upstream.statusText,
+    headers: responseHeaders,
+  });
+}
 
 async function fingerprint(value: string): Promise<string> {
   const bytes = new TextEncoder().encode(value);
@@ -479,6 +549,16 @@ async function saveArticleAnalytics(
 export default {
   async fetch(request, env, ctx): Promise<Response> {
     const url = new URL(request.url);
+    if (url.pathname === "/api/public/application-config") {
+      if (request.method !== "GET")
+        return json({ error: "GETのみ利用できます。" }, 405);
+      return publicApplicationConfig(env);
+    }
+    if (url.pathname === "/api/apply") {
+      if (request.method !== "POST")
+        return json({ error: "POSTのみ利用できます。" }, 405);
+      return forwardMemberApplication(request, env);
+    }
     if (url.pathname === "/api/article-reports") {
       if (request.method === "OPTIONS") {
         return withCors(new Response(null, { status: 204 }), request);

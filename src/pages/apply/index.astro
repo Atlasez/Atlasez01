@@ -1,0 +1,234 @@
+---
+import Breadcrumb from "../../components/Breadcrumb.astro";
+import OrgLayout from "../../layouts/OrgLayout.astro";
+import { withBase } from "../../lib/site";
+
+const prefectures = ["北海道", "青森県", "岩手県", "宮城県", "秋田県", "山形県", "福島県", "茨城県", "栃木県", "群馬県", "埼玉県", "千葉県", "東京都", "神奈川県", "新潟県", "富山県", "石川県", "福井県", "山梨県", "長野県", "岐阜県", "静岡県", "愛知県", "三重県", "滋賀県", "京都府", "大阪府", "兵庫県", "奈良県", "和歌山県", "鳥取県", "島根県", "岡山県", "広島県", "山口県", "徳島県", "香川県", "愛媛県", "高知県", "福岡県", "佐賀県", "長崎県", "熊本県", "大分県", "宮崎県", "鹿児島県", "沖縄県"];
+const affiliations = [
+  ["大学", "大学等（大学、大学院、短期大学、高等専門学校、専門学校）"],
+  ["高等学校", "高等学校"],
+  ["中学校", "中学校"],
+  ["その他", "中等教育学校"],
+  ["その他", "浪人生"],
+  ["社会人", "社会人"],
+  ["その他", "無職"],
+] as const;
+const referralOptions = ["Atlasez ホームページを見て", "SNSを見て", "学習サイトを見て", "Atlasezが実施したイベントに参加して", "友達に紹介されて"];
+const motivationOptions = ["面白そうだと思ったから", "元々このようなことをやってみたかったから", "理念や趣旨に共感したから", "親しい友達に誘われたから"];
+const atlasRoles = [["kanji", "漢字"], ["kobun", "古文"], ["kanbun", "漢文"], ["mathematics", "数学"], ["physics", "物理"], ["chemistry", "化学"], ["biology", "生物"], ["astronomy", "天文"], ["meteorology", "気象"], ["geology", "地質"], ["geography", "地理"], ["japanese-history", "日本史"], ["world-history", "世界史"]] as const;
+const secretariatRoles = ["総務部", "企画部", "ICT部", "渉外部", "広報部", "どこでも構わない", "迷っている"];
+const projects = [
+  ["atlas", "学習サイト「アトラス」"],
+  ["thinking-cafe", "考えるカフェ"],
+  ["seminar-platform", "ゼミプラットフォーム"],
+  ["student-council-exchange", "生徒会"],
+  ["secretariat", "運営事務局"],
+] as const;
+---
+
+<OrgLayout
+  title="運営参加応募"
+  description="Atlasezの学習サイト、考えるカフェ、ゼミプラットフォーム、生徒会、運営事務局への参加応募フォームです。"
+>
+  <div class="container application-page">
+    <Breadcrumb items={[{ label: "ホーム", href: withBase("/") }, { label: "運営募集" }, { label: "応募フォーム" }]} />
+    <p class="eyebrow">ATLASEZ / MEMBER APPLICATION</p>
+    <h1 data-project-title>運営参加応募</h1>
+    <p class="intro" data-project-intro>
+      応募内容は選考・連絡・承認後の担当設定にのみ使用し、運営内の担当者が確認します。
+    </p>
+
+    <nav class="form-directory" aria-label="応募フォームの種類">
+      {projects.map(([slug, label]) => <a href={`${withBase("/apply/")}?project=${slug}`} data-form-link={slug}>{label}</a>)}
+    </nav>
+
+    <form data-application>
+      <input type="hidden" name="projectSlug" data-project-slug value="atlas" />
+      <fieldset>
+        <legend>基本情報</legend>
+        <div class="name-grid">
+          <label>姓（漢字）<input name="familyName" maxlength="80" required autocomplete="family-name" /></label>
+          <label>名（漢字）<input name="givenName" maxlength="80" required autocomplete="given-name" /></label>
+        </div>
+        <div class="name-grid kana-grid">
+          <label>姓（ひらがな）<input name="familyNameKana" maxlength="80" required autocomplete="off" /></label>
+          <label>名（ひらがな）<input name="givenNameKana" maxlength="80" required autocomplete="off" /></label>
+        </div>
+        <div class="two">
+          <label>メールアドレス<input name="email" type="email" maxlength="320" required autocomplete="email" /></label>
+          <label>所属等<select name="affiliationType" data-affiliation required><option value="">選択してください</option>{affiliations.map(([value, label]) => <option value={value}>{label}</option>)}</select></label>
+        </div>
+        <div class="two">
+          <label>所属機関<input name="institution" maxlength="160" required autocomplete="organization" /></label>
+          <label data-atlas-grade hidden>学年<input name="grade" data-grade maxlength="80" autocomplete="off" /></label>
+        </div>
+        <div class="two">
+          <label>居住地（国）<select name="country" data-country required><option value="">選択してください</option><option value="日本">日本</option><option value="__other">その他</option></select></label>
+          <label>居住地（都道府県）<select name="residencePrefecture" data-project-answer="residencePrefecture" required><option value="">選択してください</option>{prefectures.map((prefecture) => <option value={prefecture}>{prefecture}</option>)}</select></label>
+        </div>
+        <div class="two">
+          <label>生年月日<input name="birthDate" type="date" required autocomplete="bday" /></label>
+          <label>居住地（都市名）<input name="residenceCity" maxlength="160" required autocomplete="address-level2" placeholder="例：新宿区、New York City" /></label>
+        </div>
+        <input type="hidden" name="timezone" value="Asia/Tokyo" />
+        <label data-country-other hidden>その他の国名<input name="countryOther" maxlength="100" autocomplete="country-name" /></label>
+        <label>現時点で参加しているサークルや学生団体等があれば教えてください。<input name="currentOrganizations" maxlength="1000" required /></label>
+        <fieldset class="choice-field"><legend>このプロジェクトについてどこで知りましたか？</legend><div class="choices">{referralOptions.map((option) => <label><input type="checkbox" name="referralChoice" value={option} />{option}</label>)}<label><input type="checkbox" name="referralChoice" value="__other" data-choice-other="referral" />その他</label></div><label data-choice-other-field="referral" hidden>その他（自由回答）<input name="referralOther" maxlength="500" /></label></fieldset>
+      </fieldset>
+
+      <fieldset>
+        <legend>参加したい内容</legend>
+        <fieldset class="choice-field" data-project-only="atlas" hidden><legend>希望する担当を教えてください。（複数選択可）</legend><div class="choices">{atlasRoles.map(([slug, label]) => <label><input type="checkbox" name="desiredRolesChoice" value={slug} data-role-label={label} />{label}</label>)}</div></fieldset>
+        <fieldset class="choice-field" data-motivation><legend>参加してみたいと思った理由を教えてください。（複数回答可）</legend><div class="choices">{motivationOptions.map((option) => <label><input type="checkbox" name="motivationChoice" value={option} />{option}</label>)}<label><input type="checkbox" name="motivationChoice" value="__other" data-choice-other="motivation" />その他</label></div><label data-choice-other-field="motivation" hidden>その他（自由回答）<input name="motivationOther" maxlength="1000" /></label></fieldset>
+        <label data-secretariat-motivation hidden>志望動機を教えてください。<textarea name="motivationReasons" maxlength="4000"></textarea></label>
+        <label data-seminar-role hidden>担当したい仕事内容について教えてください。<textarea name="desiredRoles" maxlength="4000"></textarea></label>
+
+        <div class="project-extra" data-project-extra="thinking-cafe" hidden>
+          <label>あなたが興味を持っている・取り組んでみたいテーマについて教えてください。<textarea data-project-answer="theme" maxlength="4000"></textarea></label>
+        </div>
+        <div class="project-extra" data-project-extra="student-council-exchange" hidden>
+          <fieldset class="choice-field"><legend>生徒会への所属または所属経験の有無</legend><div class="choices"><label><input type="radio" name="councilStatusChoice" value="有" data-project-answer="councilStatus" />有</label><label><input type="radio" name="councilStatusChoice" value="無" data-project-answer="councilStatus" />無</label></div></fieldset>
+          <label>生徒会での役職名<input data-project-answer="councilRole" maxlength="1000" /></label>
+          <label>運営としてどんな活動や企画をしたいですか？<textarea data-project-answer="councilPlans" maxlength="4000"></textarea></label>
+        </div>
+        <div class="project-extra" data-project-extra="secretariat" hidden>
+          <fieldset class="choice-field"><legend>希望する部署を教えてください。</legend><div class="choices">{secretariatRoles.map((role) => <label><input type="checkbox" name="secretariatRoleChoice" value={role} />{role}</label>)}</div></fieldset>
+          <label>あなたの得意なことを教えてください。資格や検定を持っていたり、あるいはコンクールや大会での表彰、学会発表などの実績や経験がある場合にはそれも教えてください。<textarea data-project-answer="strengths" maxlength="5000"></textarea></label>
+          <label>あなたが日頃持っている問題意識について教えてください。身近なものでも、社会問題など大きなものでも構いません。<textarea data-project-answer="problemAwareness" maxlength="5000"></textarea></label>
+          <label>あなたが本協議会で取り組みたいことを具体的に教えてください。1つ前の質問の内容に関連していても、していなくても構いません。<textarea data-project-answer="plans" maxlength="5000"></textarea></label>
+        </div>
+        <label><span data-interview-label>Zoomまたは対面にて面談をさせていただきます(20-30分程度)。可能な日程を複数個書いてください。</span><input name="interviewAvailability" maxlength="2000" required /></label>
+        <label>気になることや分からないことなどあればお書きください。（自由回答）<textarea name="applicantQuestions" maxlength="3000"></textarea></label>
+      </fieldset>
+      <label class="trap" aria-hidden="true">Website<input name="website" tabindex="-1" autocomplete="off" /></label>
+      <button type="submit">応募を送信</button>
+      <output data-result aria-live="polite"></output>
+    </form>
+  </div>
+</OrgLayout>
+
+<script>
+  const projectForms = {
+    atlas: { title: '学習サイト「アトラス」への応募', intro: '学習記事の執筆・査読・翻訳・ページ開発などに参加するためのフォームです。' },
+    'thinking-cafe': { title: '考えるカフェへの応募', intro: '対話型の学びの場「考えるカフェ」の企画・運営に参加するためのフォームです。' },
+    'seminar-platform': { title: 'ゼミプラットフォームへの応募', intro: 'ゼミ・研究活動を支えるプラットフォームの企画・運営に参加するためのフォームです。' },
+    'student-council-exchange': { title: '生徒会への応募', intro: '生徒会同士の交流や企画を支える運営に参加するためのフォームです。' },
+    secretariat: { title: '運営事務局への応募', intro: 'Atlasez全体の企画・広報・連絡・運営事務局に参加するためのフォームです。' },
+  } as const;
+  const form = document.querySelector<HTMLFormElement>('[data-application]');
+  if (form) {
+    const projectSlug = form.querySelector<HTMLInputElement>('[data-project-slug]')!;
+    const grade = form.querySelector<HTMLInputElement>('[data-grade]')!;
+    const country = form.querySelector<HTMLSelectElement>('[data-country]')!;
+    const countryOther = form.querySelector<HTMLInputElement>('[name="countryOther"]')!;
+    const countryOtherLabel = form.querySelector<HTMLElement>('[data-country-other]')!;
+    const title = document.querySelector<HTMLElement>('[data-project-title]')!;
+    const intro = document.querySelector<HTMLElement>('[data-project-intro]')!;
+    const result = form.querySelector<HTMLOutputElement>('[data-result]')!;
+    const setRequired = (selector: string, required: boolean) => form.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>(selector).forEach((field) => { field.required = required; });
+    const updateCountry = () => { const other = country.value === '__other'; countryOtherLabel.hidden = !other; countryOther.required = other; if (!other) countryOther.value = ''; };
+    const updateChoiceOther = () => { for (const kind of ['referral', 'motivation']) { const toggle = form.querySelector<HTMLInputElement>(`[data-choice-other="${kind}"]`); const field = form.querySelector<HTMLElement>(`[data-choice-other-field="${kind}"]`); const input = field?.querySelector<HTMLInputElement>('input'); if (!toggle || !field || !input) continue; field.hidden = !toggle.checked; input.required = toggle.checked; if (!toggle.checked) input.value = ''; } };
+    const setProject = (requested: string) => {
+      const project = Object.hasOwn(projectForms, requested) ? requested as keyof typeof projectForms : 'atlas';
+      projectSlug.value = project;
+      title.textContent = projectForms[project].title;
+      intro.textContent = projectForms[project].intro;
+      document.querySelectorAll<HTMLElement>('[data-form-link]').forEach((link) => link.toggleAttribute('aria-current', link.dataset.formLink === project));
+      const atlas = project === 'atlas';
+      const sourceMotivation = project !== 'secretariat';
+      const atlasRolesField = document.querySelector<HTMLElement>('[data-project-only="atlas"]')!;
+      const seminarRole = document.querySelector<HTMLElement>('[data-seminar-role]')!;
+      const secretariatMotivation = document.querySelector<HTMLElement>('[data-secretariat-motivation]')!;
+      const atlasGrade = document.querySelector<HTMLElement>('[data-atlas-grade]')!;
+      const interviewLabel = document.querySelector<HTMLElement>('[data-interview-label]')!;
+      atlasRolesField.hidden = !atlas;
+      atlasGrade.hidden = !atlas;
+      grade.required = atlas;
+      document.querySelector<HTMLElement>('[data-motivation]')!.hidden = !sourceMotivation;
+      setRequired('[name="motivationChoice"]', false);
+      setRequired('[name="referralChoice"]', false);
+      secretariatMotivation.hidden = project !== 'secretariat';
+      setRequired('[name="motivationReasons"]', project === 'secretariat');
+      setRequired('[name="secretariatRoleChoice"]', false);
+      seminarRole.hidden = project !== 'seminar-platform';
+      setRequired('[data-seminar-role] [name="desiredRoles"]', project === 'seminar-platform');
+      setRequired('[data-project-only="atlas"] [name="desiredRolesChoice"]', atlas);
+      setRequired('[data-project-extra="student-council-exchange"] [data-project-answer="councilStatus"]', project === 'student-council-exchange');
+      setRequired('[data-project-extra="student-council-exchange"] [data-project-answer="councilPlans"]', project === 'student-council-exchange');
+      interviewLabel.textContent = project === 'secretariat' ? 'Zoomにて面談をさせていただきます(30-60分程度)。可能な日程を複数個書いてください。' : project === 'thinking-cafe' || project === 'atlas' ? 'Zoomにて面談をさせていただきます(20-30分程度)。可能な日程を複数個書いてください。' : 'Zoomまたは対面にて面談をさせていただきます(20-30分程度)。可能な日程を複数個書いてください。';
+      document.querySelectorAll<HTMLElement>('[data-project-extra]').forEach((extra) => {
+        const active = extra.dataset.projectExtra === project;
+        extra.hidden = !active;
+        for (const control of extra.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('[data-project-answer]')) control.required = active && control.dataset.projectAnswer !== 'councilRole';
+      });
+    };
+    country.addEventListener('change', updateCountry);
+    form.addEventListener('change', updateChoiceOther);
+    updateCountry();
+    updateChoiceOther();
+    setProject(new URLSearchParams(location.search).get('project') ?? 'atlas');
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (!form.reportValidity()) return;
+      if (!form.querySelector<HTMLInputElement>('input[name="referralChoice"]:checked') || (projectSlug.value !== 'secretariat' && !form.querySelector<HTMLInputElement>('input[name="motivationChoice"]:checked')) || (projectSlug.value === 'atlas' && !form.querySelector<HTMLInputElement>('input[name="desiredRolesChoice"]:checked')) || (projectSlug.value === 'secretariat' && !form.querySelector<HTMLInputElement>('input[name="secretariatRoleChoice"]:checked'))) {
+        result.textContent = '選択項目を1つ以上選択してください。';
+        return;
+      }
+      if (projectSlug.value === 'atlas' && !form.querySelector<HTMLInputElement>('input[name="desiredSubjects"]:checked')) {
+        result.textContent = '学習サイトの関心分野を1つ以上選択してください。';
+        return;
+      }
+      result.textContent = '送信中…';
+      const formData = new FormData(form);
+      const fields = Object.fromEntries(formData.entries()) as Record<string, unknown>;
+      const atlasRoleInputs = [...form.querySelectorAll<HTMLInputElement>('input[name="desiredRolesChoice"]:checked')];
+      fields.desiredSubjects = atlasRoleInputs.map((input) => input.value);
+      fields.desiredRoles = projectSlug.value === 'atlas' ? atlasRoleInputs.map((input) => input.dataset.roleLabel ?? input.value).join(', ') : (formData.getAll('desiredRoles').join(', ') || formData.getAll('secretariatRoleChoice').join(', '));
+      const choiceValues = (name: string, otherName: string) => [...formData.getAll(name).filter((value) => value !== '__other'), formData.get(otherName) ?? ''].filter(Boolean).join(', ');
+      fields.referralSource = choiceValues('referralChoice', 'referralOther');
+      fields.motivationReasons = projectSlug.value === 'secretariat' ? formData.get('motivationReasons') ?? '' : choiceValues('motivationChoice', 'motivationOther');
+      fields.country = country.value === '__other' ? countryOther.value : country.value;
+      fields.formLanguage = 'ja';
+      fields.projectAnswers = Object.fromEntries([...form.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('[data-project-answer]')].filter((field) => !(field instanceof HTMLInputElement) || (field.type !== 'radio' && field.type !== 'checkbox') || field.checked).map((field) => [field.dataset.projectAnswer ?? '', field.value.trim()]).filter(([key, value]) => key && value));
+      try {
+        const response = await fetch('/api/apply', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(fields) });
+        const data = await response.json().catch(() => ({})) as { error?: string };
+        if (!response.ok) throw new Error(data.error ?? '送信できませんでした。');
+        const submittedProject = projectSlug.value;
+        form.reset();
+        setProject(submittedProject);
+        result.textContent = '応募を受け付けました。確認後、運営からご連絡します。';
+      } catch (error) {
+        result.textContent = error instanceof Error ? error.message : '送信できませんでした。';
+      }
+    });
+  }
+</script>
+
+<style>
+  .application-page { max-width: 920px; }
+  .eyebrow { color: var(--accent-primary); font-size: .78rem; font-weight: 800; letter-spacing: .08em; margin-bottom: .4rem; }
+  .intro { color: var(--text-secondary); max-width: 52rem; line-height: 1.8; }
+  .form-directory { display: flex; flex-wrap: wrap; gap: .45rem; margin: 1.5rem 0; }
+  .form-directory a { border: 1px solid var(--border-default); border-radius: 999px; padding: .45rem .75rem; text-decoration: none; }
+  .form-directory a[aria-current="true"], .form-directory a:hover { background: var(--accent-primary); color: #fff; }
+  form { display: grid; gap: 1rem; }
+  fieldset { border: 1px solid var(--border-default); display: grid; gap: .8rem; margin: 0; padding: 1rem; }
+  legend { color: var(--accent-primary); font-weight: 800; padding: 0 .35rem; }
+  label { display: grid; font-size: .86rem; font-weight: 700; gap: .35rem; }
+  input, textarea, select { background: var(--background-primary); border: 1px solid var(--border-default); box-sizing: border-box; color: var(--text-primary); font: inherit; min-height: 2.7rem; padding: .6rem; width: 100%; }
+  textarea { min-height: 6rem; resize: vertical; }
+  .two, .name-grid { display: grid; gap: .8rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .subject-field { background: var(--background-secondary); padding: .8rem; }
+  .choice-field { background: var(--background-secondary); padding: .8rem; }
+  .choices { display: flex; flex-wrap: wrap; gap: .45rem; }
+  .choices label { align-items: center; background: var(--background-primary); border: 1px solid var(--border-default); border-radius: .35rem; display: flex; font-size: .78rem; gap: .3rem; padding: .35rem .55rem; }
+  .choices input { min-height: 1rem; padding: 0; width: auto; }
+  .subjects { display: flex; flex-wrap: wrap; gap: .45rem; }
+  .subjects label { align-items: center; background: var(--background-primary); border: 1px solid var(--border-default); border-radius: 999px; display: flex; font-size: .78rem; gap: .3rem; padding: .3rem .55rem; }
+  .subjects input { min-height: 1rem; padding: 0; width: auto; }
+  button { background: var(--accent-primary); border: 0; color: #fff; cursor: pointer; font: inherit; font-weight: 800; padding: .85rem; }
+  output { color: var(--text-secondary); min-height: 1.4rem; }
+  .trap { height: 0; opacity: 0; overflow: hidden; pointer-events: none; }
+  @media (max-width: 650px) { .two, .name-grid { grid-template-columns: 1fr; } .application-page { padding-inline: .85rem; } }
+</style>
