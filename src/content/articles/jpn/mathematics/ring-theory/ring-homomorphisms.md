@@ -87,7 +87,7 @@ $$
 
 3. $\varphi\colon R_1\to R_2$, $\psi\colon R_2\to R_3$がともに反準同型写像であるとき, 合成写像$\psi\circ\varphi\colon R_1\to R_3$は準同型写像である.
 
-証明.
+:::proof
 
 - 合成$\psi\circ\varphi$について任意の$x,y\in R_1$に対し
 
@@ -102,6 +102,7 @@ $$
 - 仮定より$\varphi\colon R_1\to R_2^{\mathrm{op}}$, $\psi\colon R_2^{\mathrm{op}}\to R_3$は準同型写像である. 1. より合成写像$\psi\circ\varphi\colon R_1\to R_3$は準同型写像である.
 
 ◻
+:::
 
 ## 同型写像
 
@@ -127,13 +128,15 @@ $$
 
 命題 8 環準同型写像$\varphi\colon R_1\to R_2$が同型写像であることは, $\varphi\colon R_1\to R_2$が全単射であることと同値である.
 
-証明. 同型写像ならば全単射であることは定義から直ちに従う. 逆に$\varphi\colon R_1\to R_2$が全単射であると仮定する. このとき逆写像$\varphi^{-1}\colon R_2\to R_1$が存在する. さらに, $\varphi\colon R_1\to R_2$は環準同型写像であるから, 任意の$x,y\in R_2$に対して
+:::proof
+同型写像ならば全単射であることは定義から直ちに従う. 逆に$\varphi\colon R_1\to R_2$が全単射であると仮定する. このとき逆写像$\varphi^{-1}\colon R_2\to R_1$が存在する. さらに, $\varphi\colon R_1\to R_2$は環準同型写像であるから, 任意の$x,y\in R_2$に対して
 
 $$
 \begin{align*} \varphi(\varphi^{-1}(x)+\varphi^{-1}(y))&=\varphi(\varphi^{-1}(x))+\varphi(\varphi^{-1}(y))=x+y\\ \varphi(\varphi^{-1}(x)\cdot \varphi^{-1}(y))&=\varphi(\varphi^{-1}(x))\cdot \varphi(\varphi^{-1}(y))=xy \end{align*}
 $$
 
 が成り立つので$\varphi^{-1}\colon R_2\to R_1$も環準同型写像である. ◻
+:::
 
 ## 同型は同値関係
 
@@ -145,7 +148,7 @@ $$
 
 3. $R_1\cong R_2,R_2\cong R_3\implies R_1\cong R_3$
 
-証明.
+:::proof
 
 1. 恒等写像$R_1\to R_1$は全単射なので$R_1\cong R_1$である.
 
@@ -154,3 +157,4 @@ $$
 3. $R_1\cong R_2,R_2\cong R_3$とすると2つの全単射準同型写像$f\colon R_1\to R_2$, $g\colon R_2\to R_3$が存在する. このとき[環準同型写像の定義:命題 6]より合成写像$f\circ g\colon R_1\to R_3$は準同型写像で全単射である. よって$R_1\cong R_3$である.
 
 ◻
+:::

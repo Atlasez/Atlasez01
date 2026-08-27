@@ -29,7 +29,8 @@ references: []
 
 命題 1 (単元群) 単位的環$R$の単元全体を$R^{\times}$と表す. このとき$R^{\times}$は環の乗法を演算として群をなす. $R^{\times}$を単元群(group of units)または<strong>乗法群(multiplicative group)</strong>と呼ぶ.
 
-証明. $R$の単位元$1$について$1\in R^{\times}$であるから$R^{\times}$は空でない.
+:::proof
+$R$の単位元$1$について$1\in R^{\times}$であるから$R^{\times}$は空でない.
 
 $x,y\in R^{\times}$とすると$x,y$の逆元$x^{-1},y^{-1}$が存在する. このとき
 
@@ -42,6 +43,7 @@ $$
 $x\in R^{\times}$とすると$x^{-1}$は$x\in R$を逆元に持つので$x^{-1}\in R^{\times}$である.
 
 結合法則は環の定義から従うため, $R^{\times}$は群をなすことが示された. ◻
+:::
 
 単位的可換環の単元群はアーベル群である. また左単元全体を考えた場合, 積で閉じるが逆元が存在するとは限らない.
 
@@ -55,13 +57,15 @@ $$
 
 が成り立つ.
 
-証明. $\prod_{\lambda\in\Lambda}R_{\lambda}$の部分集合として両者が一致することを示せばよい.
+:::proof
+$\prod_{\lambda\in\Lambda}R_{\lambda}$の部分集合として両者が一致することを示せばよい.
 
 $$
 \begin{align*} &\mathbin{\phantom{=}}\left(\prod_{\lambda\in\Lambda}R_{\lambda}\right)^{\times} \\ &= \{(x_{\lambda})_{\lambda\in\Lambda}\mid \exists (y_{\lambda})_{\lambda\in\Lambda},\ (x_{\lambda})_{\lambda\in\Lambda}(y_{\lambda})_{\lambda\in\Lambda}=1\} \\ &= \{(x_{\lambda})_{\lambda\in\Lambda}\mid \exists (y_{\lambda})_{\lambda\in\Lambda},\ \forall \lambda\in\Lambda,\ x_{\lambda}y_{\lambda}=1\} \\ &= \prod_{\lambda\in\Lambda}R_{\lambda}^{\times} \end{align*}
 $$
 
 ◻
+:::
 
 ## 単元群の例
 
@@ -83,7 +87,8 @@ $$
 
 2. $(g\circ f)^{\times}=g^{\times}\circ f^{\times}$.
 
-証明. $x\in R^{\times}$とすると$x$の逆元$x^{-1}$が存在する. このとき
+:::proof
+$x\in R^{\times}$とすると$x$の逆元$x^{-1}$が存在する. このとき
 
 $$
 \begin{align*} f(x)f(x^{-1})=f(xx^{-1})=f(1)=1 \end{align*}
@@ -92,10 +97,12 @@ $$
 となるので$f(x)$は$f(x^{-1})$を逆元に持ち, $f(x)\in S^{\times}$が分かる. $f^{\times}$が群準同型であることは$f$が単位的環準同型であることから従う.
 
 $(\mathrm{id}_R)^{\times}=\mathrm{id}_{R^{\times}}$は明らかに成り立つ. また$(g\circ f)^{\times}=g^{\times}\circ f^{\times}$も$f^{\times}$が$f$の制限であることからただちに従う. ◻
+:::
 
 命題 8 単位的環の同型$R\cong S$が成り立つならば, 群の同型$R^{\times}\cong S^{\times}$が成り立つ.
 
-証明. 仮定より, 単位的環準同型$f\colon R \to S$, $g\colon S \to R$が存在して
+:::proof
+仮定より, 単位的環準同型$f\colon R \to S$, $g\colon S \to R$が存在して
 
 $$
 \begin{align*} g\circ f = \mathrm{id}_R,\quad f\circ g = \mathrm{id}_S \end{align*}
@@ -108,3 +115,4 @@ $$
 $$
 
 が成り立つ. よって$f^{\times}$が群の同型$R^{\times}\cong S^{\times}$を与える. ◻
+:::

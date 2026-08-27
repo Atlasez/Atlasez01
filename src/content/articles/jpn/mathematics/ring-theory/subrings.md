@@ -45,7 +45,9 @@ $S$を$R$の部分環とするとき, アーベル群$(S,+)$は$(R,+)$の部分�
 
 3. $\forall x\in S,\ xy\in S$.
 
-証明. $S$が$R$の部分環であれば, 1. 2. 3. は成り立つ. 逆に1. 2. 3. が成り立つとき, [部分群の定義:命題5]より1. 2.から$(S,+)$は$(R,+)$の部分群である. さらに3. より$S$は積について閉じているから$S$は$R$の部分環である. ◻
+:::proof
+$S$が$R$の部分環であれば, 1. 2. 3. は成り立つ. 逆に1. 2. 3. が成り立つとき, [部分群の定義:命題5]より1. 2.から$(S,+)$は$(R,+)$の部分群である. さらに3. より$S$は積について閉じているから$S$は$R$の部分環である. ◻
+:::
 
 ## 部分環の共通部分と和集合
 
@@ -53,7 +55,9 @@ $S$を$R$の部分環とするとき, アーベル群$(S,+)$は$(R,+)$の部分�
 
 命題 3 (部分環の共通部分は部分環) $\{S_{\lambda}\}_{\lambda\in\Lambda}$を$R$の部分環の族とする. このときこれらの共通部分$\bigcap_{\lambda\in\Lambda}S_{\lambda}$は$R$の部分環である.
 
-証明. $x,y\in \bigcap_{\lambda\in\Lambda}S_{\lambda}$とすると, 各$S_{\lambda}$は$R$の部分環なので任意の$\lambda\in\Lambda$に対して$x-y\in S_{\lambda}$および$xy\in S_{\lambda}$である. したがって$x-y, xy \in \bigcap_{\lambda\in\Lambda}S_{\lambda}$となり, 命題1.4.2より$\bigcap_{\lambda\in\Lambda}S_{\lambda}$は$R$の部分環である. ◻
+:::proof
+$x,y\in \bigcap_{\lambda\in\Lambda}S_{\lambda}$とすると, 各$S_{\lambda}$は$R$の部分環なので任意の$\lambda\in\Lambda$に対して$x-y\in S_{\lambda}$および$xy\in S_{\lambda}$である. したがって$x-y, xy \in \bigcap_{\lambda\in\Lambda}S_{\lambda}$となり, 命題1.4.2より$\bigcap_{\lambda\in\Lambda}S_{\lambda}$は$R$の部分環である. ◻
+:::
 
 特に各$\lambda\in\Lambda$に対して$S_{\lambda}$が$R$の単位的部分環$(S_{\lambda},1_R)$であるならば$1_R\in \bigcap_{\lambda\in\Lambda}S_{\lambda}$であり, $(\bigcap_{\lambda\in\Lambda}S_{\lambda},1_R)$は$R$の単位的部分環である.
 
@@ -63,4 +67,6 @@ $$
 \begin{align*} S_1\cup S_2\text{が$R$の部分環}\iff S_1\subset S_2\text{または}S_1\supset S_2 \end{align*}
 $$
 
-証明. $S_1\subset S_2$のとき$S_1\cup S_2=S_2$, $S_1\supset S_2$のとき$S_1\cup S_2=S_1$より$S_1\cup S_2$が$R$の部分環になることは直ちに従う. 次に$S_1\cup S_2$が$R$の部分環であると仮定する. 背理法で示す. $S_1\not\subset S_2$かつ$S_1\not\supset S_2$とすると, ある$s_1\in S_1, s_2\in S_2$で$s_1\not\in S_2, s_2\not\in S_1$となるものが存在する. $s_1,s_2\in S_1\cup S_2$なので, 部分環は加法について閉じていることから$s_1+s_2\in S_1\cup S_2$である. しかし$s_1+s_2\in S_1$とすると, $S_1$は加法群であるから$s_2=(s_1+s_2)-s_1\in S_1$となり矛盾. 同様に$s_1+s_2\in S_2$とすると, $s_1=(s_1+s_2)-s_2\in S_2$となり矛盾. 以上より$S_1\subset S_2$または$S_1\supset S_2$である. ◻
+:::proof
+$S_1\subset S_2$のとき$S_1\cup S_2=S_2$, $S_1\supset S_2$のとき$S_1\cup S_2=S_1$より$S_1\cup S_2$が$R$の部分環になることは直ちに従う. 次に$S_1\cup S_2$が$R$の部分環であると仮定する. 背理法で示す. $S_1\not\subset S_2$かつ$S_1\not\supset S_2$とすると, ある$s_1\in S_1, s_2\in S_2$で$s_1\not\in S_2, s_2\not\in S_1$となるものが存在する. $s_1,s_2\in S_1\cup S_2$なので, 部分環は加法について閉じていることから$s_1+s_2\in S_1\cup S_2$である. しかし$s_1+s_2\in S_1$とすると, $S_1$は加法群であるから$s_2=(s_1+s_2)-s_1\in S_1$となり矛盾. 同様に$s_1+s_2\in S_2$とすると, $s_1=(s_1+s_2)-s_2\in S_2$となり矛盾. 以上より$S_1\subset S_2$または$S_1\supset S_2$である. ◻
+:::

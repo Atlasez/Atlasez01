@@ -29,7 +29,7 @@ references: []
 
 定義 1 (左R加群) $R$を単位的環とする. 集合$M$と$R$ の組$((M, +_{\small M}, 0_{\small M}, -_{\small M}), (R, +_{\small R},0,-_{\small R}, \cdot_{\small R}, 1_{\small R}), . \ )$ が以下の条件を満たすとき, $M$を**左$R$加群**と呼ぶ.
 
-<div class="folding" data-summary="加法群であることの条件">
+:::folding[加法群であることの条件]
 
 $(M, +_{\small M}, 0_{\small M}, -_{\small M})$ が可換群であるとは, 以下の条件を満たすことをいう.
 
@@ -43,9 +43,9 @@ $(M, +_{\small M}, 0_{\small M}, -_{\small M})$ が可換群であるとは, 以
 
 - (加法の可換性) $\forall x, y \in M, \ x +_{\small M} y = y +_{\small M} x$.
 
-</div>
+:::
 
-<div class="folding" data-summary="係数環が単位的環であることの条件">
+:::folding[係数環が単位的環であることの条件]
 
 $(R, +_{\small R},0,-_{\small R}, \cdot_{\small R}, 1_{\small R})$ が単位的環であるとは, 以下の条件を満たすことをいう.
 
@@ -103,9 +103,9 @@ $$
 \begin{align*} \forall a, b, c \in R,\ (a +_{\small R} b)\cdot_{\small R} c = a\cdot_{\small R} c +_{\small R} b\cdot_{\small R} c \end{align*}
 $$
 
-</div>
+:::
 
-<div class="folding" data-summary="環作用であることの条件">
+:::folding[環作用であることの条件]
 
 写像 $\mathbin{.}: R \times M \to M$ が単位的環作用であるということは以下の条件を満たすことをいう.
 
@@ -117,7 +117,7 @@ $$
 
 - $\forall a \in R, \ \forall x, y \in M$ に対し, $a.(x +_{\small M} y) = a.x +_{\small M} a.y$
 
-</div>
+:::
 
 混同の恐れがない限り, 左$R$加群を定義する組$((M, +_{\small M}, 0_{\small M}, -_{\small M}), (R, +_{\small R},0,-_R, \cdot_{\small R}, 1_{\small R}), . \ )$は, 単にその台集合$M$または係数体との組$(M,R)$として表記される. また, 係数環が文脈上明らかなときは単に加群$M$ということもある. これに伴い, $M$における加法$\mathbin{+_M}$および$R$における加法$\mathbin{+_R}$は, 演算の対象によって数学的な意味が一意に定まるため, いずれも単に$+$で表す. また, 左作用$R\times M\to M$を表す記法も簡略化され, $a.x$は単に$ax$と表記される.
 
@@ -127,7 +127,7 @@ $$
 
 定義 2 (右R加群) $R$を単位的環とする. 集合$M$と$R$ の組$((M, +_{\small M}, 0_{\small M}, -_{\small M}), (R, +_{\small R},0,-_R, \cdot_{\small R}, 1_{\small R}), . \ )$ が以下の条件を満たすとき, $M$ を **右$R$加群**と呼ぶ.
 
-<div class="folding" data-summary="加法群であることの条件">
+:::folding[加法群であることの条件]
 
 $(M, +_{\small M}, 0_{\small M}, -_{\small M})$ が可換群であるとは, 以下の条件を満たすことをいう.
 
@@ -141,9 +141,9 @@ $(M, +_{\small M}, 0_{\small M}, -_{\small M})$ が可換群であるとは, 以
 
 - (加法の可換性) $\forall x, y \in M, \ x +_{\small M} y = y +_{\small M} x$.
 
-</div>
+:::
 
-<div class="folding" data-summary="係数環が単位的環であることの条件">
+:::folding[係数環が単位的環であることの条件]
 
 $(R, +_{\small R},0,-_{\small R}, \cdot_{\small R}, 1_{\small R})$ が単位的環であるとは, 以下の条件を満たすことをいう.
 
@@ -201,9 +201,9 @@ $$
 \begin{align*} \forall a, b, c \in R,\ (a +_{\small R} b)\cdot_{\small R} c = a\cdot_{\small R} c +_{\small R} b\cdot_{\small R} c \end{align*}
 $$
 
-</div>
+:::
 
-<div class="folding" data-summary="環作用であることの条件">
+:::folding[環作用であることの条件]
 
 写像 $\mathbin{.}: M \times R \to M$ が単位的環作用であるということは以下の条件を満たすことをいう.
 
@@ -215,11 +215,11 @@ $$
 
 - $\forall a \in R, \ \forall x, y \in M$ に対し, $(x +_{\small M} y).a = x.a +_{\small M} y.a$
 
-</div>
+:::
 
 定義 3 (両側(R,S)加群) $R, S$を単位的環とする. 集合$M$と環$R, S$ の組$((M, +_{\small M}, 0_{\small M}, -_{\small M}), (R, +_{\small R},0_{\small R}, -_{\small R}, \cdot_{\small R}, 1_{\small R}), (S, +_{\small S},0_{\small S}, -_{\small S}, \cdot_{\small S}, 1_{\small S}), \mathbin{._l}, \mathbin{._r})$ が以下の条件を満たすとき, $M$ を **両側$(R,S)$加群**と呼ぶ.
 
-<div class="folding" data-summary="加法群であることの条件">
+:::folding[加法群であることの条件]
 
 $(M, +_{\small M}, 0_{\small M}, -_{\small M})$ が可換群であるとは, 以下の条件を満たすことをいう.
 
@@ -233,9 +233,9 @@ $(M, +_{\small M}, 0_{\small M}, -_{\small M})$ が可換群であるとは, 以
 
 - (加法の可換性) $\forall x, y \in M, \ x +_{\small M} y = y +_{\small M} x$.
 
-</div>
+:::
 
-<div class="folding" data-summary="係数環が単位的環であることの条件">
+:::folding[係数環が単位的環であることの条件]
 
 $(R, +_{\small R},0_{\small R}, -_{\small R}, \cdot_{\small R}, 1_{\small R})$が単位的環であるとは, それぞれ以下の条件を満たすことをいう. $(S, +_{\small S},0_{\small S}, -_{\small S}, \cdot_{\small S}, 1_{\small S})$についても全く同様の条件を満たす.
 
@@ -293,9 +293,9 @@ $$
 \begin{align*} \forall a, b, c \in R,\ (a +_{\small R} b)\cdot_{\small R} c = a\cdot_{\small R} c +_{\small R} b\cdot_{\small R} c \end{align*}
 $$
 
-</div>
+:::
 
-<div class="folding" data-summary="環作用であることの条件">
+:::folding[環作用であることの条件]
 
 写像 $\mathbin{._l}: R \times M \to M$ が単位的環作用であるということは以下の条件を満たすことをいう.
 
@@ -307,9 +307,9 @@ $$
 
 - $\forall a \in R, \ \forall x, y \in M$ に対し, $a._l (x +_{\small M} y) = a._l x +_{\small M} a._l y$
 
-</div>
+:::
 
-<div class="folding" data-summary="環作用であることの条件">
+:::folding[環作用であることの条件]
 
 写像 $\mathbin{._r}: M \times S \to M$ が単位的環作用であるということは以下の条件を満たすことをいう.
 
@@ -323,7 +323,7 @@ $$
 
 $\forall a \in R, \ \forall c \in S, \ \forall x \in M,\ (a ._l x) ._r c = a ._l (x ._r c)$
 
-</div>
+:::
 
 ## 右加群, 両側加群の左加群への帰着
 
@@ -377,18 +377,19 @@ $$
 
 2. 任意の$x\in M$に対し, $0x=0$.
 
-証明.
+:::proof
 
 1. $a0=a(0+0)=a0+a0$であるから, この両辺に$-(a0)$を加えることで$0=a0$を得る.
 
 2. $0x=(0+0)x=0x+0x$であるから, この両辺に$-(0x)$を加えることで$0=0x$を得る.
 
 ◻
+:::
 
-<div class="folding" data-summary="右加群・両側加群の補足">
+:::folding[右加群・両側加群の補足]
   <h4 class="folding-title">右加群・両側加群の補足</h4>
   <p>右加群は反対環上の左加群として扱うことができ、両側加群もテンソル積を用いた左加群として統一的に扱える。</p>
-</div>
+:::
 
 注釈 線形空間では$ax=0$ならば$a=0$または$x=0$であった. しかし$R$加群$M$では係数環$R$が零因子を持つ場合や, $M$が捩れを持つ場合があるため成り立たない.
 
@@ -400,7 +401,7 @@ $$
 
 2. $a(-x)=-(ax)$
 
-証明.
+:::proof
 
 - $ax + (-a)x$ を計算する. 分配法則および逆元の定義より,
 
@@ -419,3 +420,4 @@ $$
 加法逆元の一意性より, $a(-x) = -(ax)$.
 
 ◻
+:::

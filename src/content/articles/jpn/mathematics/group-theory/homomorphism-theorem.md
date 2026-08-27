@@ -44,7 +44,8 @@ $$
 \begin{align*} G_1/N\cong \mathop{\mathrm{Im}}\varphi \end{align*}
 $$
 
-証明. 写像$\overline{\varphi}\colon G_1/N\to G_2$を$xN\mapsto \varphi(x)$で定める.
+:::proof
+写像$\overline{\varphi}\colon G_1/N\to G_2$を$xN\mapsto \varphi(x)$で定める.
 
 まず$\overline\varphi$がwell-definedであることを示す. つまり$\overline{\varphi}$が代表元の選び方によらず定まることを示す. $x_1N=x_2N\in G_1/N$と仮定する. このとき$x_2^{-1}x_1\in N\subset \mathop{\mathrm{Ker}}\varphi$なので$\varphi(x_2^{-1}x_1)=e_{G_2}$. よって$\varphi(x_1)=\varphi(x_2)$が分かる. すると
 
@@ -85,6 +86,7 @@ $$
 $$
 
 とできることから分かる. ◻
+:::
 
 特に$N=\mathop{\mathrm{Ker}}\varphi$とすると, 同型
 
@@ -108,7 +110,8 @@ $$
 
 を与える同型写像が存在する.
 
-証明. まず$H\subset N_G(N)$であることから, 任意の$h\in H$に対して$hNh^{-1}=N$が成り立つ. よって$NH=HN$が成り立つので[部分群の定義:命題 10]より$HN$は$G$の部分群である.
+:::proof
+まず$H\subset N_G(N)$であることから, 任意の$h\in H$に対して$hNh^{-1}=N$が成り立つ. よって$NH=HN$が成り立つので[部分群の定義:命題 10]より$HN$は$G$の部分群である.
 
 さらに$N$が$HN$の正規部分群であることを示すことで$HN/N$が定義されることを確かめる. $hn \in HN$と$x\in N$をとる. このとき
 
@@ -143,6 +146,7 @@ $$
 $$
 
 が示された. ◻
+:::
 
 特に$H\leq G$, $N\vartriangleleft G$のとき, $N_G(N)=G$であって
 
@@ -160,7 +164,8 @@ $$
 
 を与える同型写像が存在する.
 
-証明. 写像$\varphi$を次のように定めることができる.
+:::proof
+写像$\varphi$を次のように定めることができる.
 
 $$
 \begin{align*} \varphi\colon G/N_2\to G/N_1,\quad gN_2\mapsto gN_1 \end{align*}
@@ -179,3 +184,4 @@ $$
 $$
 
 が得られる. ◻
+:::
