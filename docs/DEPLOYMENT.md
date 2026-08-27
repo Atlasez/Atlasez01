@@ -8,29 +8,21 @@
 GitHub Pagesは確認用ミラーであり、本番ではない。Cloudflare PagesのGit連携を
 本番の前提にしてはいけない。
 
-本番デプロイの正本は `.github/workflows/deploy-cloudflare.yml` である。
-`main` へのpushで次の処理を自動実行する。
+本番デプロイの正本は、Cloudflare Dashboardで設定されたWorkers Buildsである。
+リポジトリ `Atlasez/Atlasez01` のProduction branchは `main` に固定し、
+`main` へのpushで次の処理をCloudflare側が自動実行する。
 
-1. `npm ci` と本番ターゲット検証
+1. `npm ci`
 2. `SITE_URL=https://atlasez.org BASE_PATH=/ npm run build`
-3. Wranglerのdry-run
-4. `atlasez01` へのstrict deployment
-5. Deploymentが100%であることの確認
-6. 公開中の `/build-info.json` とGit commit SHAの照合
+3. `npx wrangler deploy`
+4. `atlasez01` へのデプロイ
+5. 公開中の `/build-info.json` とGit commit SHAの照合
 
-並列デプロイはconcurrencyで防止する。古い成果物を手動でuploadしても、GitHub
-Actionsの公開SHA検証で検出できる。
+GitHub Actionsから別経路で本番デプロイしない。これにより、GitHub Actionsと
+Cloudflare Workers Buildsの競合や、異なるSHAの後着デプロイを防ぐ。
 
-## GitHub Actions Secret
-
-リポジトリまたは`production` Environmentに、次のSecretを登録する。
-
-| Secret                 | 用途                               |
-| ---------------------- | ---------------------------------- |
-| `CLOUDFLARE_API_TOKEN` | `atlasez01`をデプロイするAPI token |
-
-Tokenには対象accountのWorkersデプロイ権限だけを与える。値をリポジトリ、workflow、
-ログへ書かない。未登録の場合、workflowは本番デプロイ前に停止する。
+Cloudflare DashboardのBuild cacheは無効化する。キャッシュを再有効化する場合は、
+`dist`をキャッシュ対象にせず、mainのSHAを含む`build-info.json`を毎回検証すること。
 
 ## Cloudflare本番設定
 
@@ -61,8 +53,8 @@ Tokenには対象accountのWorkersデプロイ権限だけを与える。値を�
 
 ## 手動デプロイ
 
-通常はGitHub Actionsだけを使う。緊急時に手動デプロイする場合も、必ず`main`の固定SHA
-から作業用ディレクトリを作り、対象の`wrangler.jsonc`を使う。
+通常はCloudflare Workers Buildsだけを使う。緊急時に手動デプロイする場合も、必ず
+`main`の固定SHAから作業用ディレクトリを作り、対象の`wrangler.jsonc`を使う。
 
 ```sh
 git archive <mainのSHA> | tar -x -C <作業用ディレクトリ>

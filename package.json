@@ -10,7 +10,7 @@
     "db:reports:local": "npx --yes wrangler d1 migrations apply atlasez-reports-local --local --config wrangler.local.jsonc",
     "new:article": "node scripts/new-article.mjs",
     "update:institutions": "node scripts/build-institution-directory.mjs",
-    "build": "astro build && npm run search:index",
+    "build": "node scripts/write-build-info.mjs && astro build && npm run search:index",
     "verify:deploy-config": "node scripts/verify-deployment-config.mjs",
     "build:ci": "astro build",
     "search:index": "pagefind --site dist",

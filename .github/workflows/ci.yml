@@ -1,5 +1,6 @@
 # CI: PR・mainへのpushで内容を検証する。
-# 本番配信は deploy-cloudflare.yml が担当し、このワークフローは検証を担当する。
+# 本番配信はCloudflare Workers Builds（Production branch: main）が担当し、
+# このワークフローは本番と同じビルドの検証を担当する。
 name: CI
 
 on:
@@ -49,9 +50,12 @@ jobs:
       - name: 単体テスト
         run: npm test
       - name: ビルド（下書きは除外される）
-        run: npx astro build
-      - name: 検索インデックス生成
-        run: npx pagefind --site dist
+        run: npm run build
+      - name: ビルドSHA検証
+        run: |
+          expected="$(git rev-parse HEAD)"
+          actual="$(node -p 'require("./dist/build-info.json").commit')"
+          test "$actual" = "$expected"
       - name: 内部リンク検証
         run: node scripts/check-links.mjs dist "$BASE_PATH"
       # `--with-deps` は毎回 apt を叩くため、ミラーが詰まるとジョブ全体が
