@@ -2,6 +2,19 @@
 
 このファイルは、LLMや自動化エージェントがこのリポジトリを変更するときの最小ルールです。詳細は [`docs/DEVELOPMENT_GUIDE.md`](docs/DEVELOPMENT_GUIDE.md) を必ず確認してください。
 
+## 最重要インシデントと本番デプロイ
+
+最初に [`docs/incidents/2026-08-27-cloudflare-stale-build.md`](docs/incidents/2026-08-27-cloudflare-stale-build.md) と [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) を読む。このリポジトリでは、過去にCloudflare Workers Buildsが古いbuild output cacheを復元し、GitHub `main`と異なる成果物を本番配信したSEV-1インシデントが発生した。
+
+- 本番の正本はCloudflare Worker `atlasez01`。GitHub Pagesは確認用ミラー。
+- Production branchは`main`。通常の本番デプロイ経路はCloudflare Workers Buildsだけ。
+- GitHub Actionsから別の本番deployを追加しない。二重デプロイを作らない。
+- Cloudflare DashboardのBuild cacheは無効のまま維持する。
+- 本番変更前に`npm run verify:deploy-config`、`npm run build`、`dist/build-info.json`のSHA照合を行う。
+- デプロイ後はCloudflareのVersion/Deploymentが100%で対象SHAに対応すること、公開`/build-info.json`、主要画面をChromeで確認する。
+- Worker名`atlasez-web-1`、旧route、推測したaccount/domainを使わない。
+- SHA不一致時にrollback、promote、cache purge、route変更を推測で実行せず、まずIssue記録と再調査を行う。
+
 ## 作業前
 
 - `git status` で既存の未コミット変更を確認し、他人の変更を破棄しない。
