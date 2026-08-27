@@ -1,0 +1,114 @@
+name: Deploy Cloudflare Production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cloudflare-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://atlasez.org/
+    steps:
+      - name: Checkout exact main commit
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify Cloudflare production target
+        run: npm run verify:deploy-config
+
+      - name: Verify Cloudflare credentials are configured
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          test -n "$CLOUDFLARE_API_TOKEN" || {
+            echo "::error::GitHub Actions secret CLOUDFLARE_API_TOKEN is not configured."
+            exit 1
+          }
+
+      - name: Stamp build provenance
+        env:
+          BUILD_SHA: ${{ github.sha }}
+          BUILD_REF: ${{ github.ref_name }}
+          BUILD_RUN_ID: ${{ github.run_id }}
+        run: |
+          node <<'NODE'
+          import { mkdir, writeFile } from "node:fs/promises";
+
+          await mkdir("public", { recursive: true });
+          await writeFile(
+            "public/build-info.json",
+            `${JSON.stringify({
+              repository: process.env.GITHUB_REPOSITORY,
+              commit: process.env.BUILD_SHA,
+              ref: process.env.BUILD_REF,
+              runId: process.env.BUILD_RUN_ID,
+              builtAt: new Date().toISOString(),
+            })}\n`,
+          );
+          NODE
+
+      - name: Build production assets
+        run: SITE_URL=https://atlasez.org BASE_PATH=/ npm run build
+
+      - name: Cloudflare dry-run
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: >-
+          npx wrangler deploy --dry-run --config wrangler.jsonc --keep-vars
+          --strict --message "GitHub main ${{ github.sha }}"
+
+      - name: Deploy Cloudflare Worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: >-
+          npx wrangler deploy --config wrangler.jsonc --keep-vars --strict
+          --message "GitHub main ${{ github.sha }}"
+
+      - name: Verify active deployment is 100 percent
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          status="$(npx wrangler deployments status --config wrangler.jsonc --name atlasez01 --json)"
+          echo "$status"
+          echo "$status" | jq -e '.versions | length == 1 and .[0].percentage == 100'
+          echo "$status" | jq -e --arg sha "${GITHUB_SHA}" '.annotations["workers/message"] | contains($sha)'
+
+      - name: Verify public build provenance
+        env:
+          EXPECTED_SHA: ${{ github.sha }}
+        run: |
+          for attempt in 1 2 3 4 5 6; do
+            build_info="$(curl --fail --silent --show-error --retry 2 \
+              "https://atlasez.org/build-info.json?sha=${EXPECTED_SHA}")" || true
+            if EXPECTED_SHA="$EXPECTED_SHA" BUILD_INFO="$build_info" node --input-type=module <<'NODE'
+          const info = JSON.parse(process.env.BUILD_INFO || "null");
+          if (!info || info.commit !== process.env.EXPECTED_SHA) process.exit(1);
+          NODE
+            then
+              echo "Public build provenance verified: ${EXPECTED_SHA}"
+              exit 0
+            fi
+            echo "Waiting for public asset propagation (attempt ${attempt}/6)"
+            sleep 5
+          done
+          echo "::error::Public build-info.json does not match ${EXPECTED_SHA}."
+          exit 1

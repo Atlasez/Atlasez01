@@ -1,8 +1,21 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
+  "account_id": "812021e62fa20465950b61be55dfe064",
   "name": "atlasez01",
+  "workers_dev": false,
+  "preview_urls": false,
   "main": "src/worker.ts",
   "compatibility_date": "2026-07-26",
+  "routes": [
+    {
+      "pattern": "atlasez.org/*",
+      "zone_name": "atlasez.org",
+    },
+    {
+      "pattern": "www.atlasez.org/*",
+      "zone_name": "atlasez.org",
+    },
+  ],
   "vars": {
     "DISCORD_REPORT_SYNC_URL": "https://atlasez-admin.ukyoukay0.workers.dev/internal/article-report-discord",
   },

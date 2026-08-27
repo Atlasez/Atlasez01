@@ -1,4 +1,4 @@
-# Cloudflare Pages のヘッダ設定（このファイルは配信されず、設定として読まれる）
+# Cloudflare Workers/Pages のヘッダ設定（このファイルは配信されず、設定として読まれる）
 # 構文: https://developers.cloudflare.com/pages/configuration/headers/
 
 /*
@@ -19,6 +19,10 @@
 
 /images/*
   Cache-Control: public, max-age=604800
+
+# デプロイ検証用のSHAは、古い値を再利用しない。
+/build-info.json
+  Cache-Control: no-store
 
 /favicon.svg
   Cache-Control: public, max-age=604800

@@ -4,6 +4,7 @@ node_modules/
 .env.*
 *.log
 dist/
+public/build-info.json
 .astro/
 .wrangler/
 test-results/
