@@ -58,7 +58,7 @@ test.describe("公式サイト", () => {
     await expect(page.locator("h1")).toContainText("ベータ版");
   });
 
-  test("表示設定を右端に置き、応募導線をGoogleフォームへつなぐ", async ({
+  test("表示設定を右端に置き、応募導線を運営サイトへつなぐ", async ({
     page,
   }) => {
     await page.goto("./");
@@ -72,8 +72,8 @@ test.describe("公式サイト", () => {
 
     await page.goto("join/");
     await expect(
-      page.getByRole("link", { name: "応募フォームを開く（Googleフォーム）" }),
-    ).toHaveAttribute("href", "https://forms.gle/NMXFgxzasbBsf3gX6");
+      page.getByRole("link", { name: "応募フォームを開く（運営サイト）" }),
+    ).toHaveAttribute("href", "https://admin.atlasez.org/apply/atlas/");
   });
 });
 
