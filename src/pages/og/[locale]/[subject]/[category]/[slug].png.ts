@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import sharp from "sharp";
 import {
   getPublishedArticles,
   getPublishedSubjects,
@@ -94,7 +95,7 @@ export async function getStaticPaths() {
   });
 }
 
-export const GET = ({
+export const GET = async ({
   props,
 }: {
   props: {
@@ -104,7 +105,12 @@ export const GET = ({
   };
 }) => {
   const { entry, subjectLabel, categoryLabel } = props;
-  return new Response(image(entry.data.title, subjectLabel, categoryLabel), {
-    headers: { "content-type": "image/svg+xml; charset=utf-8" },
+  const svg = image(entry.data.title, subjectLabel, categoryLabel);
+  const png = await sharp(Buffer.from(svg)).png().toBuffer();
+  return new Response(png, {
+    headers: {
+      "content-type": "image/png",
+      "cache-control": "public, max-age=31536000, immutable",
+    },
   });
 };

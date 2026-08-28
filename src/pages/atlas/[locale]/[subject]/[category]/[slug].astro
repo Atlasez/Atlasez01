@@ -218,7 +218,7 @@ const conceptNames = entry.data.concepts.map((c) => {
 const historyUrl = `${ORG.githubRepo}/commits/main/src/content/articles/${entry.id}.md`;
 const ogImage = new URL(
   withBase(
-    `/og/${entry.data.locale}/${entry.data.subject}/${entry.data.category}/${entry.data.slug}.svg`,
+    `/og/${entry.data.locale}/${entry.data.subject}/${entry.data.category}/${entry.data.slug}.png`,
   ),
   Astro.site,
 ).href;
@@ -253,6 +253,9 @@ const structuredData = {
   description={entry.data.summary}
   ogType="article"
   ogImage={ogImage}
+  ogImageWidth={1200}
+  ogImageHeight={630}
+  ogImageType="image/png"
   alternates={alternates}
   structuredData={structuredData}
   localeSwitchHrefs={localeSwitchHrefs}

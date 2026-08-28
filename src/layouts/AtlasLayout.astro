@@ -18,6 +18,9 @@ interface Props {
   description: string;
   ogType?: "website" | "article";
   ogImage?: string;
+  ogImageWidth?: number;
+  ogImageHeight?: number;
+  ogImageType?: string;
   alternates?: AlternateLink[];
   structuredData?: object;
   /** 言語切替リンク先（省略時は各ロケールの総合ホーム） */
@@ -31,6 +34,9 @@ const {
   description,
   ogType,
   ogImage,
+  ogImageWidth,
+  ogImageHeight,
+  ogImageType,
   alternates = [],
   structuredData,
   localeSwitchHrefs = {},
@@ -65,6 +71,9 @@ const currentPath = Astro.url.pathname;
       description={description}
       ogType={ogType}
       ogImage={ogImage}
+      ogImageWidth={ogImageWidth}
+      ogImageHeight={ogImageHeight}
+      ogImageType={ogImageType}
       alternates={alternates}
       structuredData={structuredData}
       noindex={noindex}
