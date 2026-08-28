@@ -155,6 +155,7 @@ const items = articles.map((a) => ({
       </div>
       <p class="section-meta">{summary}</p>
     </div>
+    <p class="visually-hidden" aria-live="polite" data-context-search-status></p>
 
     <div
       id="category-view-panel-articles"
@@ -169,6 +170,8 @@ const items = articles.map((a) => ({
           <li
             class="article-item card"
             data-title={`${a.data.title} ${a.data.summary} ${a.data.tags.join(" ")} ${a.data.aliases.join(" ")}`}
+            data-context-search-item
+            data-search-text={`${a.data.title} ${a.data.summary} ${a.data.tags.join(" ")} ${a.data.aliases.join(" ")}`}
           >
             <h2 class="article-title">
               <a href={href}>{a.data.title}</a>
@@ -203,6 +206,8 @@ const items = articles.map((a) => ({
             class="article-item card planned-article"
             id={index === 0 ? "planned-articles" : undefined}
             data-title={plannedArticleTitle(item, locale)}
+            data-context-search-item
+            data-search-text={plannedArticleTitle(item, locale)}
           >
             <p class="article-status">
               {t(locale, "preparing")}
@@ -445,6 +450,32 @@ const items = articles.map((a) => ({
   ];
   const viewKey =
     categoryLayout?.dataset.viewStorageKey ?? "atlasez-category-view";
+  const contextSearchStatus = document.querySelector<HTMLElement>(
+    "[data-context-search-status]",
+  );
+  const contextSearchItems = [
+    ...document.querySelectorAll<HTMLElement>("[data-context-search-item]"),
+  ];
+
+  function applyContextSearch(rawQuery: string): void {
+    const query = rawQuery.trim().toLocaleLowerCase();
+    let visible = 0;
+    for (const item of contextSearchItems) {
+      const text = (item.dataset.searchText ?? item.textContent ?? "").toLocaleLowerCase();
+      const show = !query || text.includes(query);
+      item.hidden = !show;
+      if (show) visible += 1;
+    }
+    if (contextSearchStatus) {
+      contextSearchStatus.textContent = query ? `${visible}件を表示` : "";
+    }
+  }
+
+  document.addEventListener("atlas:context-search", (event) => {
+    const detail = (event as CustomEvent<{ view?: string; query?: string }>).detail;
+    if (!detail?.view || detail.view === "map") return;
+    applyContextSearch(detail.query ?? "");
+  });
 
   function setView(view: string, focus = false): void {
     if (!tabs.some((tab) => tab.dataset.viewTab === view)) view = "tiles";
@@ -459,6 +490,8 @@ const items = articles.map((a) => ({
     }
     if (mapPanel) mapPanel.hidden = !mapActive;
     if (categoryLayout) categoryLayout.dataset.activeView = view;
+    applyContextSearch("");
+    window.dispatchEvent(new CustomEvent("atlas:view-change", { detail: { view } }));
     for (const tab of tabs) {
       const active = tab.dataset.viewTab === view;
       tab.setAttribute("aria-selected", String(active));

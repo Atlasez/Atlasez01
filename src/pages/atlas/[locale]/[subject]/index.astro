@@ -105,6 +105,7 @@ const summary =
     class="container subject-home"
     data-subject-layout
     data-atlas-locale={locale}
+    data-active-view="tiles"
     data-view-storage-key={`atlasez-subject-view-v3:${subject.data.slug}`}
   >
     <h1>{subjectName}</h1>
@@ -141,6 +142,7 @@ const summary =
         ]}
       />
     </div>
+    <p class="visually-hidden" aria-live="polite" data-context-search-status></p>
 
     <div class="view-bar">
       <div
@@ -179,7 +181,11 @@ const summary =
       <ul class="category-tiles">
         {
           categoryItems.map(({ category, articles, planned }) => (
-            <li class="category-tile">
+            <li
+              class="category-tile"
+              data-context-search-item
+              data-search-text={localizedName(category.name, locale)}
+            >
               <a href={atlasPath(locale, subject.data.slug, category.slug)}>
                 <span class="category-name">
                   {localizedName(category.name, locale)}
@@ -238,7 +244,11 @@ const summary =
             categoryItems.map(({ category, articles, planned }) => {
               const empty = articles.length === 0 && planned.length === 0;
               return (
-                <li class="toc-category">
+                <li
+                  class="toc-category"
+                  data-context-search-item
+                  data-search-text={`${localizedName(category.name, locale)} ${articles.map((article) => article.data.title).join(" ")} ${planned.map((item) => plannedArticleTitle(item, locale)).join(" ")}`}
+                >
                   <details
                     class="toc-category-details"
                     data-category={category.slug}
@@ -330,6 +340,36 @@ const summary =
   ];
   const subjectViewKey =
     subjectLayout?.dataset.viewStorageKey ?? "atlasez-subject-view";
+  const contextSearchStatus = document.querySelector<HTMLElement>(
+    "[data-context-search-status]",
+  );
+  const contextSearchItems = [
+    ...document.querySelectorAll<HTMLElement>("[data-context-search-item]"),
+  ];
+
+  function applyContextSearch(view: string, rawQuery: string): void {
+    if (view === "map") return;
+    const query = rawQuery.trim().toLocaleLowerCase();
+    const items = contextSearchItems.filter((item) =>
+      item.closest(`[data-view-panel="${view}"]`),
+    );
+    let visible = 0;
+    for (const item of items) {
+      const text = (item.dataset.searchText ?? item.textContent ?? "").toLocaleLowerCase();
+      const show = !query || text.includes(query);
+      item.hidden = !show;
+      if (show) visible += 1;
+    }
+    if (contextSearchStatus) {
+      contextSearchStatus.textContent = query ? `${visible}件を表示` : "";
+    }
+  }
+
+  document.addEventListener("atlas:context-search", (event) => {
+    const detail = (event as CustomEvent<{ view?: string; query?: string }>).detail;
+    if (!detail?.view || detail.view === "map") return;
+    applyContextSearch(detail.view, detail.query ?? "");
+  });
   let mapCategoryKey = new URL(location.href).searchParams.get("category");
 
   function categoryPath(categoryKey: string, view: string): string {
@@ -355,6 +395,9 @@ const summary =
     for (const panel of subjectPanels) {
       panel.hidden = panel.dataset.viewPanel !== view;
     }
+    if (subjectLayout) subjectLayout.dataset.activeView = view;
+    applyContextSearch(view, "");
+    window.dispatchEvent(new CustomEvent("atlas:view-change", { detail: { view } }));
     try {
       localStorage.setItem(subjectViewKey, view);
     } catch {
