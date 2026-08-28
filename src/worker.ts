@@ -27,6 +27,9 @@ interface D1Database {
 interface Env {
   ASSETS: Fetcher;
   REPORTS: D1Database;
+  /** 分野別通知先。例: DISCORD_REPORT_WEBHOOK_MATHEMATICS */
+  [key: `DISCORD_REPORT_WEBHOOK_${string}`]: string | undefined;
+  /** 分野別通知先が未設定の場合だけ使う既定の通知先。 */
   DISCORD_REPORT_WEBHOOK_URL?: string;
   /** 報告者ハッシュのソルト。Cloudflare の Secret として登録する。 */
   REPORT_IP_HASH_SALT?: string;
@@ -207,12 +210,20 @@ type DiscordReport = {
   reportType: string;
 };
 
+const discordWebhookSecretName = (subject: string) =>
+  `DISCORD_REPORT_WEBHOOK_${subject
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "_")}` as const;
+
 /**
  * 通知先はWorkerのシークレットだけから読む。報告本文・連絡先・IP由来の情報は
  * Discordへ送らず、管理画面でのみ確認できるようにする。
  */
 async function notifyDiscord(env: Env, report: DiscordReport): Promise<void> {
-  const webhookUrl = env.DISCORD_REPORT_WEBHOOK_URL?.trim();
+  // 分野ごとの通知先を優先し、未設定の分野だけ共通通知先へ戻す。
+  const webhookUrl =
+    env[discordWebhookSecretName(report.subject)]?.trim() ||
+    env.DISCORD_REPORT_WEBHOOK_URL?.trim();
   if (webhookUrl) {
     try {
       const url = new URL(webhookUrl);
@@ -220,7 +231,7 @@ async function notifyDiscord(env: Env, report: DiscordReport): Promise<void> {
         url.protocol === "https:" &&
         (url.hostname === "discord.com" || url.hostname === "discordapp.com")
       ) {
-        await fetch(url, {
+        const response = await fetch(url, {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({
@@ -250,6 +261,12 @@ async function notifyDiscord(env: Env, report: DiscordReport): Promise<void> {
             ],
           }),
         });
+        if (!response.ok) {
+          console.error(
+            "Discord report webhook responded with status",
+            response.status,
+          );
+        }
       }
     } catch {
       // 通知失敗は報告保存に影響させない。Webhook URLもログへ出さない。

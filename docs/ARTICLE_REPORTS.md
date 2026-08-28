@@ -4,9 +4,11 @@
 
 ## Discord通知（任意）
 
-`DISCORD_REPORT_WEBHOOK_URL` をCloudflare Worker `atlasez-web-1` のシークレットに設定すると、保存成功後にDiscordへ通知します。通知するのは記事名・分野・カテゴリ・報告種別だけで、報告本文と返信先はDiscordへ送りません。通知に失敗しても報告の保存は失敗しません。
+分野別のWebhookをCloudflare Worker `atlasez-web-1` のシークレットに設定すると、保存成功後に該当分野のDiscordチャンネルへ通知します。通知するのは記事名・分野・カテゴリ・報告種別だけで、報告本文と返信先はDiscordへ送りません。通知に失敗しても報告の保存は失敗しません。
 
-Cloudflare Dashboardで Worker & Pages → `atlasez-web-1` → Settings → Variables and Secrets を開き、**Secret** として `DISCORD_REPORT_WEBHOOK_URL` を追加してください。値にはDiscordで新規発行したIncoming Webhook URLを入力します。Webhook URLは外部に共有した場合は無効化し、再発行してください。
+Cloudflare Dashboardで Worker & Pages → `atlasez-web-1` → Settings → Variables and Secrets を開き、各分野のWebhookを**Secret**として追加してください。分野slugを大文字にした名前を使います。数学は `DISCORD_REPORT_WEBHOOK_MATHEMATICS` です。分野別Secretがない記事だけに使う既定の通知先は `DISCORD_REPORT_WEBHOOK_URL` です。Webhook URLは外部に共有した場合は無効化し、再発行してください。
+
+今回の数学テストチャンネルは、Secret `DISCORD_REPORT_WEBHOOK_MATHEMATICS` に数学カテゴリ内の「問題報告通知」チャンネルのWebhook URLを設定すると接続されます。Webhook URLはGitHubやチャットへ保存・投稿しません。
 
 ### 分野別チャンネルへの通知
 
