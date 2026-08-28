@@ -32,9 +32,6 @@ const { list } = await getConcepts();
 const subjects = (await getPublishedSubjects()).filter(
   (s) => s.data.status === "published",
 );
-const selectableSubjects = fixedSubject
-  ? subjects.filter((s) => s.data.slug === fixedSubject)
-  : subjects;
 const graphUrl = withBase("/atlas/graph.json");
 
 const edgeKinds = [
@@ -97,17 +94,6 @@ const categoryMetaJson = JSON.stringify(
   */}
   <div class="map-frame" data-map-frame>
     <div class="map-toolbar" data-graph-controls hidden>
-      <label for="map-subject" class="map-subject-label">
-        {t(locale, "subjects")}
-      </label>
-      <select id="map-subject" data-map-subject>
-        {!fixedSubject && <option value="">{t(locale, "all")}</option>}
-        {selectableSubjects.map((s) => (
-          <option value={s.data.slug} selected={s.data.slug === fixedSubject}>
-            {localizedName(s.data.name, locale)}
-          </option>
-        ))}
-      </select>
       <span class="map-status" data-map-status aria-live="polite"></span>
       <div
         class="map-viewport-tools"
@@ -183,12 +169,6 @@ const categoryMetaJson = JSON.stringify(
           : "Choose a goal. Set a starting point only if there is a concept you already understand. Concepts are grouped by subject."}
       </p>
       <form data-route-form class="route-form">
-        <div>
-          <label for="route-subject">{t(locale, "subjects")}</label>
-          <select id="route-subject" data-route-subject>
-            {routeConceptGroups.map(({ slug, name }) => <option value={slug}>{name}</option>)}
-          </select>
-        </div>
         <div>
           <label for="route-start">{locale === "ja" ? "開始地点（任意）" : "Starting point (optional)"}</label>
           <select id="route-start" data-route-start>
@@ -334,9 +314,6 @@ const categoryMetaJson = JSON.stringify(
   .map-toolbar input,
   .map-toolbar select {
     min-width: 12rem;
-  }
-  .map-subject-label {
-    font-weight: 700;
   }
   .map-status {
     flex: 1 1 14rem;

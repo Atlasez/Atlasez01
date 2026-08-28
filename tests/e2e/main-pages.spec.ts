@@ -287,7 +287,7 @@ test.describe("学習サイト", () => {
 
     await page.getByRole("tab", { name: "学習地図" }).click();
     await expect(page.locator("[data-view-panel='map']")).toBeVisible();
-    await expect(page.locator("[data-map-subject]")).toHaveValue("mathematics");
+    await expect(page.locator("[data-map-subject]")).toHaveCount(0);
 
     await page.getByRole("tab", { name: "リスト表示" }).click();
     await expect(page.locator(".toc-category-details[open]")).toHaveCount(0);
@@ -774,7 +774,7 @@ test.describe("学習サイト", () => {
 
     await page.getByRole("tab", { name: "学習地図" }).click();
     await expect(page.locator("[data-map-view-panel]")).toBeVisible();
-    await expect(page.locator("[data-map-subject]")).toHaveValue("mathematics");
+    await expect(page.locator("[data-map-subject]")).toHaveCount(0);
 
     await page.getByRole("tab", { name: "リスト表示" }).click();
     await expect(list).toHaveAttribute("data-view", "list");
@@ -907,7 +907,7 @@ test.describe("学習サイト", () => {
   }) => {
     await page.goto("atlas/ja/map/");
     await page.getByRole("button", { name: "学習ルート検索" }).click();
-    await page.locator("[data-route-subject]").selectOption({ label: "数学" });
+    await expect(page.locator("[data-route-subject]")).toHaveCount(0);
     await page.getByLabel(/開始地点/).selectOption({ label: "線形空間" });
     await page
       .getByLabel(/目的地点/)
