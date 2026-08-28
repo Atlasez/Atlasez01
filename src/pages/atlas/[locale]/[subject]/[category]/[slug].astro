@@ -4,7 +4,12 @@ import { render } from "astro:content";
 import AtlasLayout from "../../../../../layouts/AtlasLayout.astro";
 import Breadcrumb from "../../../../../components/Breadcrumb.astro";
 import HistoryStageControl from "../../../../../components/HistoryStageControl.astro";
-import { atlasPath, articlePath, formatDate } from "../../../../../lib/site";
+import {
+  atlasPath,
+  articlePath,
+  formatDate,
+  withBase,
+} from "../../../../../lib/site";
 import {
   t,
   LOCALES,
@@ -211,6 +216,12 @@ const conceptNames = entry.data.concepts.map((c) => {
   return { id: c.id, name: node ? localizedName(node.name, locale) : c.id };
 });
 const historyUrl = `${ORG.githubRepo}/commits/main/src/content/articles/${entry.id}.md`;
+const ogImage = new URL(
+  withBase(
+    `/og/${entry.data.locale}/${entry.data.subject}/${entry.data.category}/${entry.data.slug}.svg`,
+  ),
+  Astro.site,
+).href;
 
 const structuredData = {
   "@context": "https://schema.org",
@@ -241,6 +252,7 @@ const structuredData = {
   title={entry.data.title}
   description={entry.data.summary}
   ogType="article"
+  ogImage={ogImage}
   alternates={alternates}
   structuredData={structuredData}
   localeSwitchHrefs={localeSwitchHrefs}

@@ -17,6 +17,7 @@ interface Props {
   title: string;
   description: string;
   ogType?: "website" | "article";
+  ogImage?: string;
   alternates?: AlternateLink[];
   structuredData?: object;
   /** 言語切替リンク先（省略時は各ロケールの総合ホーム） */
@@ -29,6 +30,7 @@ const {
   title,
   description,
   ogType,
+  ogImage,
   alternates = [],
   structuredData,
   localeSwitchHrefs = {},
@@ -62,6 +64,7 @@ const currentPath = Astro.url.pathname;
       title={`${title} | ${t(locale, "siteName")}`}
       description={description}
       ogType={ogType}
+      ogImage={ogImage}
       alternates={alternates}
       structuredData={structuredData}
       noindex={noindex}
