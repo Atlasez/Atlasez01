@@ -354,6 +354,8 @@ const structuredData = {
           data-subject-slug={entry.data.subject}
           data-category-slug={entry.data.category}
           data-summary={entry.data.summary}
+          data-label-copied={t(locale, "linkCopied")}
+          data-label-share-failed={t(locale, "shareFailed")}
         >
           <button
             type="button"
@@ -367,6 +369,29 @@ const structuredData = {
             <span data-bookmark-label>{t(locale, "saveForLater")}</span>
           </button>
           <HistoryStageControl locale={locale} />
+          <button
+            type="button"
+            class="article-icon-btn"
+            data-article-share
+            aria-label={t(locale, "shareArticle")}
+            title={t(locale, "shareArticle")}
+          >
+            <span aria-hidden="true">↗</span>
+          </button>
+          <button
+            type="button"
+            class="article-icon-btn"
+            data-article-copy
+            aria-label={t(locale, "copyLink")}
+            title={t(locale, "copyLink")}
+          >
+            <span aria-hidden="true">🔗</span>
+          </button>
+          <span
+            class="article-action-status"
+            data-article-action-status
+            aria-live="polite"
+          ></span>
         </div>
         {
           [...translations.entries()].length > 0 && (
@@ -809,6 +834,34 @@ const structuredData = {
   .history-btn:hover {
     border-color: var(--accent-primary);
     color: var(--accent-primary);
+  }
+  .article-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--touch-target, 2.75rem);
+    min-width: var(--touch-target, 2.75rem);
+    height: var(--touch-target, 2.75rem);
+    padding: 0;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius, 4px);
+    background: transparent;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: 1.1rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .article-icon-btn:hover,
+  .article-icon-btn:focus-visible {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+    background: var(--accent-subtle);
+  }
+  .article-action-status {
+    align-self: center;
+    color: var(--text-secondary);
+    font-size: calc(0.85rem * var(--text-scale));
   }
   .translation-info {
     font-size: calc(0.9rem * var(--text-scale));
@@ -1706,6 +1759,54 @@ const structuredData = {
         setStatus(message, "error");
       } finally {
         submit?.removeAttribute("disabled");
+      }
+    });
+  }
+</script>
+
+<script>
+  const articleActionRoot = document.querySelector<HTMLElement>("[data-article-actions]");
+  const articleShareButton = articleActionRoot?.querySelector<HTMLButtonElement>("[data-article-share]");
+  const articleCopyButton = articleActionRoot?.querySelector<HTMLButtonElement>("[data-article-copy]");
+  const articleActionStatus = articleActionRoot?.querySelector<HTMLElement>("[data-article-action-status]");
+  if (articleActionRoot && (articleShareButton || articleCopyButton)) {
+    const articleData = articleActionRoot.dataset;
+    const articleUrl = new URL(articleData.href ?? window.location.pathname, window.location.origin).href;
+    const isJapanese = articleData.locale === "ja";
+    const copiedMessage = articleData.labelCopied ?? (isJapanese ? "リンクをコピーしました" : "Link copied");
+    const shareFailedMessage = articleData.labelShareFailed ?? (isJapanese ? "共有できませんでした。" : "Could not share.");
+
+    const showActionStatus = (message: string) => {
+      if (!articleActionStatus) return;
+      articleActionStatus.textContent = message;
+      window.setTimeout(() => {
+        if (articleActionStatus.textContent === message) articleActionStatus.textContent = "";
+      }, 2400);
+    };
+
+    const copyArticleLink = async (): Promise<void> => {
+      try {
+        await navigator.clipboard.writeText(articleUrl);
+        showActionStatus(copiedMessage);
+      } catch {
+        showActionStatus(shareFailedMessage);
+      }
+    };
+
+    articleCopyButton?.addEventListener("click", () => {
+      void copyArticleLink();
+    });
+    articleShareButton?.addEventListener("click", async () => {
+      if (typeof navigator.share !== "function") {
+        await copyArticleLink();
+        return;
+      }
+      try {
+        await navigator.share({ title: articleData.title ?? "Atlasez", url: articleUrl });
+      } catch (error) {
+        if (!(error instanceof DOMException) || error.name !== "AbortError") {
+          showActionStatus(shareFailedMessage);
+        }
       }
     });
   }

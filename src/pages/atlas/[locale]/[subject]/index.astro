@@ -362,6 +362,9 @@ const summary =
   const contextSearchItems = [
     ...document.querySelectorAll<HTMLElement>("[data-context-search-item]"),
   ];
+  const subjectMapBreadcrumb = subjectLayout?.querySelector<HTMLElement>(
+    "[data-subject-breadcrumb]",
+  );
 
   function applyContextSearch(view: string, rawQuery: string): void {
     if (view === "map") return;
@@ -412,6 +415,7 @@ const summary =
       panel.hidden = panel.dataset.viewPanel !== view;
     }
     if (subjectLayout) subjectLayout.dataset.activeView = view;
+    subjectMapBreadcrumb?.toggleAttribute("hidden", view === "map");
     applyContextSearch(view, "");
     window.dispatchEvent(new CustomEvent("atlas:view-change", { detail: { view } }));
     try {

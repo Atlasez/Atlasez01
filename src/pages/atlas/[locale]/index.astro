@@ -497,6 +497,9 @@ const views = [
   const contextSearchItems = [
     ...document.querySelectorAll<HTMLElement>("[data-context-search-item]"),
   ];
+  const homeMapBreadcrumb = document.querySelector<HTMLElement>(
+    "[data-home-map-breadcrumb]",
+  );
 
   function applyContextSearch(view: string, rawQuery: string): void {
     if (view === "map") return;
@@ -653,6 +656,7 @@ const views = [
         ?.scrollIntoView({ block: "nearest" });
     }
     if (layout) layout.dataset.activeView = view;
+    homeMapBreadcrumb?.toggleAttribute("hidden", view === "map");
     applyContextSearch(view, "");
     window.dispatchEvent(new CustomEvent("atlas:view-change", { detail: { view } }));
     try {

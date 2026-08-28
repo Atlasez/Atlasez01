@@ -483,6 +483,9 @@ const items = articles.map((a) => ({
   const contextSearchItems = [
     ...document.querySelectorAll<HTMLElement>("[data-context-search-item]"),
   ];
+  const categoryMapBreadcrumb = categoryLayout?.querySelector<HTMLElement>(
+    ".breadcrumb",
+  );
 
   function applyContextSearch(rawQuery: string): void {
     const query = rawQuery.trim().toLocaleLowerCase();
@@ -517,6 +520,7 @@ const items = articles.map((a) => ({
     }
     if (mapPanel) mapPanel.hidden = !mapActive;
     if (categoryLayout) categoryLayout.dataset.activeView = view;
+    categoryMapBreadcrumb?.toggleAttribute("hidden", mapActive);
     applyContextSearch("");
     window.dispatchEvent(new CustomEvent("atlas:view-change", { detail: { view } }));
     for (const tab of tabs) {
