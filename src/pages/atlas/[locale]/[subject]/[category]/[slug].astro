@@ -275,7 +275,7 @@ const structuredData = {
       aria-controls="article-toc"
       aria-expanded="false"
     >
-      {t(locale, "toc")}
+      <span class="mobile-toc-label">{t(locale, "toc")}</span>
     </button>
 
     {/* 中央: 本文（Pagefindの検索対象） */}
@@ -1454,6 +1454,11 @@ const structuredData = {
       color: var(--accent-primary);
       font-weight: 700;
       padding: 0 var(--space-3);
+    }
+    .mobile-toc-label {
+      display: inline-block;
+      transform: scale(1.08);
+      transform-origin: center;
     }
     /* 読み進めた位置から目次を開いても本文を離れないよう、
        目次は浮いたパネルとして表示する。閉じるときは見出し帯を押す。 */

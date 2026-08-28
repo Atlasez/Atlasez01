@@ -108,31 +108,10 @@ const summary =
     data-active-view="tiles"
     data-view-storage-key={`atlasez-subject-view-v3:${subject.data.slug}`}
   >
+  <div class="content-columns">
+    <section class="subject-main">
     <h1>{subjectName}</h1>
     <p class="reading">{localizedName(subject.data.description, locale)}</p>
-
-    <section class="subject-highlights" aria-label={locale === "ja" ? "記事の更新情報" : "Article updates"}>
-      <div class="highlight-panel">
-        <h2>{locale === "ja" ? "最近公開された記事" : "Recently published"}</h2>
-        {recentArticles.length > 0 ? (
-          <ul>
-            {recentArticles.map((article) => (
-              <li><a href={articlePath(locale, article.data.subject, article.data.category, article.data.slug)}>{article.data.title}</a><time datetime={article.data.updatedAt.toISOString()}>{article.data.updatedAt.toLocaleDateString(locale === "ja" ? "ja-JP" : "en-US")}</time></li>
-            ))}
-          </ul>
-        ) : <p class="highlight-empty">{locale === "ja" ? "現在ありません。" : "Nothing yet."}</p>}
-      </div>
-      <div class="highlight-panel">
-        <h2>{locale === "ja" ? "近日公開予定の記事" : "Coming soon"}</h2>
-        {upcomingArticles.length > 0 ? (
-          <ul>
-            {upcomingArticles.map(({ item, category }) => (
-              <li><a href={`${atlasPath(locale, subject.data.slug, category.slug)}?view=list`}>{plannedArticleTitle(item, locale)}</a><span>{localizedName(category.name, locale)}</span></li>
-            ))}
-          </ul>
-        ) : <p class="highlight-empty">{locale === "ja" ? "現在ありません。" : "Nothing yet."}</p>}
-      </div>
-    </section>
 
     <div data-subject-breadcrumb>
       <Breadcrumb
@@ -321,6 +300,43 @@ const summary =
         </ol>
       </section>
     </div>
+    </section>
+
+    <aside class="recent" aria-label={locale === "ja" ? "記事の更新情報" : "Article updates"}>
+      <section aria-labelledby="subject-recent-heading">
+        <div class="section-title">
+          <h2 id="subject-recent-heading">{locale === "ja" ? "最近公開された記事" : "Recently published"}</h2>
+        </div>
+        <div class="scroll-shell">
+          <div class="recent-scroll" tabindex="0">
+            <ul class="recent-list">
+              {recentArticles.map((article) => (
+                <li>
+                  <a href={articlePath(locale, article.data.subject, article.data.category, article.data.slug)}>{article.data.title}</a>
+                  <time datetime={article.data.updatedAt.toISOString()}>{article.data.updatedAt.toLocaleDateString(locale === "ja" ? "ja-JP" : "en-US")}</time>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
+      <section class="upcoming" aria-labelledby="subject-upcoming-heading">
+        <div class="section-title">
+          <h2 id="subject-upcoming-heading">{locale === "ja" ? "近日公開予定の記事" : "Coming soon"}</h2>
+        </div>
+        {upcomingArticles.length > 0 ? (
+          <ul class="upcoming-list" tabindex="0">
+            {upcomingArticles.map(({ item, category }) => (
+              <li>
+                <a href={`${atlasPath(locale, subject.data.slug, category.slug)}?view=list`}>{plannedArticleTitle(item, locale)}</a>
+                <span class="upcoming-meta"><span class="upcoming-category">{localizedName(category.name, locale)}</span></span>
+              </li>
+            ))}
+          </ul>
+        ) : <p class="highlight-empty">{locale === "ja" ? "現在ありません。" : "Nothing yet."}</p>}
+      </section>
+    </aside>
+  </div>
   </div>
 </AtlasLayout>
 
@@ -540,6 +556,86 @@ const summary =
     max-width: var(--content-width);
     padding-bottom: var(--space-5);
   }
+  .content-columns {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(14rem, 16rem);
+    gap: var(--space-5);
+    padding-block: var(--space-2) var(--space-5);
+    align-items: start;
+  }
+  .subject-main {
+    min-width: 0;
+  }
+  .section-title {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-3);
+    padding-bottom: var(--space-1);
+    border-bottom: 1px solid var(--border-strong);
+  }
+  .section-title h2 {
+    margin: 0;
+    font-size: calc(1.02rem * var(--text-scale));
+  }
+  .recent {
+    font-size: calc(0.9rem * var(--text-scale));
+  }
+  .recent-scroll {
+    max-height: 26rem;
+    overflow-y: auto;
+    padding-right: var(--space-2);
+    scrollbar-gutter: stable;
+  }
+  .scroll-shell {
+    position: relative;
+  }
+  .recent-list,
+  .upcoming-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .recent-list li,
+  .upcoming-list li {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-2);
+    padding: var(--space-1) 0;
+    border-bottom: 1px solid var(--border-default);
+    line-height: 1.45;
+  }
+  .recent-list a,
+  .upcoming-list a {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    text-decoration: none;
+  }
+  .recent-list a:hover,
+  .upcoming-list a:hover {
+    text-decoration: underline;
+  }
+  .recent-list time,
+  .upcoming-category {
+    flex: 0 0 auto;
+    color: var(--text-secondary);
+    font-size: calc(0.72rem * var(--text-scale));
+  }
+  .upcoming {
+    margin-top: var(--space-4);
+  }
+  .upcoming-list {
+    max-height: 14rem;
+    overflow-y: auto;
+    padding-right: var(--space-2);
+    scrollbar-gutter: stable;
+  }
+  .upcoming-list li {
+    border-bottom-style: dashed;
+  }
+  .upcoming-meta {
+    flex: 0 0 auto;
+  }
   .view-bar {
     display: flex;
     align-items: flex-end;
@@ -737,15 +833,11 @@ const summary =
   .planned-article > span:first-child {
     color: var(--text-secondary);
   }
-  .subject-highlights { display: grid; gap: var(--space-3); grid-template-columns: repeat(2, minmax(0, 1fr)); margin: var(--space-4) 0 var(--space-3); }
-  .highlight-panel { background: var(--background-secondary); border: 1px solid var(--border); border-top: 3px solid var(--accent-primary); min-width: 0; padding: var(--space-2) var(--space-3); }
-  .highlight-panel h2 { font-size: calc(1rem * var(--text-scale)); margin: 0 0 var(--space-1); }
-  .highlight-panel ul { display: grid; gap: .15rem; list-style: none; margin: 0; padding: 0; }
-  .highlight-panel li { align-items: baseline; display: flex; gap: var(--space-2); justify-content: space-between; min-width: 0; padding: .35rem 0; }
-  .highlight-panel li + li { border-top: 1px solid var(--border); }
-  .highlight-panel a { min-width: 0; overflow-wrap: anywhere; }
-  .highlight-panel time, .highlight-panel li > span { color: var(--text-secondary); flex: 0 0 auto; font-size: calc(.72rem * var(--text-scale)); }
   .highlight-empty { color: var(--text-secondary); font-size: calc(.8rem * var(--text-scale)); margin: 0; }
+  @media (max-width: 900px) {
+    .content-columns { grid-template-columns: 1fr; gap: var(--space-4); }
+    .recent-scroll { max-height: 18rem; }
+  }
   @media (max-width: 767px) {
     .view-tabs {
       width: 100%;
@@ -766,6 +858,5 @@ const summary =
     .category-tiles {
       grid-template-columns: 1fr;
     }
-    .subject-highlights { grid-template-columns: 1fr; }
   }
 </style>

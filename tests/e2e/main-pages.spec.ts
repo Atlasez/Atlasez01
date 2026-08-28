@@ -173,6 +173,32 @@ test.describe("学習サイト", () => {
     );
   });
 
+  test("分野・カテゴリでも更新情報を右カラムの同じ位置に置く", async ({
+    page,
+  }) => {
+    for (const path of [
+      "atlas/ja/mathematics/",
+      "atlas/ja/mathematics/group-theory/",
+    ]) {
+      await page.goto(path);
+      const main = path.includes("group-theory")
+        ? page.locator(".category-main")
+        : page.locator(".subject-main");
+      await expect(page.locator(".recent")).toBeVisible();
+      await expect(page.locator(".recent h2")).toHaveCount(2);
+      await expect(page.locator(".highlight-panel")).toHaveCount(0);
+      const [mainBox, recentBox] = await Promise.all([
+        main.boundingBox(),
+        page.locator(".recent").boundingBox(),
+      ]);
+      expect(mainBox).not.toBeNull();
+      expect(recentBox).not.toBeNull();
+      expect(Math.abs((mainBox?.y ?? 0) - (recentBox?.y ?? 0))).toBeLessThan(
+        8,
+      );
+    }
+  });
+
   test("学習地図で選んだカテゴリの表示タブへ遷移し、分野地図へ戻れる", async ({
     page,
   }) => {
@@ -325,6 +351,30 @@ test.describe("学習サイト", () => {
     await expect(
       page.getByRole("button", { name: "報告を送信" }),
     ).toBeVisible();
+  });
+
+  test("スマホの目次ボタンは外寸を保ったまま文字だけ少し大きくする", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("atlas/ja/mathematics/group-theory/group-definition/");
+    const trigger = page.locator("[data-mobile-toc]");
+    await expect(trigger).toBeVisible();
+    const metrics = await trigger.evaluate((element) => {
+      const label = element.querySelector(".mobile-toc-label");
+      const rect = element.getBoundingClientRect();
+      const style = label ? getComputedStyle(label) : null;
+      return {
+        width: rect.width,
+        height: rect.height,
+        display: style?.display,
+        transform: style?.transform,
+      };
+    });
+    expect(metrics.width).toBeGreaterThan(0);
+    expect(metrics.height).toBeGreaterThan(0);
+    expect(metrics.display).toBe("inline-block");
+    expect(metrics.transform).not.toBe("none");
   });
 
   test("数学記事の証明を一括で開閉できる", async ({ page }) => {
