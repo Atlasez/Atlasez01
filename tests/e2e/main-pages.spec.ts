@@ -313,6 +313,12 @@ test.describe("学習サイト", () => {
   }) => {
     await page.goto("atlas/ja/mathematics/");
 
+    expect(await page.locator("[data-view-tab]").allTextContents()).toEqual([
+      "タイル表示",
+      "リスト表示",
+      "学習地図",
+    ]);
+
     await expect(page.getByRole("tab", { name: "タイル表示" })).toHaveAttribute(
       "aria-selected",
       "true",
@@ -1016,6 +1022,53 @@ test.describe("学習サイト", () => {
     await expect(results).toContainText("数学記事です");
     await expect(results).not.toContainText("math.group-theory");
     await expect(page.locator("[data-search-count]")).toContainText("件の記事");
+  });
+
+  test("検索の分野とカテゴリを複数選択でき、カテゴリ候補が分野に連動する", async ({
+    page,
+  }) => {
+    await page.goto("atlas/ja/search/");
+    const subject = page.locator('select[data-filter-name="subject"]');
+    const category = page.locator('select[data-filter-name="category"]');
+
+    await expect(subject).toHaveAttribute("multiple", "");
+    await expect(category).toHaveAttribute("multiple", "");
+    await subject.selectOption(["化学", "数学"]);
+
+    const categories = await category
+      .locator("option")
+      .evaluateAll((options) =>
+        options.map((option) => (option as HTMLOptionElement).value),
+      );
+    expect(categories).toEqual(
+      expect.arrayContaining(["化学反応", "群論", "集合論"]),
+    );
+    expect(categories).not.toContain("ニュートン力学");
+
+    await category.selectOption(["化学反応", "群論"]);
+    await expect(category.locator("option:checked")).toHaveCount(2);
+  });
+
+  test("フッターの言語切替に全対応言語が表示され、同じページで反映される", async ({
+    page,
+  }) => {
+    await page.goto("atlas/ja/");
+    const footer = page.locator("[data-lang-switch]");
+    await expect(footer.locator("[data-lang-item]")).toHaveCount(4);
+    await footer.locator("summary").click();
+
+    const dimensions = await footer.evaluate((element) => {
+      const wrapper = element.parentElement?.getBoundingClientRect();
+      const button = element.querySelector("summary")?.getBoundingClientRect();
+      return {
+        wrapperHeight: wrapper?.height ?? 0,
+        buttonHeight: button?.height ?? 0,
+      };
+    });
+    expect(dimensions.wrapperHeight).toBeLessThan(dimensions.buttonHeight + 8);
+
+    await footer.locator('[data-ui-language="zh"]').click();
+    await expect(page.locator("html")).toHaveAttribute("lang", "zh");
   });
 
   test("スマートフォンでも行き先が畳まれずに出ている", async ({ page }) => {

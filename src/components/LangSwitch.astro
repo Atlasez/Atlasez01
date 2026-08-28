@@ -9,8 +9,12 @@
  *  - パネルは max-height + スクロール。20言語でも画面外にはみ出さない。
  *  - JavaScriptが無くても <details> の開閉だけで全言語のリンクに到達できる。
  */
-import { t, LOCALES, localeMeta, localeLabel, type Locale } from "../lib/i18n";
-import { atlasPath } from "../lib/site";
+import { t, type Locale } from "../lib/i18n";
+import {
+  UI_LANGUAGE_ENGLISH_NAMES,
+  UI_LANGUAGE_NAMES,
+  UI_LANGUAGES,
+} from "../lib/ui-locales";
 
 interface Props {
   locale: Locale;
@@ -19,11 +23,11 @@ interface Props {
 }
 const { locale, hrefs = {} } = Astro.props;
 
-const items = LOCALES.map((l) => ({
+const items = UI_LANGUAGES.map((l) => ({
   code: l,
-  native: localeLabel(l),
-  english: localeMeta[l]?.english ?? l,
-  href: hrefs[l] ?? atlasPath(l),
+  native: UI_LANGUAGE_NAMES[l],
+  english: UI_LANGUAGE_ENGLISH_NAMES[l],
+  href: hrefs[l] ?? "#",
   current: l === locale,
 }));
 const filterable = items.length > 3;
@@ -36,7 +40,7 @@ const filterable = items.length > 3;
         <span class="lang-globe" aria-hidden="true">
           ⌘
         </span>
-        <span class="lang-current">{localeLabel(locale)}</span>
+        <span class="lang-current">{UI_LANGUAGE_NAMES[locale]}</span>
         <span class="lang-caret" aria-hidden="true" />
       </summary>
       <div class="lang-panel">
@@ -61,22 +65,17 @@ const filterable = items.length > 3;
               data-lang-item
               data-search={`${item.code} ${item.native} ${item.english}`.toLowerCase()}
             >
-              {item.current ? (
-                <span class="lang-option is-current" aria-current="true">
-                  <span class="lang-native">{item.native}</span>
-                  <span class="lang-english">{item.english}</span>
-                </span>
-              ) : (
-                <a
-                  class="lang-option"
-                  href={item.href}
-                  hreflang={item.code}
-                  lang={item.code}
-                >
-                  <span class="lang-native">{item.native}</span>
-                  <span class="lang-english">{item.english}</span>
-                </a>
-              )}
+              <a
+                class:list={["lang-option", item.current && "is-current"]}
+                href={item.href}
+                hreflang={item.code}
+                lang={item.code}
+                data-ui-language={item.code}
+                aria-current={item.current ? "true" : undefined}
+              >
+                <span class="lang-native">{item.native}</span>
+                <span class="lang-english">{item.english}</span>
+              </a>
             </li>
           ))}
         </ul>
@@ -217,8 +216,40 @@ const filterable = items.length > 3;
   const root = document.querySelector<HTMLDetailsElement>("[data-lang-switch]");
   if (root) {
     const filter = root.querySelector<HTMLInputElement>("[data-lang-filter]");
+    const current = root.querySelector<HTMLElement>(".lang-current");
     const items = [...root.querySelectorAll<HTMLElement>("[data-lang-item]")];
+    const languageLinks = [
+      ...root.querySelectorAll<HTMLAnchorElement>("[data-ui-language]"),
+    ];
     const empty = root.querySelector<HTMLElement>("[data-lang-empty]");
+    const languageNames: Record<"ja" | "en" | "zh" | "ko", string> = {
+      ja: "日本語",
+      en: "English",
+      zh: "中文",
+      ko: "한국어",
+    };
+
+    for (const link of languageLinks) {
+      link.addEventListener("click", (event) => {
+        const code = link.dataset.uiLanguage;
+        if (!code || !(code in languageNames)) return;
+        try {
+          const prefs = JSON.parse(localStorage.getItem("atlasez-prefs") ?? "{}");
+          localStorage.setItem(
+            "atlasez-prefs",
+            JSON.stringify({ ...prefs, lang: code }),
+          );
+        } catch {
+          /* 保存できなくても、同じページ内の切り替えは続ける */
+        }
+        if (current) {
+          current.textContent = languageNames[code as keyof typeof languageNames];
+        }
+        window.dispatchEvent(new CustomEvent("atlasez-lang-change"));
+        // 中国語・韓国語のページはまだないため、同じページ上でUIだけ切り替える。
+        if (code === "zh" || code === "ko") event.preventDefault();
+      });
+    }
 
     filter?.addEventListener("input", () => {
       const q = filter.value.trim().toLowerCase();
