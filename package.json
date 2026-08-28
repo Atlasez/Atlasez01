@@ -10,7 +10,8 @@
     "db:reports:local": "npx --yes wrangler d1 migrations apply atlasez-reports-local --local --config wrangler.local.jsonc",
     "new:article": "node scripts/new-article.mjs",
     "update:institutions": "node scripts/build-institution-directory.mjs",
-    "build": "astro build && npm run search:index",
+    "build": "node scripts/write-build-info.mjs && astro build && npm run search:index",
+    "verify:deploy-config": "node scripts/verify-deployment-config.mjs",
     "build:ci": "astro build",
     "search:index": "pagefind --site dist",
     "preview": "astro preview",
@@ -52,6 +53,7 @@
     "prettier": "^3.3.0",
     "typescript": "^5.6.0",
     "typescript-eslint": "^8.65.0",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.10",
+    "wrangler": "4.127.0"
   }
 }
