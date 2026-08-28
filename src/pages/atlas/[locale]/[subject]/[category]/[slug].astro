@@ -414,7 +414,7 @@ const structuredData = {
             aria-expanded="false"
             hidden
           >
-            <span class="proof-toggle-icon" data-proof-indicator aria-hidden="true">▶</span>{" "}<span data-proof-label>証明を展開</span>
+            <span class="proof-toggle-icon" data-proof-indicator aria-hidden="true">▼</span>{" "}<span data-proof-label>証明を展開</span>
           </button>
         )
       }
@@ -1113,6 +1113,11 @@ const structuredData = {
     line-height: 1;
     margin-inline-end: 0.2rem;
     text-align: center;
+    transform: rotate(-90deg);
+    transition: transform 120ms ease;
+  }
+  .proof-toggle[aria-expanded="true"] .proof-toggle-icon {
+    transform: rotate(0deg);
   }
   .article-body :global(.article-reference-pending) {
     border-bottom: 1px dotted var(--border-strong);
@@ -2047,10 +2052,10 @@ const structuredData = {
         const indicator = proofToggle.querySelector<HTMLElement>("[data-proof-indicator]");
         const label = proofToggle.querySelector<HTMLElement>("[data-proof-label]");
         const setProofToggleLabel = (expanded: boolean) => {
-          if (indicator) indicator.textContent = expanded ? "▼" : "▶";
+          if (indicator) indicator.textContent = "▼";
           if (label) label.textContent = expanded ? "証明を閉じる" : "証明を展開";
           if (!indicator && !label) {
-            proofToggle.textContent = expanded ? "▼ 証明を閉じる" : "▶ 証明を展開";
+            proofToggle.textContent = expanded ? "▼ 証明を閉じる" : "▼ 証明を展開";
           }
         };
         setProofToggleLabel(false);

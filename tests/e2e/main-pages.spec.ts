@@ -401,14 +401,32 @@ test.describe("学習サイト", () => {
     await expect(toggle).toBeVisible();
     await expect(proofs).not.toHaveCount(0);
     await expect(openProofs).toHaveCount(0);
-    await expect(toggle.locator("[data-proof-indicator]")).toHaveText("▶");
+    await expect(toggle.locator("[data-proof-indicator]")).toHaveText("▼");
+    const triangleStyles = await page.evaluate(() => ({
+      allProofs: getComputedStyle(
+        document.querySelector("[data-proof-indicator]")!,
+      ).transform,
+      singleProof: getComputedStyle(
+        document.querySelector("details.proof-details > summary")!,
+        "::before",
+      ).transform,
+    }));
+    const rotation = (transform: string) =>
+      transform
+        .replace(/^matrix\(/, "")
+        .split(",")
+        .slice(0, 4)
+        .join(",");
+    expect(rotation(triangleStyles.allProofs)).toBe(
+      rotation(triangleStyles.singleProof),
+    );
     await toggle.click();
     await expect(openProofs).toHaveCount(await proofs.count());
     await expect(toggle).toHaveText("▼ 証明を閉じる");
     await expect(toggle.locator("[data-proof-indicator]")).toHaveText("▼");
     await toggle.click();
     await expect(openProofs).toHaveCount(0);
-    await expect(toggle).toHaveText("▶ 証明を展開");
+    await expect(toggle).toHaveText("▼ 証明を展開");
 
     await page.setViewportSize({ width: 390, height: 844 });
     await page.reload();
