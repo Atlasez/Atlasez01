@@ -71,7 +71,9 @@ export async function getStaticPaths() {
   const articles = await getPublishedArticles();
   const subjects = await getPublishedSubjects();
   return articles.map((entry) => {
-    const subject = subjects.find((item) => item.data.slug === entry.data.subject);
+    const subject = subjects.find(
+      (item) => item.data.slug === entry.data.subject,
+    );
     const category = subject?.data.categories.find(
       (item) => item.slug === entry.data.category,
     );
@@ -86,8 +88,7 @@ export async function getStaticPaths() {
         entry,
         subjectLabel:
           subject?.data.name[entry.data.locale] ?? entry.data.subject,
-        categoryLabel:
-          category?.name[entry.data.locale] ?? entry.data.category,
+        categoryLabel: category?.name[entry.data.locale] ?? entry.data.category,
       },
     };
   });
@@ -103,8 +104,7 @@ export const GET = ({
   };
 }) => {
   const { entry, subjectLabel, categoryLabel } = props;
-  return new Response(
-    image(entry.data.title, subjectLabel, categoryLabel),
-    { headers: { "content-type": "image/svg+xml; charset=utf-8" } },
-  );
+  return new Response(image(entry.data.title, subjectLabel, categoryLabel), {
+    headers: { "content-type": "image/svg+xml; charset=utf-8" },
+  });
 };
