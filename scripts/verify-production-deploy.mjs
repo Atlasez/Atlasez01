@@ -1,10 +1,18 @@
 import { readFile } from "node:fs/promises";
 
 const failures = [];
-const branch = process.env.CF_BRANCH ?? process.env.GITHUB_REF_NAME ?? "";
+const branch =
+  process.env.WORKERS_CI_BRANCH ?? process.env.GITHUB_REF_NAME ?? "";
 const repository =
-  process.env.CF_REPOSITORY ?? process.env.GITHUB_REPOSITORY ?? "";
-const commit = process.env.CF_COMMIT_SHA ?? process.env.GITHUB_SHA ?? "";
+  process.env.ATLASEZ_REPOSITORY ?? process.env.GITHUB_REPOSITORY ?? "";
+const commit =
+  process.env.WORKERS_CI_COMMIT_SHA ?? process.env.GITHUB_SHA ?? "";
+
+if (process.env.WORKERS_CI !== "1") {
+  failures.push(
+    "WORKERS_CI=1 が設定されていません（Cloudflare Workers Builds以外からのDeployを拒否します）。",
+  );
+}
 
 if (process.env.ATLASEZ_DEPLOY_GATE !== "main-only-v1") {
   failures.push(
@@ -16,13 +24,13 @@ if (branch !== "main") {
   failures.push(`本番Deployはmain限定です（検出値: ${branch || "未設定"}）。`);
 }
 
-if (repository && repository !== "Atlasez/Atlasez01") {
+if (repository !== "Atlasez/Atlasez01") {
   failures.push(`対象リポジトリが違います（検出値: ${repository}）。`);
 }
 
 if (!/^[0-9a-f]{40}$/i.test(commit)) {
   failures.push(
-    "CF_COMMIT_SHAまたはGITHUB_SHAが40桁のコミットSHAではありません。",
+    "WORKERS_CI_COMMIT_SHAまたはGITHUB_SHAが40桁のコミットSHAではありません。",
   );
 }
 

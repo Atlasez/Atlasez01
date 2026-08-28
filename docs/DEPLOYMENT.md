@@ -26,9 +26,10 @@ Workers BuildsのDeploy commandは裸の`npx wrangler deploy`ではなく、必�
 限り失敗し、Wranglerを起動しない。
 
 - `ATLASEZ_DEPLOY_GATE=main-only-v1`
-- `CF_BRANCH=main`
-- `CF_REPOSITORY=Atlasez/Atlasez01`
-- `CF_COMMIT_SHA`が40桁のコミットSHA
+- `WORKERS_CI=1`
+- `WORKERS_CI_BRANCH=main`
+- `ATLASEZ_REPOSITORY=Atlasez/Atlasez01`
+- `WORKERS_CI_COMMIT_SHA`が40桁のコミットSHA
 - `dist/build-info.json`のrepository/ref/commitが上記と一致
 
 このゲートにより、PRブランチやローカルからの手動Deployはfail-closedで停止する。
