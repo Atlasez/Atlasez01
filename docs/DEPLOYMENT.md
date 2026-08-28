@@ -21,6 +21,19 @@ GitHub Pagesは確認用ミラーであり、本番ではない。Cloudflare Pag
 GitHub Actionsから別経路で本番デプロイしない。これにより、GitHub Actionsと
 Cloudflare Workers Buildsの競合や、異なるSHAの後着デプロイを防ぐ。
 
+Workers BuildsのDeploy commandは裸の`npx wrangler deploy`ではなく、必ず
+`npm run deploy:production`を指定する。このコマンドは次の値がすべて一致しない
+限り失敗し、Wranglerを起動しない。
+
+- `ATLASEZ_DEPLOY_GATE=main-only-v1`
+- `CF_BRANCH=main`
+- `CF_REPOSITORY=Atlasez/Atlasez01`
+- `CF_COMMIT_SHA`が40桁のコミットSHA
+- `dist/build-info.json`のrepository/ref/commitが上記と一致
+
+このゲートにより、PRブランチやローカルからの手動Deployはfail-closedで停止する。
+ゲートを迂回する直接のWrangler実行は禁止する。
+
 Cloudflare DashboardのBuild cacheは無効化する。キャッシュを再有効化する場合は、
 `dist`をキャッシュ対象にせず、mainのSHAを含む`build-info.json`を毎回検証すること。
 
