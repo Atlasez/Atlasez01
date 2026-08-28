@@ -101,12 +101,19 @@ test.describe("学習サイト", () => {
     const header = page.locator("[data-header-search]");
     const search = header.getByRole("searchbox");
 
-    await expect(search).toHaveAttribute("placeholder", "分野名・カテゴリ名で検索");
-    await expect(header.getByRole("button", { name: "全体で検索" })).toBeVisible();
+    await expect(search).toHaveAttribute(
+      "placeholder",
+      "分野名・カテゴリ名で検索",
+    );
+    await expect(
+      header.getByRole("button", { name: "全体で検索" }),
+    ).toBeVisible();
     await search.fill("数学");
     await header.getByRole("button", { name: "検索", exact: true }).click();
     await expect(
-      page.locator("[data-view-panel='tiles'] [data-context-search-item]:visible"),
+      page.locator(
+        "[data-view-panel='tiles'] [data-context-search-item]:visible",
+      ),
     ).toHaveCount(1);
 
     await page.getByRole("tab", { name: "学習地図" }).click();
@@ -115,10 +122,14 @@ test.describe("学習サイト", () => {
     await expect(page.locator("[data-map-search]")).toHaveCount(0);
     await search.fill("群の定義");
     await header.getByRole("button", { name: "検索", exact: true }).click();
-    await expect(page.getByRole("button", { name: /群論を折りたたむ/ })).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: /群論を折りたたむ/ }),
+    ).toBeVisible();
 
     await header.getByRole("button", { name: "全体で検索" }).click();
-    await expect(page).toHaveURL(/\/atlas\/ja\/search\/\?q=%E7%BE%A4%E3%81%AE%E5%AE%9A%E7%BE%A9/);
+    await expect(page).toHaveURL(
+      /\/atlas\/ja\/search\/\?q=%E7%BE%A4%E3%81%AE%E5%AE%9A%E7%BE%A9/,
+    );
   });
 
   test("漢字記事に専用の見出し・表スタイルが適用される", async ({ page }) => {
@@ -193,9 +204,7 @@ test.describe("学習サイト", () => {
       ]);
       expect(mainBox).not.toBeNull();
       expect(recentBox).not.toBeNull();
-      expect(Math.abs((mainBox?.y ?? 0) - (recentBox?.y ?? 0))).toBeLessThan(
-        8,
-      );
+      expect(Math.abs((mainBox?.y ?? 0) - (recentBox?.y ?? 0))).toBeLessThan(8);
     }
   });
 
@@ -214,9 +223,10 @@ test.describe("学習サイト", () => {
         }),
       );
     });
-    await expect(
-      page.locator("[data-map-subject-link]"),
-    ).toHaveAttribute("href", /\/atlas\/ja\/mathematics\/\?view=map$/);
+    await expect(page.locator("[data-map-subject-link]")).toHaveAttribute(
+      "href",
+      /\/atlas\/ja\/mathematics\/\?view=map$/,
+    );
     await page.getByRole("tab", { name: "リスト表示" }).click();
     await expect(page).toHaveURL(
       /\/atlas\/ja\/mathematics\/group-theory\/\?view=list$/,
@@ -913,7 +923,9 @@ test.describe("学習サイト", () => {
     await expect(page.getByLabel(/目的地点/)).not.toBeVisible();
 
     await header.getByRole("button", { name: "全体で検索" }).click();
-    await expect(page).toHaveURL(/\/atlas\/ja\/search\/\?q=%E7%BE%A4%E3%81%AE%E5%AE%9A%E7%BE%A9/);
+    await expect(page).toHaveURL(
+      /\/atlas\/ja\/search\/\?q=%E7%BE%A4%E3%81%AE%E5%AE%9A%E7%BE%A9/,
+    );
   });
 
   test("スマートフォンでは学習地図とページスクロールを切り替えられる", async ({
