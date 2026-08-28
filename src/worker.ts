@@ -31,6 +31,10 @@ interface Env {
   [key: `DISCORD_REPORT_WEBHOOK_${string}`]: string | undefined;
   /** 分野別通知先が未設定の場合だけ使う既定の通知先。 */
   DISCORD_REPORT_WEBHOOK_URL?: string;
+  /** 問題報告を運営Workerへ中継するURL。値は公開設定でよい。 */
+  ARTICLE_REPORT_INGEST_URL?: string;
+  /** 問題報告を運営Workerへ中継する共有Secret。Cloudflare Secretに登録する。 */
+  ARTICLE_REPORT_INGEST_TOKEN?: string;
   /** 報告者ハッシュのソルト。Cloudflare の Secret として登録する。 */
   REPORT_IP_HASH_SALT?: string;
 }
@@ -210,6 +214,17 @@ type DiscordReport = {
   reportType: string;
 };
 
+type ArticleReportRelay = DiscordReport & {
+  reportId: string;
+  articleId: string;
+  details: string;
+  contact: string;
+  locale: string;
+  reporterHash: string;
+  contentHash: string;
+  createdAt: string;
+};
+
 const discordWebhookSecretName = (subject: string) =>
   `DISCORD_REPORT_WEBHOOK_${subject
     .toUpperCase()
@@ -271,6 +286,44 @@ async function notifyDiscord(env: Env, report: DiscordReport): Promise<void> {
     } catch {
       // 通知失敗は報告保存に影響させない。Webhook URLもログへ出さない。
     }
+  }
+}
+
+/**
+ * 管理Workerの運営用D1へ問題報告を中継する。公開WorkerのSecretやD1を
+ * 管理画面へ直接公開せず、共有Secretで保護した内部APIだけを呼び出す。
+ */
+async function relayArticleReport(
+  env: Env,
+  report: ArticleReportRelay,
+): Promise<void> {
+  const ingestUrl = env.ARTICLE_REPORT_INGEST_URL?.trim();
+  const ingestToken = env.ARTICLE_REPORT_INGEST_TOKEN?.trim();
+  if (!ingestUrl || !ingestToken) return;
+  try {
+    const endpoint = new URL(ingestUrl);
+    if (
+      endpoint.protocol !== "https:" &&
+      !(endpoint.hostname === "localhost" || endpoint.hostname === "127.0.0.1")
+    ) {
+      return;
+    }
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-atlasez-article-report-token": ingestToken,
+      },
+      body: JSON.stringify(report),
+    });
+    if (!response.ok) {
+      console.error("Article report admin relay failed", response.status);
+    }
+  } catch (error) {
+    console.error(
+      "Article report admin relay error",
+      error instanceof Error ? error.name : "unknown",
+    );
   }
 }
 
@@ -382,13 +435,15 @@ async function saveArticleReport(
     return json({ error: "同じ内容の報告はすでに受け付けています。" }, 409);
   }
 
+  const reportId = crypto.randomUUID();
+  const createdAt = new Date().toISOString();
   await env.REPORTS.prepare(
     `INSERT INTO article_reports
       (id, article_title, article_url, article_id, subject, category, report_type, details, contact, locale, reporter_hash, content_hash, created_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   )
     .bind(
-      crypto.randomUUID(),
+      reportId,
       articleTitle,
       articleUrl,
       articleId || null,
@@ -400,18 +455,32 @@ async function saveArticleReport(
       locale,
       reporterHash,
       contentHash,
-      new Date().toISOString(),
+      createdAt,
     )
     .run();
 
+  const notification = {
+    articleTitle,
+    articleUrl,
+    subject,
+    category,
+    reportType,
+  };
   ctx.waitUntil(
-    notifyDiscord(env, {
-      articleTitle,
-      articleUrl,
-      subject,
-      category,
-      reportType,
-    }),
+    Promise.all([
+      notifyDiscord(env, notification),
+      relayArticleReport(env, {
+        ...notification,
+        reportId,
+        articleId,
+        details,
+        contact,
+        locale,
+        reporterHash,
+        contentHash,
+        createdAt,
+      }),
+    ]),
   );
 
   return json({ ok: true }, 201);
