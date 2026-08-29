@@ -17,6 +17,10 @@ interface Props {
   title: string;
   description: string;
   ogType?: "website" | "article";
+  ogImage?: string;
+  ogImageWidth?: number;
+  ogImageHeight?: number;
+  ogImageType?: string;
   alternates?: AlternateLink[];
   structuredData?: object;
   /** 言語切替リンク先（省略時は各ロケールの総合ホーム） */
@@ -29,6 +33,10 @@ const {
   title,
   description,
   ogType,
+  ogImage,
+  ogImageWidth,
+  ogImageHeight,
+  ogImageType,
   alternates = [],
   structuredData,
   localeSwitchHrefs = {},
@@ -66,6 +74,10 @@ const resolvedLocaleSwitchHrefs = {
       title={`${title} | ${t(locale, "siteName")}`}
       description={description}
       ogType={ogType}
+      ogImage={ogImage}
+      ogImageWidth={ogImageWidth}
+      ogImageHeight={ogImageHeight}
+      ogImageType={ogImageType}
       alternates={alternates}
       structuredData={structuredData}
       noindex={noindex}
