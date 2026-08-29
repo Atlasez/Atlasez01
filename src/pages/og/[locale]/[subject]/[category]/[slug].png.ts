@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { pathToFileURL } from "node:url";
 import sharp from "sharp";
 import {
   getPublishedArticles,
@@ -16,13 +17,9 @@ const escapeXml = (value: string) =>
 const logoDataUri = `data:image/png;base64,${readFileSync(
   "public/images/atlasez-logo-og.png",
 ).toString("base64")}`;
-const ogFontDataUris = {
-  700: `data:font/woff2;base64,${readFileSync(
-    "public/fonts/NotoSansJP-700-subset.woff2",
-  ).toString("base64")}`,
-  800: `data:font/woff2;base64,${readFileSync(
-    "public/fonts/NotoSansJP-800-subset.woff2",
-  ).toString("base64")}`,
+const ogFontFileUrls = {
+  700: pathToFileURL("public/fonts/NotoSansJP-700-subset.woff2").href,
+  800: pathToFileURL("public/fonts/NotoSansJP-800-subset.woff2").href,
 };
 
 /** Keep the title readable in a 1200×630 social preview. */
@@ -66,13 +63,13 @@ const image = (title: string, subject: string, category: string) => {
         font-family: "Atlasez Noto Sans JP";
         font-style: normal;
         font-weight: 700;
-        src: url(${ogFontDataUris[700]}) format("woff2");
+        src: url(${ogFontFileUrls[700]}) format("woff2");
       }
       @font-face {
         font-family: "Atlasez Noto Sans JP";
         font-style: normal;
         font-weight: 800;
-        src: url(${ogFontDataUris[800]}) format("woff2");
+        src: url(${ogFontFileUrls[800]}) format("woff2");
       }
     </style>
   </defs>
