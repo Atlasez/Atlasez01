@@ -16,6 +16,14 @@ const escapeXml = (value: string) =>
 const logoDataUri = `data:image/png;base64,${readFileSync(
   "public/images/atlasez-logo-og.png",
 ).toString("base64")}`;
+const ogFontDataUris = {
+  700: `data:font/woff2;base64,${readFileSync(
+    "public/fonts/NotoSansJP-700-subset.woff2",
+  ).toString("base64")}`,
+  800: `data:font/woff2;base64,${readFileSync(
+    "public/fonts/NotoSansJP-800-subset.woff2",
+  ).toString("base64")}`,
+};
 
 /** Keep the title readable in a 1200×630 social preview. */
 const titleLines = (title: string) => {
@@ -36,7 +44,7 @@ const image = (title: string, subject: string, category: string) => {
   const titleMarkup = lines
     .map(
       (line, index) =>
-        `<text x="92" y="${275 + index * 82}" font-family="Hiragino Kaku Gothic ProN, Noto Sans JP, sans-serif" font-size="76" font-weight="800" fill="#18324a">${escapeXml(line)}</text>`,
+        `<text x="92" y="${275 + index * 82}" font-family="Atlasez Noto Sans JP, sans-serif" font-size="76" font-weight="800" fill="#18324a">${escapeXml(line)}</text>`,
     )
     .join("");
   const label = [subject, category].filter(Boolean).join(" / ");
@@ -53,6 +61,20 @@ const image = (title: string, subject: string, category: string) => {
       <stop offset="0" stop-color="#1478ab" />
       <stop offset="1" stop-color="#073b62" />
     </linearGradient>
+    <style>
+      @font-face {
+        font-family: "Atlasez Noto Sans JP";
+        font-style: normal;
+        font-weight: 700;
+        src: url(${ogFontDataUris[700]}) format("woff2");
+      }
+      @font-face {
+        font-family: "Atlasez Noto Sans JP";
+        font-style: normal;
+        font-weight: 800;
+        src: url(${ogFontDataUris[800]}) format("woff2");
+      }
+    </style>
   </defs>
   <rect width="1200" height="630" fill="url(#background)" />
   <circle cx="1050" cy="90" r="260" fill="#438fb9" opacity=".72" />
@@ -61,10 +83,10 @@ const image = (title: string, subject: string, category: string) => {
   <rect x="70" y="70" width="1060" height="490" rx="28" fill="#fff" />
   <rect x="70" y="70" width="14" height="490" rx="7" fill="url(#accent)" />
   <image href="${logoDataUri}" x="750" y="95" width="360" height="360" preserveAspectRatio="xMidYMid meet" />
-  <text x="92" y="190" font-family="Hiragino Kaku Gothic ProN, Noto Sans JP, sans-serif" font-size="22" fill="#5b7384">${escapeXml(label)}</text>
+  <text x="92" y="190" font-family="Atlasez Noto Sans JP, sans-serif" font-size="22" font-weight="700" fill="#5b7384">${escapeXml(label)}</text>
   ${titleMarkup}
   <line x1="92" y1="496" x2="1108" y2="496" stroke="#d7e6ed" stroke-width="2" />
-  <text x="92" y="540" font-family="Hiragino Kaku Gothic ProN, Noto Sans JP, sans-serif" font-size="24" font-weight="700" fill="#18324a">未来の学びを創る。学びで未来を創る。</text>
+  <text x="92" y="540" font-family="Atlasez Noto Sans JP, sans-serif" font-size="24" font-weight="700" fill="#18324a">未来の学びを創る。学びで未来を創る。</text>
 </svg>`;
 };
 
