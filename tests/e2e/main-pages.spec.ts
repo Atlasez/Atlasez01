@@ -58,7 +58,7 @@ test.describe("公式サイト", () => {
     await expect(page.locator("h1")).toContainText("ベータ版");
   });
 
-  test("表示設定を右端に置き、応募導線をGoogleフォームへつなぐ", async ({
+  test("表示設定を右端に置き、応募導線を運営サイトへつなぐ", async ({
     page,
   }) => {
     await page.goto("./");
@@ -72,8 +72,8 @@ test.describe("公式サイト", () => {
 
     await page.goto("join/");
     await expect(
-      page.getByRole("link", { name: "応募フォームを開く（Googleフォーム）" }),
-    ).toHaveAttribute("href", "https://forms.gle/NMXFgxzasbBsf3gX6");
+      page.getByRole("link", { name: "応募フォームを開く（運営サイト）" }),
+    ).toHaveAttribute("href", "https://admin.atlasez.org/apply/atlas/");
   });
 });
 
@@ -92,6 +92,44 @@ test.describe("学習サイト", () => {
       /\/atlas\/ja\/mathematics\//,
     );
     await expect(page.getByText("準備中").first()).toBeVisible();
+  });
+
+  test("上部検索欄が表示中のタブに連動し、全体検索へ切り替えられる", async ({
+    page,
+  }) => {
+    await page.goto("atlas/ja/?view=tiles");
+    const header = page.locator("[data-header-search]");
+    const search = header.getByRole("searchbox");
+
+    await expect(search).toHaveAttribute(
+      "placeholder",
+      "分野名・カテゴリ名で検索",
+    );
+    await expect(
+      header.getByRole("button", { name: "全体で検索" }),
+    ).toBeVisible();
+    await search.fill("数学");
+    await header.getByRole("button", { name: "検索", exact: true }).click();
+    await expect(
+      page.locator(
+        "[data-view-panel='tiles'] [data-context-search-item]:visible",
+      ),
+    ).toHaveCount(1);
+
+    await page.getByRole("tab", { name: "学習地図" }).click();
+    await expect(search).toHaveAttribute("placeholder", "地図上の概念を検索");
+    await expect(page.locator(".map-breadcrumb")).toHaveCount(0);
+    await expect(page.locator("[data-map-search]")).toHaveCount(0);
+    await search.fill("群の定義");
+    await header.getByRole("button", { name: "検索", exact: true }).click();
+    await expect(
+      page.getByRole("button", { name: /群論を折りたたむ/ }),
+    ).toBeVisible();
+
+    await header.getByRole("button", { name: "全体で検索" }).click();
+    await expect(page).toHaveURL(
+      /\/atlas\/ja\/search\/\?q=%E7%BE%A4%E3%81%AE%E5%AE%9A%E7%BE%A9/,
+    );
   });
 
   test("漢字記事に専用の見出し・表スタイルが適用される", async ({ page }) => {
@@ -146,6 +184,30 @@ test.describe("学習サイト", () => {
     );
   });
 
+  test("分野・カテゴリでも更新情報を右カラムの同じ位置に置く", async ({
+    page,
+  }) => {
+    for (const path of [
+      "atlas/ja/mathematics/",
+      "atlas/ja/mathematics/group-theory/",
+    ]) {
+      await page.goto(path);
+      const main = path.includes("group-theory")
+        ? page.locator(".category-main")
+        : page.locator(".subject-main");
+      await expect(page.locator(".recent")).toBeVisible();
+      await expect(page.locator(".recent h2")).toHaveCount(2);
+      await expect(page.locator(".highlight-panel")).toHaveCount(0);
+      const [mainBox, recentBox] = await Promise.all([
+        main.boundingBox(),
+        page.locator(".recent").boundingBox(),
+      ]);
+      expect(mainBox).not.toBeNull();
+      expect(recentBox).not.toBeNull();
+      expect(Math.abs((mainBox?.y ?? 0) - (recentBox?.y ?? 0))).toBeLessThan(8);
+    }
+  });
+
   test("学習地図で選んだカテゴリの表示タブへ遷移し、分野地図へ戻れる", async ({
     page,
   }) => {
@@ -161,12 +223,32 @@ test.describe("学習サイト", () => {
         }),
       );
     });
-    await expect(
-      page.getByRole("link", { name: "数学の学習地図を開く" }),
-    ).toHaveAttribute("href", /\/atlas\/ja\/mathematics\/\?view=map$/);
+    await expect(page.locator("[data-map-subject-link]")).toHaveAttribute(
+      "href",
+      /\/atlas\/ja\/mathematics\/\?view=map$/,
+    );
     await page.getByRole("tab", { name: "リスト表示" }).click();
     await expect(page).toHaveURL(
       /\/atlas\/ja\/mathematics\/group-theory\/\?view=list$/,
+    );
+  });
+
+  test("総合学習地図の分野名から分野地図へ移動できる", async ({ page }) => {
+    await page.goto("atlas/ja/?view=map");
+    const mathematics = page.getByRole("link", {
+      name: "数学の学習地図を開く",
+      exact: true,
+    });
+    await expect(mathematics).toBeVisible();
+    await expect(mathematics).toHaveAttribute(
+      "href",
+      "/atlas/ja/mathematics/?view=map",
+    );
+    await mathematics.click();
+    await expect(page).toHaveURL(/\/atlas\/ja\/mathematics\/\?view=map$/);
+    await expect(page.getByRole("tab", { name: "学習地図" })).toHaveAttribute(
+      "aria-selected",
+      "true",
     );
   });
 
@@ -231,6 +313,12 @@ test.describe("学習サイト", () => {
   }) => {
     await page.goto("atlas/ja/mathematics/");
 
+    expect(await page.locator("[data-view-tab]").allTextContents()).toEqual([
+      "タイル表示",
+      "リスト表示",
+      "学習地図",
+    ]);
+
     await expect(page.getByRole("tab", { name: "タイル表示" })).toHaveAttribute(
       "aria-selected",
       "true",
@@ -241,7 +329,7 @@ test.describe("学習サイト", () => {
 
     await page.getByRole("tab", { name: "学習地図" }).click();
     await expect(page.locator("[data-view-panel='map']")).toBeVisible();
-    await expect(page.locator("[data-map-subject]")).toHaveValue("mathematics");
+    await expect(page.locator("[data-map-subject]")).toHaveCount(0);
 
     await page.getByRole("tab", { name: "リスト表示" }).click();
     await expect(page.locator(".toc-category-details[open]")).toHaveCount(0);
@@ -281,6 +369,30 @@ test.describe("学習サイト", () => {
     ).toBeVisible();
   });
 
+  test("スマホの目次ボタンは外寸を保ったまま文字だけ少し大きくする", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("atlas/ja/mathematics/group-theory/group-definition/");
+    const trigger = page.locator("[data-mobile-toc]");
+    await expect(trigger).toBeVisible();
+    const metrics = await trigger.evaluate((element) => {
+      const label = element.querySelector(".mobile-toc-label");
+      const rect = element.getBoundingClientRect();
+      const style = label ? getComputedStyle(label) : null;
+      return {
+        width: rect.width,
+        height: rect.height,
+        display: style?.display,
+        transform: style?.transform,
+      };
+    });
+    expect(metrics.width).toBeGreaterThan(0);
+    expect(metrics.height).toBeGreaterThan(0);
+    expect(metrics.display).toBe("inline-block");
+    expect(metrics.transform).not.toBe("none");
+  });
+
   test("数学記事の証明を一括で開閉できる", async ({ page }) => {
     await page.goto("atlas/ja/mathematics/group-theory/group-definition/");
     const toggle = page.locator("[data-proof-toggle]");
@@ -289,14 +401,32 @@ test.describe("学習サイト", () => {
     await expect(toggle).toBeVisible();
     await expect(proofs).not.toHaveCount(0);
     await expect(openProofs).toHaveCount(0);
-    await expect(toggle.locator("[data-proof-indicator]")).toHaveText("▶");
+    await expect(toggle.locator("[data-proof-indicator]")).toHaveText("▼");
+    const triangleStyles = await page.evaluate(() => ({
+      allProofs: getComputedStyle(
+        document.querySelector("[data-proof-indicator]")!,
+      ).transform,
+      singleProof: getComputedStyle(
+        document.querySelector("details.proof-details > summary")!,
+        "::before",
+      ).transform,
+    }));
+    const rotation = (transform: string) =>
+      transform
+        .replace(/^matrix\(/, "")
+        .split(",")
+        .slice(0, 4)
+        .join(",");
+    expect(rotation(triangleStyles.allProofs)).toBe(
+      rotation(triangleStyles.singleProof),
+    );
     await toggle.click();
     await expect(openProofs).toHaveCount(await proofs.count());
     await expect(toggle).toHaveText("▼ 証明を閉じる");
     await expect(toggle.locator("[data-proof-indicator]")).toHaveText("▼");
     await toggle.click();
     await expect(openProofs).toHaveCount(0);
-    await expect(toggle).toHaveText("▶ 証明を展開");
+    await expect(toggle).toHaveText("▼ 証明を展開");
 
     await page.setViewportSize({ width: 390, height: 844 });
     await page.reload();
@@ -408,7 +538,7 @@ test.describe("学習サイト", () => {
   test("数学記事の証明矢印・folding境界・命題枠を整える", async ({ page }) => {
     await page.goto("atlas/ja/mathematics/module-theory/module-homomorphisms/");
     const toggle = page.locator("[data-proof-toggle]");
-    await expect(toggle).toHaveText("▶ 証明を展開");
+    await expect(toggle).toHaveText("▼ 証明を展開");
     await expect(toggle).toHaveCSS("justify-content", "center");
     await expect(page.locator("details.folding").first()).toHaveCSS(
       "border-top-width",
@@ -728,7 +858,7 @@ test.describe("学習サイト", () => {
 
     await page.getByRole("tab", { name: "学習地図" }).click();
     await expect(page.locator("[data-map-view-panel]")).toBeVisible();
-    await expect(page.locator("[data-map-subject]")).toHaveValue("mathematics");
+    await expect(page.locator("[data-map-subject]")).toHaveCount(0);
 
     await page.getByRole("tab", { name: "リスト表示" }).click();
     await expect(list).toHaveAttribute("data-view", "list");
@@ -779,10 +909,13 @@ test.describe("学習サイト", () => {
       )
       .toBe(firstWheelZoom + 5);
 
-    // 共通検索は記事検索、地図内検索は概念検索として役割を明示する。
-    await expect(page.getByLabel("地図上の概念を検索")).toBeVisible();
-    await page.locator("[data-map-search]").fill("群の定義");
-    await page.locator("[data-map-search]").dispatchEvent("change");
+    // ヘッダー検索は地図表示中だけ概念検索として働く。
+    const header = page.locator("[data-header-search]");
+    const search = header.getByRole("searchbox");
+    await expect(search).toHaveAttribute("placeholder", "地図上の概念を検索");
+    await expect(page.locator("[data-map-search]")).toHaveCount(0);
+    await search.fill("群の定義");
+    await header.getByRole("button", { name: "検索", exact: true }).click();
     const fold = page.getByRole("button", { name: /群論を折りたたむ/ });
     await expect(fold).toBeVisible();
     await fold.click();
@@ -812,6 +945,11 @@ test.describe("学習サイト", () => {
     );
     await page.keyboard.press("Escape");
     await expect(page.getByLabel(/目的地点/)).not.toBeVisible();
+
+    await header.getByRole("button", { name: "全体で検索" }).click();
+    await expect(page).toHaveURL(
+      /\/atlas\/ja\/search\/\?q=%E7%BE%A4%E3%81%AE%E5%AE%9A%E7%BE%A9/,
+    );
   });
 
   test("スマートフォンでは学習地図とページスクロールを切り替えられる", async ({
@@ -855,7 +993,7 @@ test.describe("学習サイト", () => {
   }) => {
     await page.goto("atlas/ja/map/");
     await page.getByRole("button", { name: "学習ルート検索" }).click();
-    await page.locator("[data-route-subject]").selectOption({ label: "数学" });
+    await expect(page.locator("[data-route-subject]")).toHaveCount(0);
     await page.getByLabel(/開始地点/).selectOption({ label: "線形空間" });
     await page
       .getByLabel(/目的地点/)
@@ -902,6 +1040,53 @@ test.describe("学習サイト", () => {
     await expect(results).toContainText("数学記事です");
     await expect(results).not.toContainText("math.group-theory");
     await expect(page.locator("[data-search-count]")).toContainText("件の記事");
+  });
+
+  test("検索の分野とカテゴリを複数選択でき、カテゴリ候補が分野に連動する", async ({
+    page,
+  }) => {
+    await page.goto("atlas/ja/search/");
+    const subject = page.locator('select[data-filter-name="subject"]');
+    const category = page.locator('select[data-filter-name="category"]');
+
+    await expect(subject).toHaveAttribute("multiple", "");
+    await expect(category).toHaveAttribute("multiple", "");
+    await subject.selectOption(["化学", "数学"]);
+
+    const categories = await category
+      .locator("option")
+      .evaluateAll((options) =>
+        options.map((option) => (option as HTMLOptionElement).value),
+      );
+    expect(categories).toEqual(
+      expect.arrayContaining(["化学反応", "群論", "集合論"]),
+    );
+    expect(categories).not.toContain("ニュートン力学");
+
+    await category.selectOption(["化学反応", "群論"]);
+    await expect(category.locator("option:checked")).toHaveCount(2);
+  });
+
+  test("フッターの言語切替に全対応言語が表示され、同じページで反映される", async ({
+    page,
+  }) => {
+    await page.goto("atlas/ja/");
+    const footer = page.locator("[data-lang-switch]");
+    await expect(footer.locator("[data-lang-item]")).toHaveCount(4);
+    await footer.locator("summary").click();
+
+    const dimensions = await footer.evaluate((element) => {
+      const wrapper = element.parentElement?.getBoundingClientRect();
+      const button = element.querySelector("summary")?.getBoundingClientRect();
+      return {
+        wrapperHeight: wrapper?.height ?? 0,
+        buttonHeight: button?.height ?? 0,
+      };
+    });
+    expect(dimensions.wrapperHeight).toBeLessThan(dimensions.buttonHeight + 8);
+
+    await footer.locator('[data-ui-language="zh"]').click();
+    await expect(page.locator("html")).toHaveAttribute("lang", "zh");
   });
 
   test("スマートフォンでも行き先が畳まれずに出ている", async ({ page }) => {

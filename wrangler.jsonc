@@ -17,7 +17,7 @@
     },
   ],
   "vars": {
-    "DISCORD_REPORT_SYNC_URL": "https://atlasez-admin.ukyoukay0.workers.dev/internal/article-report-discord",
+    "ARTICLE_REPORT_INGEST_URL": "https://atlasez-admin.ukyoukay0.workers.dev/internal/article-reports",
   },
   "assets": {
     "directory": "./dist",
