@@ -41,7 +41,7 @@ const image = (title: string, subject: string, category: string) => {
   const titleMarkup = lines
     .map(
       (line, index) =>
-        `<text x="92" y="${275 + index * 82}" font-family="Atlasez Noto Sans JP, sans-serif" font-size="76" font-weight="800" fill="#18324a">${escapeXml(line)}</text>`,
+        `<text x="92" y="${275 + index * 82}" font-family="Atlasez Noto Sans JP, sans-serif" font-size="76" font-weight="700" letter-spacing="2" fill="#18324a">${escapeXml(line)}</text>`,
     )
     .join("");
   const label = [subject, category].filter(Boolean).join(" / ");
