@@ -17,6 +17,7 @@ interface Props {
   description: string;
   lang?: string;
   ogType?: "website" | "article";
+  ogImage?: string;
   alternates?: AlternateLink[];
   structuredData?: object | undefined;
   noindex?: boolean;
@@ -26,6 +27,7 @@ const {
   title,
   description,
   ogType = "website",
+  ogImage: ogImageProp,
   alternates = [],
   structuredData,
   noindex = false,
@@ -33,7 +35,8 @@ const {
 
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const ogImage = new URL(
-  `${import.meta.env.BASE_URL.replace(/\/$/, "")}/images/og-default.svg`,
+  ogImageProp ??
+    `${import.meta.env.BASE_URL.replace(/\/$/, "")}/images/og-default.svg`,
   Astro.site,
 );
 ---
@@ -59,7 +62,7 @@ const ogImage = new URL(
 <meta property="og:type" content={ogType} />
 <meta property="og:url" content={canonical.href} />
 <meta property="og:image" content={ogImage.href} />
-<meta name="twitter:card" content="summary" />
+<meta name="twitter:card" content={ogImageProp ? "summary_large_image" : "summary"} />
 <meta name="twitter:title" content={title} />
 <meta name="twitter:description" content={description} />
 {
