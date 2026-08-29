@@ -11,6 +11,7 @@
     "new:article": "node scripts/new-article.mjs",
     "update:institutions": "node scripts/build-institution-directory.mjs",
     "build": "node scripts/write-build-info.mjs && astro build && npm run search:index",
+    "deploy:production": "node scripts/verify-production-deploy.mjs && npx wrangler deploy --config wrangler.jsonc",
     "verify:deploy-config": "node scripts/verify-deployment-config.mjs",
     "build:ci": "astro build",
     "search:index": "pagefind --site dist",

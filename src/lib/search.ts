@@ -13,7 +13,7 @@ export interface SearchResultItem {
 }
 
 export interface SearchFilters {
-  [name: string]: string | undefined;
+  [name: string]: string | string[] | undefined;
 }
 
 export interface SearchAdapter {
@@ -25,7 +25,7 @@ export interface SearchAdapter {
 interface PagefindModule {
   search(
     query: string,
-    options?: { filters?: Record<string, string> },
+    options?: { filters?: Record<string, string[]> },
   ): Promise<{
     results: {
       data: () => Promise<{
@@ -50,9 +50,10 @@ export async function createPagefindAdapter(
   pagefind.init();
   return {
     async search(query, filters) {
-      const activeFilters: Record<string, string> = {};
+      const activeFilters: Record<string, string[]> = {};
       for (const [k, v] of Object.entries(filters)) {
-        if (v) activeFilters[k] = v;
+        const values = Array.isArray(v) ? v.filter(Boolean) : v ? [v] : [];
+        if (values.length > 0) activeFilters[k] = values;
       }
       const res = await pagefind.search(query, {
         filters:

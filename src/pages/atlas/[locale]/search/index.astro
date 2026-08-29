@@ -3,13 +3,33 @@
 import AtlasLayout from "../../../../layouts/AtlasLayout.astro";
 import Breadcrumb from "../../../../components/Breadcrumb.astro";
 import { atlasPath, withBase } from "../../../../lib/site";
-import { t, LOCALES, localeNames, type Locale } from "../../../../lib/i18n";
+import {
+  localizedName,
+  t,
+  LOCALES,
+  localeNames,
+  type Locale,
+} from "../../../../lib/i18n";
+import { getPublishedSubjects } from "../../../../lib/content";
 
 export function getStaticPaths() {
   return LOCALES.map((locale) => ({ params: { locale } }));
 }
 
 const locale = Astro.params.locale as Locale;
+
+/** 選択した分野に応じてカテゴリを絞り込むための対応表。 */
+const categorySubjects: Record<string, string[]> = {};
+for (const subject of await getPublishedSubjects()) {
+  const subjectName = localizedName(subject.data.name, locale);
+  for (const category of subject.data.categories) {
+    const categoryName = localizedName(category.name, locale);
+    categorySubjects[categoryName] = [
+      ...(categorySubjects[categoryName] ?? []),
+      subjectName,
+    ];
+  }
+}
 
 /** Pagefindのフィルタ名 → ローカライズ済みラベル */
 const filterLabels: Record<string, string> = {
@@ -46,6 +66,7 @@ const filterLabels: Record<string, string> = {
       data-locale-name={localeNames[locale]}
       data-all-label={t(locale, "all")}
       data-filter-labels={JSON.stringify(filterLabels)}
+      data-category-subjects={JSON.stringify(categorySubjects)}
     >
       <label for="search-input">{t(locale, "searchPlaceholder")}</label>
       <div class="search-row">
@@ -95,6 +116,10 @@ const filterLabels: Record<string, string> = {
   .search-filters :global(label) {
     font-weight: 400;
     color: var(--text-secondary);
+  }
+  .search-filters :global(select[multiple]) {
+    min-width: 12rem;
+    min-height: 5.5rem;
   }
   .search-note {
     color: var(--text-secondary);
@@ -158,6 +183,66 @@ const filterLabels: Record<string, string> = {
   } catch {
     filterLabels = {};
   }
+  let categorySubjects: Record<string, string[]> = {};
+  try {
+    categorySubjects = JSON.parse(form?.dataset.categorySubjects ?? "{}");
+  } catch {
+    categorySubjects = {};
+  }
+
+  const filterOrder = ["subject", "category", "locale"];
+
+  function selectedValues(select: HTMLSelectElement): string[] {
+    return [...select.selectedOptions]
+      .map((option) => option.value)
+      .filter(Boolean);
+  }
+
+  function normalizeMultipleSelect(select: HTMLSelectElement): void {
+    if (!select.multiple) return;
+    const selected = [...select.selectedOptions];
+    const all = selected.find((option) => option.value === "");
+    if (all) {
+      for (const option of select.options) option.selected = option === all;
+    } else if (selected.length === 0 && select.options[0]) {
+      select.options[0].selected = true;
+    }
+  }
+
+  function refreshCategoryOptions(
+    available: Record<string, Record<string, number>>,
+  ): void {
+    const subjectSelect = filtersEl?.querySelector<HTMLSelectElement>(
+      'select[data-filter-name="subject"]',
+    );
+    const categorySelect = filtersEl?.querySelector<HTMLSelectElement>(
+      'select[data-filter-name="category"]',
+    );
+    if (!subjectSelect || !categorySelect) return;
+
+    const subjects = selectedValues(subjectSelect);
+    const selectedCategories = new Set(selectedValues(categorySelect));
+    const categories = Object.entries(available.category ?? {}).filter(
+      ([category]) =>
+        subjects.length === 0 ||
+        (categorySubjects[category] ?? []).some((subject) =>
+          subjects.includes(subject),
+        ),
+    );
+    categorySelect.replaceChildren();
+    const all = document.createElement("option");
+    all.value = "";
+    all.textContent = allLabel;
+    categorySelect.append(all);
+    for (const [value, total] of categories) {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = `${value} (${total})`;
+      option.selected = selectedCategories.has(value);
+      categorySelect.append(option);
+    }
+    normalizeMultipleSelect(categorySelect);
+  }
 
   async function init(): Promise<void> {
     if (!form) return;
@@ -167,7 +252,13 @@ const filterLabels: Record<string, string> = {
       // フィルタUIを動的生成
       const available = await adapter.filters();
       if (filtersEl) {
-        for (const [name, values] of Object.entries(available)) {
+        const names = [
+          ...filterOrder.filter((name) => available[name]),
+          ...Object.keys(available).filter((name) => !filterOrder.includes(name)),
+        ];
+        for (const name of names) {
+          const values = available[name];
+          if (!values) continue;
           const id = `filter-${name}`;
           const wrap = document.createElement("span");
           const label = document.createElement("label");
@@ -176,6 +267,7 @@ const filterLabels: Record<string, string> = {
           const select = document.createElement("select");
           select.id = id;
           select.dataset.filterName = name;
+          select.multiple = name === "subject" || name === "category";
           const all = document.createElement("option");
           all.value = "";
           all.textContent = allLabel;
@@ -190,10 +282,15 @@ const filterLabels: Record<string, string> = {
           if (name === "locale" && localeName && values[localeName]) {
             select.value = localeName;
           }
-          select.addEventListener("change", run);
+          select.addEventListener("change", () => {
+            normalizeMultipleSelect(select);
+            if (name === "subject") refreshCategoryOptions(available);
+            void run();
+          });
           wrap.append(label, select);
           filtersEl.append(wrap);
         }
+        refreshCategoryOptions(available);
       }
     } catch {
       /* 開発サーバーではインデックスがないため案内文を残す */
@@ -214,10 +311,14 @@ const filterLabels: Record<string, string> = {
       }
       return;
     }
-    const filters: Record<string, string | undefined> = {};
+    const filters: Record<string, string | string[] | undefined> = {};
     filtersEl
       ?.querySelectorAll<HTMLSelectElement>("select")
-      .forEach((s) => (filters[s.dataset.filterName ?? ""] = s.value));
+      .forEach((s) => {
+        filters[s.dataset.filterName ?? ""] = s.multiple
+          ? selectedValues(s)
+          : s.value;
+      });
     const items = await adapter.search(q, filters);
     resultsEl.innerHTML = "";
     for (const item of items) {

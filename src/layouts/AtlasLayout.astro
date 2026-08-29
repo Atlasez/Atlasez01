@@ -6,7 +6,7 @@ import SettingsMenu from "../components/SettingsMenu.astro";
 import LangSwitch from "../components/LangSwitch.astro";
 import HeaderSearch from "../components/HeaderSearch.astro";
 import { withBase, atlasPath, ORG } from "../lib/site";
-import { t, type Locale } from "../lib/i18n";
+import { LOCALES, t, type Locale } from "../lib/i18n";
 
 interface AlternateLink {
   hreflang: string;
@@ -53,6 +53,10 @@ const guide = {
   href: atlasPath(locale, "guide"),
 };
 const currentPath = Astro.url.pathname;
+const resolvedLocaleSwitchHrefs = {
+  ...Object.fromEntries(LOCALES.map((l) => [l, atlasPath(l)])),
+  ...localeSwitchHrefs,
+};
 ---
 
 <!doctype html>
@@ -142,7 +146,7 @@ const currentPath = Astro.url.pathname;
           </p>
         </div>
         <div class="atlas-footer-language">
-          <LangSwitch locale={locale} hrefs={localeSwitchHrefs} />
+          <LangSwitch locale={locale} hrefs={resolvedLocaleSwitchHrefs} />
         </div>
       </div>
       <p class="container atlas-copyright">© 2024-2026 Atlasez</p>
@@ -259,6 +263,7 @@ const currentPath = Astro.url.pathname;
   .atlas-footer-language {
     display: flex;
     justify-content: flex-end;
+    align-self: start;
   }
   .atlas-copyright {
     margin-top: var(--space-4);
