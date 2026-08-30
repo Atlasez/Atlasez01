@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { readFile, readdir, writeFile } from "node:fs/promises";
 import { join, relative } from "node:path";
+import { ARTICLE_DIRECTIVE_NAMES } from "../src/lib/article-directives.mjs";
 
 const ROOT = "src/content/articles/jpn/mathematics";
 const WRITE = process.argv.includes("--write");
@@ -27,8 +28,11 @@ const legacyEnvironmentStart = /^\s*\\begin\{(rem|proof|supp|folding)\}\s*$/u;
 const legacyEnvironmentEnd = /^\s*\\end\{(rem|proof|supp|folding)\}\s*$/u;
 const legacyDivStart =
   /^\s*<div\s+class="(folding|supp|rem)"(?:\s+data-(?:summary|title)="([^"]*)")?\s*>\s*$/u;
-const directiveStart =
-  /^\s*(:{3,4})\s*(proof|folding|rem|supp)(?:\[[^\]]*\])?(?:\s+.*?)?\s*$/u;
+const directiveNames = [...ARTICLE_DIRECTIVE_NAMES].join("|");
+const directiveStart = new RegExp(
+  `^\\s*(:{3,4})\\s*(${directiveNames})(?:\\[[^\\]]*\\])?(?:\\s+.*?)?\\s*$`,
+  "u",
+);
 const anyDirectiveStart = /^\s*(:{3,})\s*([A-Za-z][\w-]*)/u;
 const directiveEnd = /^\s*(:{3,4})\s*$/u;
 const anyDirectiveEnd = /^\s*(:{3,})\s*$/u;
@@ -48,9 +52,9 @@ function validateDirectives(source, file) {
     const start = line.match(directiveStart);
     if (start) {
       const parent = stack.at(-1);
-      if (parent && start[1].length >= parent.fence) {
+      if (parent && start[1].length > parent.fence) {
         throw new Error(
-          `${file}:${index + 1}: 入れ子の directive は外側より短いコロン列で開始してください。`,
+          `${file}:${index + 1}: 入れ子の directive は外側より長いコロン列で開始できません。`,
         );
       }
       stack.push({ name: start[2], fence: start[1].length, line: index + 1 });

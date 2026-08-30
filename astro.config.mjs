@@ -6,7 +6,7 @@ import remarkDirective from "remark-directive";
 import remarkMath from "remark-math";
 import rehypeRaw from "rehype-raw";
 import rehypeMathjax from "rehype-mathjax/svg";
-import { renderArticleDirectives } from "./src/lib/markdown-directives.mjs";
+import { remarkArticleDirectives } from "./src/lib/article-directives.mjs";
 
 /**
  * 旧記事には Pandoc が出力した `<span class="math inline">\(...\)</span>`
@@ -265,7 +265,7 @@ export default defineConfig({
   ],
   markdown: {
     processor: unified({
-      remarkPlugins: [remarkMath, remarkDirective, renderArticleDirectives],
+      remarkPlugins: [remarkMath, remarkDirective, remarkArticleDirectives],
       rehypePlugins: [
         // Preserve legacy theorem/folding HTML and authored links before the
         // MathJax pass. Content is repository-controlled Markdown/HTML.
