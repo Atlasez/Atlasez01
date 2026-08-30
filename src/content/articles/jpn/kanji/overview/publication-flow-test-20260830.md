@@ -9,7 +9,7 @@ concepts:
   - id: kanji.culture.musical-instruments
 authors: [editorial-workspace]
 reviewers: [ukyoukay0@gmail.com]
-status: published
+status: draft
 createdAt: 2026-08-30
 updatedAt: 2026-08-30
 summary: 運営サイトから学習サイトへ公開する経路を確認するための検証用記事です。
