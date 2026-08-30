@@ -28,8 +28,8 @@ const legacyEnvironmentEnd = /^\s*\\end\{(rem|proof|supp|folding)\}\s*$/u;
 const legacyDivStart =
   /^\s*<div\s+class="(folding|supp|rem)"(?:\s+data-(?:summary|title)="([^"]*)")?\s*>\s*$/u;
 const directiveStart =
-  /^\s*(:{3,4})(proof|folding|rem|supp)(?:\[[^\]]*\])?\s*$/u;
-const anyDirectiveStart = /^\s*(:{3,})([A-Za-z][\w-]*)/u;
+  /^\s*(:{3,4})\s*(proof|folding|rem|supp)(?:\[[^\]]*\])?(?:\s+.*?)?\s*$/u;
+const anyDirectiveStart = /^\s*(:{3,})\s*([A-Za-z][\w-]*)/u;
 const directiveEnd = /^\s*(:{3,4})\s*$/u;
 const anyDirectiveEnd = /^\s*(:{3,})\s*$/u;
 const supplementStart = /^補足(?:[.。．:：]|\s|$)\s*/u;
