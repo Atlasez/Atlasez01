@@ -1277,6 +1277,31 @@ const structuredData = {
     max-width: 100%;
     vertical-align: middle;
   }
+  .article-body :global(.tikz-fallback) {
+    background: color-mix(in srgb, var(--background-secondary) 78%, transparent);
+    border: 1px solid var(--border-default);
+    border-left: 4px solid var(--border-strong);
+    border-radius: 0.45rem;
+    margin-block: 1.4rem;
+    padding: 0.75rem 0.9rem;
+    text-align: left;
+  }
+  .article-body :global(.tikz-fallback > summary) {
+    color: var(--text-primary);
+    cursor: pointer;
+    font-weight: 700;
+  }
+  .article-body :global(.tikz-fallback .tikz-error-message) {
+    color: var(--text-secondary);
+    font-size: 0.9em;
+    margin: 0.65rem 0;
+  }
+  .article-body :global(.tikz-fallback pre) {
+    margin: 0;
+    max-height: 20rem;
+    overflow: auto;
+    white-space: pre-wrap;
+  }
   /* folding の外枠は証明本文の左ガイド線と二重になるため持たせない。
      .proof-details-inner.folding-content の左borderは別ルールで維持する。 */
   .article-body :global(details.folding) { border: 0; border-radius: 0.45rem; margin-block: 1rem; overflow: hidden; }
