@@ -175,12 +175,18 @@ $$
 \left(\int_a^b f(x)\,dx\right)^2\le (b-a)\int_a^b f(x)^2\,dx
 $$
 
-    \begin{aligned}
-    \mathcal{L}(x,\lambda)
-      &= f(x)+\lambda g(x),\\
-    \nabla_x\mathcal{L}(x,\lambda)
-      &= \nabla f(x)+\lambda\nabla g(x)=0.
-    \end{aligned}
+$$
+\begin{aligned}
+\mathcal{L}(x,\lambda)
+  &= f(x)+\lambda g(x),\\
+\nabla_x\mathcal{L}(x,\lambda)
+  &= \nabla f(x)+\lambda\nabla g(x)=0.
+\end{aligned}
+$$
+
+```css
+.math-article__equation { overflow-x: auto; }
+```
 
 > **確認ポイント**：数式が文字化けしないこと、分数・添字がつぶれないこと、行列が横にはみ出しすぎないこと、画像の余白と角丸が自然であること、長文とコードブロックのコントラストが保たれること。
 
