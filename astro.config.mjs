@@ -6,7 +6,7 @@ import remarkDirective from "remark-directive";
 import remarkMath from "remark-math";
 import rehypeRaw from "rehype-raw";
 import rehypeMathjax from "rehype-mathjax/svg";
-import { renderArticleDirectives } from "./src/lib/markdown-directives.mjs";
+import { remarkArticleDirectives } from "./src/lib/article-directives.mjs";
 import { renderArticleTikz } from "./src/lib/markdown-tikz.mjs";
 
 /**
@@ -269,7 +269,7 @@ export default defineConfig({
       remarkPlugins: [
         remarkMath,
         remarkDirective,
-        renderArticleDirectives,
+        remarkArticleDirectives,
         renderArticleTikz,
       ],
       rehypePlugins: [

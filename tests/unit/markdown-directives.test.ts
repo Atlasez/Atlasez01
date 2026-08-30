@@ -1,14 +1,23 @@
 import { describe, expect, it } from "vitest";
 import { unified } from "unified";
 import remarkDirective from "remark-directive";
+import remarkMath from "remark-math";
 import remarkParse from "remark-parse";
-import { renderArticleDirectives } from "../../src/lib/markdown-directives.mjs";
+import {
+  parseArticleDirectiveMarker,
+  remarkArticleDirectives,
+} from "../../src/lib/article-directives.mjs";
 
 type TestNode = {
   value?: string;
   data?: {
     hName?: string;
-    hProperties?: { className?: string[]; role?: string };
+    hProperties?: {
+      className?: string[];
+      role?: string;
+      id?: string;
+      "data-statement-id"?: string;
+    };
   };
   children?: TestNode[];
 };
@@ -17,7 +26,8 @@ const parse = async (source: string) => {
   const processor = unified()
     .use(remarkParse)
     .use(remarkDirective)
-    .use(renderArticleDirectives);
+    .use(remarkMath)
+    .use(remarkArticleDirectives);
   return processor.run(processor.parse(source), { value: source });
 };
 
@@ -60,6 +70,37 @@ describe("math article directives", () => {
     expect(plainText(tree)).toBe(source);
   });
 
+  it("renders semantic directives emitted by the editor", async () => {
+    const tree = await parse(`:::defi タイトル$ab$ {#defi-id}
+
+定義本文
+
+:::`);
+    const root = tree as unknown as TestNode;
+    expect(plainText(root)).toContain('class="article-directive defi"');
+    expect(plainText(root)).toContain('data-statement-id="defi-id"');
+    expect(plainText(root)).toContain("タイトルab</span>定義本文");
+    expect(plainText(root)).toContain(
+      'data-authored-statement-title="タイトル$ab$"',
+    );
+  });
+
+  it("supports every semantic directive family used by the editor", async () => {
+    const source = ["defi", "prop", "lemma", "cor", "remark"]
+      .map((name) => `:::${name} 見出し\n\n本文\n\n:::`)
+      .join("\n\n");
+    const tree = (await parse(source)) as unknown as TestNode;
+    const rendered = plainText(tree);
+    expect(rendered.match(/data-directive="/gu)).toHaveLength(5);
+    expect(rendered).toContain('class="article-directive defi"');
+    expect(rendered).toContain('class="article-directive prop"');
+    expect(rendered).toContain('class="article-directive lemma"');
+    expect(rendered).toContain('class="article-directive cor"');
+    expect(rendered).toContain(
+      'class="article-directive article-directive-remark"',
+    );
+  });
+
   it("rejects unsupported container names", async () => {
     await expect(parse(":::unknown\n本文\n:::")).rejects.toThrow(
       "未対応の directive",
@@ -70,5 +111,43 @@ describe("math article directives", () => {
     await expect(parse(":::::proof\n本文 ◻\n:::::")).rejects.toThrow(
       "境界には `:::` または `::::`",
     );
+  });
+
+  it("allows same-width nested directives emitted by the editor", async () => {
+    const tree = await parse(
+      [
+        ":::defi 定義",
+        "",
+        ":::folding 補足",
+        "",
+        "本文",
+        ":::",
+        "",
+        ":::",
+      ].join("\n"),
+    );
+    expect(plainText(tree)).toContain('data-directive="defi"');
+    expect(plainText(tree)).toContain('data-directive="folding"');
+  });
+
+  it("renders a directive whose body has no blank line after its marker", async () => {
+    const tree = await parse(
+      ["::: remark", "補足の本文", "複数行の本文", ":::"].join("\n"),
+    );
+    expect(plainText(tree)).toContain(
+      'class="article-directive article-directive-remark"',
+    );
+    expect(plainText(tree)).toContain("補足の本文\n複数行の本文");
+  });
+
+  it("parses directive titles with an optional statement id", () => {
+    expect(
+      parseArticleDirectiveMarker(":::cor 系 $G$ {#cor-id}"),
+    ).toMatchObject({
+      fence: ":::",
+      name: "cor",
+      title: "系 $G$",
+      id: "cor-id",
+    });
   });
 });
