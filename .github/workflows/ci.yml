@@ -51,6 +51,8 @@ jobs:
         run: npm test
       - name: ビルド（下書きは除外される）
         run: npm run build
+      - name: 公開記事本文の空出力検査
+        run: npm run check:published-bodies
       - name: ビルドSHA検証
         run: |
           expected="$(git rev-parse HEAD)"

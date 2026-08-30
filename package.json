@@ -22,6 +22,7 @@
     "format:check": "prettier --check .",
     "validate:content": "astro build --config astro.config.mjs > /dev/null && node scripts/validate-content.mjs && node scripts/validate-article-media.mjs",
     "validate:media": "node scripts/validate-article-media.mjs",
+    "check:published-bodies": "node scripts/check-published-article-bodies.mjs dist",
     "test": "vitest run",
     "audit:math": "node scripts/audit-math.mjs",
     "migrate:math-directives": "node scripts/migrate-math-directives.mjs --write",
