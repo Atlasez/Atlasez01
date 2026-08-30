@@ -6,7 +6,7 @@ slug: math-typesetting-css-coverage-test-20260830
 subject: mathematics
 category: overview
 concepts:
-  - id: mathematics.testing.typesetting-css-coverage
+  - id: math.linear-algebra.vector-space
 authors: [editorial-workspace]
 reviewers: [ukyoukay0@gmail.com]
 status: published
