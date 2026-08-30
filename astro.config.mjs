@@ -8,6 +8,7 @@ import rehypeRaw from "rehype-raw";
 import rehypeMathjax from "rehype-mathjax/svg";
 import { remarkArticleDirectives } from "./src/lib/article-directives.mjs";
 import { renderArticleTikz } from "./src/lib/markdown-tikz.mjs";
+import { repairEditorFenceBoundaries } from "./src/lib/markdown-editor-recovery.mjs";
 
 /**
  * 旧記事には Pandoc が出力した `<span class="math inline">\(...\)</span>`
@@ -269,6 +270,7 @@ export default defineConfig({
       remarkPlugins: [
         remarkMath,
         remarkDirective,
+        repairEditorFenceBoundaries,
         remarkArticleDirectives,
         renderArticleTikz,
       ],
