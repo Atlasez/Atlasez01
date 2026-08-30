@@ -7,6 +7,7 @@ import remarkMath from "remark-math";
 import rehypeRaw from "rehype-raw";
 import rehypeMathjax from "rehype-mathjax/svg";
 import { remarkArticleDirectives } from "./src/lib/article-directives.mjs";
+import { renderArticleTikz } from "./src/lib/markdown-tikz.mjs";
 
 /**
  * 旧記事には Pandoc が出力した `<span class="math inline">\(...\)</span>`
@@ -265,7 +266,12 @@ export default defineConfig({
   ],
   markdown: {
     processor: unified({
-      remarkPlugins: [remarkMath, remarkDirective, remarkArticleDirectives],
+      remarkPlugins: [
+        remarkMath,
+        remarkDirective,
+        remarkArticleDirectives,
+        renderArticleTikz,
+      ],
       rehypePlugins: [
         // Preserve legacy theorem/folding HTML and authored links before the
         // MathJax pass. Content is repository-controlled Markdown/HTML.
