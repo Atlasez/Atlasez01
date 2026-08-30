@@ -9,7 +9,7 @@ concepts:
   - id: math.linear-algebra.vector-space
 authors: [editorial-workspace]
 reviewers: [ukyoukay0@gmail.com]
-status: published
+status: draft
 createdAt: 2026-08-30
 updatedAt: 2026-08-30
 summary: 数学の代表的な数式・長い式・行列・図表をまとめ、学習サイト公開後のCSSと組版を検証するテスト記事です。
