@@ -128,8 +128,7 @@ $$
         \draw(monoid)--(grp)node[below,midway]{(iii)};
         \draw(unimagma)--(loop)node[above,pos=0.4]{(iii)};
         \draw(semigrp)--(assoquasigrp)node[above,pos=0.4]{(iii')};
-        \draw(magma)--(quasigrp)node[above,mi
-        改行テストdway]{(iii')};
+        \draw(magma)--(quasigrp)node[above,midway]{(iii')}; % 改行テスト
     \end{scope}
     \end{scope}
     \draw[double distance=1.3pt,blue](grp)--(assoquasigrp)node[right,midway]{(ii)};
