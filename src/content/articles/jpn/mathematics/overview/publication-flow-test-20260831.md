@@ -9,7 +9,7 @@ concepts:
   - id: math.overview.what-is-mathematics
 authors: [editorial-workspace]
 reviewers: [yuta.k20030828@gmail.com]
-status: published
+status: draft
 createdAt: 2026-08-30
 updatedAt: 2026-08-30
 summary: 公開フローと学習サイト側の数式・本文CSSを確認するための一時テスト記事です。
