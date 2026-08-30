@@ -9,7 +9,7 @@ concepts:
   - id: math.overview.what-is-mathematics
 authors: [editorial-workspace]
 reviewers: [ukyoukay0@gmail.com]
-status: published
+status: draft
 createdAt: 2026-08-30
 updatedAt: 2026-08-30
 summary: 数学分野の枠を含むテスト記事
@@ -22,9 +22,9 @@ references: []
 ---
 
 # 枠のテスト
-## 折りたたみ・証明・注釈枠
+## 定義, 命題枠
 
-::: folding 定義枠
+:::defi タイトル$ab$ {#defi-id-test}
 
 定義の本文
 $$
@@ -32,7 +32,7 @@ $$
 $$
 :::
 
-::: folding 命題枠
+:::prop タイトル$ab$ {#prop-id-test}
 
 命題の本文
 $$
@@ -44,11 +44,11 @@ $$
 
 証明の内容
 
-定義枠を参照する本文
+[[ref:defi-id-test]]を用いる
 
 :::
 
-::: folding 補題枠
+:::lemma タイトル$ab$ {#lemma-id-test}
 
 本文
 $$
@@ -56,7 +56,7 @@ $$
 $$
 :::
 
-::: folding 系枠
+:::cor タイトル$ab$ {#cor-id-test}
 
 本文
 $$
@@ -64,7 +64,7 @@ $$
 $$
 :::
 
-:::: folding 入れ子テスト
+:::defi foldingテスト {#defi-id-test2}
 
 本文の中にfoldingが入る
 
@@ -86,9 +86,9 @@ $$
 
 :::
 
-::::
+:::
 
-::: rem 補足
+::: remark
 補足の内容
 折りたためるようにする？
 改行ができない
@@ -135,4 +135,81 @@ $$
     \draw[double distance=1.3pt,blue](grp)--(assoquasigrp)node[right,midway]{(ii)};
 \end{tikzpicture}
 
-```
+```# 枠のテスト
+## 定義, 命題枠
+
+:::defi タイトル$ab$ {#defi-id-test}
+
+定義の本文
+$$
+\sum_{i=1}^ni=\frac{n(n+1)}{2}
+$$
+:::
+
+:::prop タイトル$ab$ {#prop-id-test}
+
+命題の本文
+$$
+\sum_{i=1}^ni=\frac{n(n+1)}{2}
+$$
+:::
+
+::: proof
+
+証明の内容
+
+[[ref:defi-id-test]]を用いる
+
+:::
+
+:::lemma タイトル$ab$ {#lemma-id-test}
+
+本文
+$$
+\sum_{i=1}^ni=\frac{n(n+1)}{2}
+$$
+:::
+
+:::cor タイトル$ab$ {#cor-id-test}
+
+本文
+$$
+\sum_{i=1}^ni=\frac{n(n+1)}{2}
+$$
+:::
+
+:::defi foldingテスト {#defi-id-test2}
+
+本文の中にfoldingが入る
+
+::: folding タイトル
+
+折り畳みの内容
+
+:::
+
+::: folding タイトル
+
+折り畳みの内容
+
+:::
+
+::: folding タイトル
+
+折り畳みの内容
+
+:::
+
+:::
+
+::: remark
+補足の内容
+折りたためるようにする？
+改行ができない
+:::
+
+# 図のテスト
+## svg画像
+**【要修正】画像のアップロードができません**
+
+改行テスト
