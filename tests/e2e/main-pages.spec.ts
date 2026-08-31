@@ -468,7 +468,7 @@ test.describe("学習サイト", () => {
     await page.goto("atlas/ja/mathematics/overview/test-mathematics/");
     const reference = page.locator("a.math-statement-reference").first();
     await expect(reference).toHaveAttribute("href", "#defi-id-test");
-    await expect(reference).toHaveText("定義1");
+    await expect(reference).toHaveText("定義 1");
   });
 
   test("旧数学サイトから移行した図を読み込み、スマホ幅に収める", async ({
