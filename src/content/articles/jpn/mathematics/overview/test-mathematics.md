@@ -96,4 +96,4 @@ $$
 
 # 図のテスト
 ## svg画像
-**【要修正】画像のアップロードができません**
+**【要修正】画像のアップロードができません**![HE3KO02XwAEw8Wp.jpg](/images/editorial/2577d423-0979-4b3d-9a74-6f08bd2a00ce/HE3KO02XwAEw8Wp.jpg)
