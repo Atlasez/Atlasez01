@@ -2188,6 +2188,7 @@ const structuredData = {
         const title = wrapper.querySelector<HTMLElement>(":scope > p > .thmtitle, :scope > .thmtitle");
         if (!title) continue;
         const source = title.dataset.authoredStatementTitle ?? title.textContent?.trim() ?? "";
+        const hasAuthoredNumber = new RegExp(`^${label}\\s*\\d+\\b`, "u").test(source);
         const authored = source
           .replace(new RegExp(`^${label}\\s*\\d*\\s*[.．。:：]?\\s*`, "u"), "")
           .replace(/^[（(]\\s*(.*?)\\s*[）)]$/u, "$1")
@@ -2195,7 +2196,12 @@ const structuredData = {
           .trim();
         title.dataset.authoredStatementTitle = source;
         statementNumber += 1;
-        title.textContent = `${label}${statementNumber}${authored ? `(${authored})` : ""}`;
+        // Older articles already contain a carefully formatted numbered label;
+        // preserve it verbatim. New directive titles receive the missing
+        // Japanese label and article-wide number.
+        title.textContent = hasAuthoredNumber
+          ? source
+          : `${label}${statementNumber}${authored ? `(${authored})` : ""}`;
         wrapper.dataset.statementNumber = String(statementNumber);
         wrapper.dataset.statementLabel = label;
       }
