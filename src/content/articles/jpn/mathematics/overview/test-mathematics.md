@@ -1,18 +1,18 @@
 ---
-articleId: ja-mathematics-test-mathematics
-locale: ja
-title: 【テスト記事】公開確認と枠表示確認
-slug: test-mathematics
-subject: mathematics
-category: overview
+articleId: "ja-mathematics-overview-test-mathematics"
+locale: "ja"
+title: "【テスト記事】公開確認と枠表示確認"
+slug: "test-mathematics"
+subject: "mathematics"
+category: "overview"
 concepts:
-  - id: math.overview.what-is-mathematics
+  - id: "math.overview.what-is-mathematics"
 authors: [editorial-workspace]
-reviewers: [ukyoukay0@gmail.com]
+reviewers: ["ukyoukay0@gmail.com"]
 status: published
-createdAt: 2026-08-31
+createdAt: 2026-08-30
 updatedAt: 2026-08-31
-summary: 数学分野の枠を含むテスト記事
+summary: "数学分野の枠を含むテスト記事"
 difficulty: basic
 estimatedMinutes: 10
 tags: []
