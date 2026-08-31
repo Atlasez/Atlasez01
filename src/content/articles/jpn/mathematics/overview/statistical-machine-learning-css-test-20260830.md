@@ -9,7 +9,7 @@ concepts:
   - id: math.linear-algebra.vector-space
 authors: [editorial-workspace]
 reviewers: [ukyoukay0@gmail.com]
-status: draft
+status: published
 createdAt: 2026-08-31
 updatedAt: 2026-08-31
 summary: 確率モデル、最尤推定、ベイズ推論、回帰、正則化、評価指標を、例・命題・証明と数式で横断的に確認する表示テスト記事です。
@@ -24,7 +24,7 @@ references: []
 # 統計的機械学習の基礎：確率モデルと正則化
 
 この検証記事では、群論の記事と同じく「定義・例・命題・証明」の流れを採用し、統計的機械学習で頻出する確率・統計・線形代数の表記を確認します。インライン式 $y\sim\mathcal{N}(\mu,\sigma^2)$、損失 $L(\theta)$、ベクトル $\mathbf{x}$ を含みます。
-
+[CalabiYau5.jpg](asset://d4c2ce57-689c-4600-a28b-41cc3d16d6eb)　
 ## 1. 確率モデルとデータ
 
 観測データを $D=\{(\mathbf{x}_i,y_i)\}_{i=1}^n$ とし、入力を $\mathbf{x}_i\in\mathbb{R}^d$、ラベルを $y_i\in\mathcal{Y}$ とします。
@@ -228,4 +228,5 @@ class LinearModel:
 
 ## 7. まとめ
 
-統計的機械学習では、確率モデル $p_\theta(y\mid\mathbf{x})$、推定 $\hat\theta$、正則化 $\lambda$、評価指標を一つの枠組みで扱います。数学的な定義と具体例を往復しながら、データの不確実性とモデルの汎化性能を理解することが重要です。
+統計的機械学習では、確率モデル $p_\theta(y\mid\mathbf{x})$、推定 $\hat\theta$、正則化 $\lambda$、評価指標を一つの枠組みで扱います。数学的な定義と具体例を往復しながら、データの不確実性とモデルの汎化性能を理解することが重要です!
+。
