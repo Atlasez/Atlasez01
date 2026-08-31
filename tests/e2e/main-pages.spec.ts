@@ -464,6 +464,13 @@ test.describe("学習サイト", () => {
     );
   });
 
+  test("[[ref:識別子]]を同一記事の命題アンカーへ変換する", async ({ page }) => {
+    await page.goto("atlas/ja/mathematics/overview/test-mathematics/");
+    const reference = page.locator("a.math-statement-reference").first();
+    await expect(reference).toHaveAttribute("href", "#defi-id-test");
+    await expect(reference).toHaveText("定義1");
+  });
+
   test("旧数学サイトから移行した図を読み込み、スマホ幅に収める", async ({
     page,
   }) => {

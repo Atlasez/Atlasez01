@@ -2293,8 +2293,12 @@ const structuredData = {
       });
       const tocSubLists = new Map<string, HTMLOListElement>();
       theoremCards.forEach((card, index) => {
-        const id = `math-block-${index + 1}`;
-        card.id = id;
+        // Preserve an authored directive id (`{#group}`) so [[ref:group]]
+        // can resolve to the statement.  Legacy statements without an id
+        // still receive the generated anchor used by the old reference
+        // format.
+        const id = card.id || `math-block-${index + 1}`;
+        if (!card.id) card.id = id;
         if (!tocList || tocList.querySelector(`[data-math-toc="${id}"]`)) return;
         const title = card.querySelector<HTMLElement>(":scope > p > .thmtitle")?.textContent?.trim()
           || card.querySelector<HTMLElement>(":scope > .thmtitle")?.textContent?.trim()
@@ -2347,8 +2351,10 @@ const structuredData = {
           return {};
         }
       })();
-      if (Object.keys(referenceMap).length > 0) {
-        const referencePattern = /\[([^\]\n]+)\]/gu;
+      if (Object.keys(referenceMap).length > 0 || mathBody.textContent?.includes("[[ref:")) {
+        // New editor references use [[ref:identifier]]. Keep the legacy
+        // [記事タイトル:命題 7] form below for older imported articles.
+        const referencePattern = /\[\[ref:([A-Za-z][A-Za-z0-9_-]*)\]\]|\[([^\]\n]+)\]/gu;
         const walker = document.createTreeWalker(mathBody, NodeFilter.SHOW_TEXT);
         const textNodes: Text[] = [];
         let current = walker.nextNode();
@@ -2366,7 +2372,27 @@ const structuredData = {
           referencePattern.lastIndex = 0;
           let match: RegExpExecArray | null;
           while ((match = referencePattern.exec(value))) {
-            const reference = match[1]?.trim() ?? "";
+            const referenceId = match[1]?.trim() ?? "";
+            const reference = match[2]?.trim() ?? "";
+            if (referenceId) {
+              const target = document.getElementById(referenceId);
+              fragment.append(value.slice(cursor, match.index));
+              if (target?.dataset.statementNumber && target.dataset.statementLabel) {
+                const link = document.createElement("a");
+                link.className = "article-reference math-statement-reference";
+                link.href = `#${target.id || referenceId}`;
+                link.dataset.articleReference = referenceId;
+                link.textContent = `${target.dataset.statementLabel}${target.dataset.statementNumber}`;
+                fragment.append(link);
+              } else {
+                // Do not hide an unresolved identifier.  It remains useful
+                // source text until the referenced statement is published.
+                fragment.append(match[0]);
+              }
+              cursor = match.index + match[0].length;
+              changed = true;
+              continue;
+            }
             const parts = reference.match(
               /^(.+?)\s*:\s*(?:定義|命題|定理|補題|系|例)\s*(\d+)\s*$/u,
             );
