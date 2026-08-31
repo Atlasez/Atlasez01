@@ -7,21 +7,17 @@ subject: mathematics
 category: group-theory
 concepts:
   - id: math.group-theory.homomorphism-theorem
-authors:
-  - atlas-math-team
-reviewers: []
-status: published
-createdAt: 2024-01-01
-updatedAt: 2026-07-22
+authors: [editorial-workspace]
+reviewers: [ukyoukay0@gmail.com]
+status: draft
+createdAt: 2026-08-31
+updatedAt: 2026-08-31
 summary: 準同型定理は群の同型を与える上で非常に有用な定理である. 次の例は準同型定理を用いて同型を与える例である.
-difficulty: intermediate
-estimatedMinutes: 20
-tags:
-  - 準同型定理
+difficulty: basic
+estimatedMinutes: 10
+tags: []
 aliases: []
-exerciseIds:
-  pre: []
-  post: []
+exerciseIds: { pre: [], post: [] }
 references: []
 ---
 
@@ -29,23 +25,13 @@ references: []
 
 定理 1 (準同型定理). $\varphi\colon G_1\to G_2$を群$G_1$から$G_2$への群準同型とする. $N\subset \mathop{\mathrm{Ker}}{\varphi}$を$G$の正規部分群として, $\pi\colon G_1\to G_1/N$を自然な射影とする. このとき準同型写像$\overline{\varphi}\colon G_1/N\to G_2$で$\varphi=\overline{\varphi}\circ \pi$となるもの, すなわち以下の図式を可換にするものが一意的に存在する.
 
-<figure class="math-figure">
-  <img
-    src="../../../../../images/math/homomorphism-theorem/commutative-diagram.svg"
-    alt="準同型定理の可換図式"
-    loading="lazy"
-    decoding="async"
-  />
-</figure>
-
 さらに$\overline{\varphi}\colon G_1/N \to \mathop{\mathrm{Im}}\varphi$は同型写像である. つまり次の群の同型が成り立つ.
 
 $$
 \begin{align*} G_1/N\cong \mathop{\mathrm{Im}}\varphi \end{align*}
 $$
 
-:::proof
-写像$\overline{\varphi}\colon G_1/N\to G_2$を$xN\mapsto \varphi(x)$で定める.
+証明. 写像$\overline{\varphi}\colon G_1/N\to G_2$を$xN\mapsto \varphi(x)$で定める.
 
 まず$\overline\varphi$がwell-definedであることを示す. つまり$\overline{\varphi}$が代表元の選び方によらず定まることを示す. $x_1N=x_2N\in G_1/N$と仮定する. このとき$x_2^{-1}x_1\in N\subset \mathop{\mathrm{Ker}}\varphi$なので$\varphi(x_2^{-1}x_1)=e_{G_2}$. よって$\varphi(x_1)=\varphi(x_2)$が分かる. すると
 
@@ -86,7 +72,6 @@ $$
 $$
 
 とできることから分かる. ◻
-:::
 
 特に$N=\mathop{\mathrm{Ker}}\varphi$とすると, 同型
 
@@ -110,8 +95,7 @@ $$
 
 を与える同型写像が存在する.
 
-:::proof
-まず$H\subset N_G(N)$であることから, 任意の$h\in H$に対して$hNh^{-1}=N$が成り立つ. よって$NH=HN$が成り立つので[部分群の定義:命題 10]より$HN$は$G$の部分群である.
+証明. まず$H\subset N_G(N)$であることから, 任意の$h\in H$に対して$hNh^{-1}=N$が成り立つ. よって$NH=HN$が成り立つので[部分群の定義:命題 10]より$HN$は$G$の部分群である.
 
 さらに$N$が$HN$の正規部分群であることを示すことで$HN/N$が定義されることを確かめる. $hn \in HN$と$x\in N$をとる. このとき
 
@@ -146,7 +130,6 @@ $$
 $$
 
 が示された. ◻
-:::
 
 特に$H\leq G$, $N\vartriangleleft G$のとき, $N_G(N)=G$であって
 
@@ -164,8 +147,7 @@ $$
 
 を与える同型写像が存在する.
 
-:::proof
-写像$\varphi$を次のように定めることができる.
+証明. 写像$\varphi$を次のように定めることができる.
 
 $$
 \begin{align*} \varphi\colon G/N_2\to G/N_1,\quad gN_2\mapsto gN_1 \end{align*}
@@ -184,4 +166,3 @@ $$
 $$
 
 が得られる. ◻
-:::
