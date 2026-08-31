@@ -1185,6 +1185,10 @@ const structuredData = {
   .proof-toggle {
     position: sticky;
     top: 1rem;
+    /* folding 枠が後続の本文で重なっても、証明の一括開閉操作を
+       常に前面で押せるようにする。目次（45）より上、ヘッダー外の
+       記事内操作として十分なスタッキングレベルを確保する。 */
+    z-index: 60;
     /* ブロック幅を確保して auto マージンで右端へ寄せつつ、
        flex の中央揃えでラベルが常にボタン中央に来るようにする。 */
     display: flex;

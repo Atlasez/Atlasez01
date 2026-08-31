@@ -545,6 +545,7 @@ test.describe("学習サイト", () => {
   test("数学記事の証明矢印・folding境界・命題枠を整える", async ({ page }) => {
     await page.goto("atlas/ja/mathematics/module-theory/module-homomorphisms/");
     const toggle = page.locator("[data-proof-toggle]");
+    await expect(toggle).toHaveCSS("z-index", "60");
     await expect(toggle).toHaveText("▼ 証明を展開");
     await expect(toggle).toHaveCSS("justify-content", "center");
     await expect(page.locator("details.folding").first()).toHaveCSS(
