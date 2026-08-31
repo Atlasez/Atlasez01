@@ -2191,6 +2191,17 @@ const structuredData = {
         if (!label) continue;
         const title = wrapper.querySelector<HTMLElement>(":scope > p > .thmtitle, :scope > .thmtitle");
         if (!title) continue;
+        // The published HTML already contains MathJax SVG for inline math in
+        // directive titles. Do not replace it with textContent while adding
+        // the article-wide statement number; that turns `$ab$` back into
+        // literal source in the browser even though the server render is
+        // correct. The marker makes this safe if Astro page-load runs twice.
+        if (title.dataset.statementNumbered === "true") {
+          statementNumber += 1;
+          wrapper.dataset.statementNumber = String(statementNumber);
+          wrapper.dataset.statementLabel = label;
+          continue;
+        }
         const source = title.dataset.authoredStatementTitle ?? title.textContent?.trim() ?? "";
         const hasAuthoredNumber = new RegExp(`^${label}\\s*\\d+\\b`, "u").test(source);
         const authored = source
@@ -2207,9 +2218,23 @@ const structuredData = {
           new RegExp(`^${label}\\s*(\\d+)`, "u"),
           `${label} $1`,
         );
-        title.textContent = hasAuthoredNumber
-          ? normalizedSource
-          : `${label} ${statementNumber}${authored ? ` (${authored})` : ""}`;
+        if (hasAuthoredNumber) {
+          // Keep any server-rendered MathJax nodes. Numbered legacy titles
+          // are already complete and only need their metadata refreshed.
+          if (normalizedSource !== source && !title.querySelector("mjx-container")) {
+            title.textContent = normalizedSource;
+          }
+        } else if (title.querySelector("mjx-container")) {
+          const renderedTitle = [...title.childNodes].map((node) => node.cloneNode(true));
+          title.replaceChildren(
+            document.createTextNode(`${label} ${statementNumber}${authored ? " (" : ""}`),
+            ...renderedTitle,
+            ...(authored ? [document.createTextNode(")")] : []),
+          );
+        } else {
+          title.textContent = `${label} ${statementNumber}${authored ? ` (${authored})` : ""}`;
+        }
+        title.dataset.statementNumbered = "true";
         wrapper.dataset.statementNumber = String(statementNumber);
         wrapper.dataset.statementLabel = label;
       }

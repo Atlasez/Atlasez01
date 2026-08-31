@@ -464,6 +464,24 @@ test.describe("学習サイト", () => {
     );
   });
 
+  test("数学枠タイトルのインライン数式を記事表示後も保持する", async ({
+    page,
+  }) => {
+    await page.goto("atlas/ja/mathematics/overview/test-mathematics/");
+    const title = page.locator(
+      '.article-body [data-statement-id="defi-id-test"] .thmtitle',
+    );
+    if ((await title.count()) === 0) {
+      test.skip(true, "テスト記事が非公開状態のためタイトル検証をスキップ");
+    }
+    await expect(title).toContainText("定義 1 (タイトル)");
+    await expect(title).not.toContainText("$ab$");
+    await expect(title.locator("mjx-container")).toHaveCount(1);
+    await expect(
+      page.locator('.toc-list a[href="#defi-id-test"]'),
+    ).not.toContainText("$ab$");
+  });
+
   test("[[ref:識別子]]を同一記事の命題アンカーへ変換する", async ({ page }) => {
     await page.goto("atlas/ja/mathematics/overview/test-mathematics/");
     const reference = page.locator("a.math-statement-reference").first();
