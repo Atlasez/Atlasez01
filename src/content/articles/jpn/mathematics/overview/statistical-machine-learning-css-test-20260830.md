@@ -9,7 +9,7 @@ concepts:
   - id: math.linear-algebra.vector-space
 authors: [editorial-workspace]
 reviewers: [ukyoukay0@gmail.com]
-status: draft
+status: published
 createdAt: 2026-08-31
 updatedAt: 2026-08-31
 summary: 確率モデル、最尤推定、ベイズ推論、回帰、正則化、評価指標を、例・命題・証明と数式で横断的に確認する表示テスト記事です。
