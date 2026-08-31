@@ -1,3 +1,8 @@
+import {
+  articleTitleContainsMath,
+  renderArticleTitleMath,
+} from "../lib/article-title-math.mjs";
+
 const LABEL_TO_CLASS: Record<string, string> = {
   定義: "defi",
   命題: "prop",
@@ -179,7 +184,8 @@ function statementLabel(wrapper: HTMLElement): string | null {
 function authoredStatementTitle(title: HTMLElement, label: string): string {
   if (title.dataset.authoredStatementTitle !== undefined)
     return title.dataset.authoredStatementTitle;
-  const source = title.textContent?.trim() ?? "";
+  const source =
+    title.dataset.mathTitleSource?.trim() ?? title.textContent?.trim() ?? "";
   const withoutNumber = source
     .replace(new RegExp(`^${label}\\s*\\d*\\s*[.．。:：]?\\s*`, "u"), "")
     .trim();
@@ -189,6 +195,24 @@ function authoredStatementTitle(title: HTMLElement, label: string): string {
     .trim();
   title.dataset.authoredStatementTitle = authored;
   return authored;
+}
+
+function setStatementTitle(
+  title: HTMLElement,
+  label: string,
+  number: number,
+  authored: string,
+): void {
+  const visible = `${label} ${number}${authored ? ` (${authored})` : ""}`;
+  delete title.dataset.titleMathRendered;
+  if (articleTitleContainsMath(visible)) {
+    title.innerHTML = renderArticleTitleMath(visible);
+    title.dataset.mathTitleSource = visible;
+    title.dataset.titleMathRendered = "true";
+  } else {
+    title.textContent = visible;
+    delete title.dataset.mathTitleSource;
+  }
 }
 
 /** Number definitions, propositions, theorems, lemmas, corollaries and examples in reading order. */
@@ -215,8 +239,7 @@ export function numberMathStatements(
     if (!label || !title) continue;
     const number = ++statementNumber;
     const authored = authoredStatementTitle(title, label);
-    const visible = `${label}${number}${authored ? `(${authored})` : ""}`;
-    title.textContent = visible;
+    setStatementTitle(title, label, number, authored);
     wrapper.dataset.statementNumber = String(number);
     wrapper.dataset.statementLabel = label;
   }
@@ -253,7 +276,7 @@ export function numberMathStatements(
         const link = mathBody.ownerDocument.createElement("a");
         link.className = "math-statement-reference";
         link.href = `#${match[1]}`;
-        link.textContent = `${target.dataset.statementLabel}${target.dataset.statementNumber}`;
+        link.textContent = `${target.dataset.statementLabel} ${target.dataset.statementNumber}`;
         fragment.append(link);
       } else {
         const candidates = index.filter((item) => item.id === match[1]);
@@ -275,7 +298,7 @@ export function numberMathStatements(
           link.className =
             "math-statement-reference math-statement-reference-external";
           link.href = `${external.href}#${encodeURIComponent(external.id)}`;
-          link.textContent = `${external.articleTitle}:${external.label}${external.number}`;
+          link.textContent = `${external.articleTitle}:${external.label} ${external.number}`;
           fragment.append(link);
         } else fragment.append(match[0]);
       }
@@ -306,6 +329,18 @@ function initializePublishedMathStructure(): void {
     locale: meta.dataset.locale,
     statementIndex,
   });
+  // Generic directive/proof titles are not numbered, but they can still carry
+  // inline math. Render them after the same subject gate as statement boxes.
+  for (const title of body.querySelectorAll<HTMLElement>(
+    ".article-directive-title, .proof-details > summary, .supp-details-summary, details.folding > summary",
+  )) {
+    if (title.dataset.titleMathRendered === "true") continue;
+    const source = title.textContent ?? "";
+    if (!articleTitleContainsMath(source)) continue;
+    title.innerHTML = renderArticleTitleMath(source);
+    title.dataset.mathTitleSource = source;
+    title.dataset.titleMathRendered = "true";
+  }
 }
 
 if (typeof document !== "undefined") {

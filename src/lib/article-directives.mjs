@@ -71,8 +71,19 @@ export function isArticleDirectiveClose(value, minimumLength = 3) {
 function paragraphText(node) {
   if (!node || node.type !== "paragraph" || !Array.isArray(node.children))
     return null;
-  if (!node.children.every((child) => child.type === "text")) return null;
-  return node.children.map((child) => child.value).join("");
+  if (
+    !node.children.every((child) =>
+      ["text", "inlineMath", "math"].includes(child.type),
+    )
+  )
+    return null;
+  return node.children
+    .map((child) =>
+      child.type === "text"
+        ? child.value
+        : `${child.type === "math" ? "$$" : "$"}${child.value}${child.type === "math" ? "$$" : "$"}`,
+    )
+    .join("");
 }
 
 function directiveMarkup(marker) {

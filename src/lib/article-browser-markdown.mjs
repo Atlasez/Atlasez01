@@ -276,8 +276,12 @@ export async function renderArticleMarkdown(
     .use(remarkBrowserEditorialAssets)
     .use(remarkArticleTikzPlaceholder)
     .use(remarkRehype, { allowDangerousHtml: true });
+  // Parse directive-generated raw HTML before KaTeX.  Frame titles are emitted
+  // as HTML by remarkArticleDirectives, so running rehype-katex first leaves
+  // their inline delimiters as literal text.
+  processor.use(rehypeRaw);
   if (katex) processor.use(rehypeArticleKatex);
-  processor.use(rehypeRaw).use(rehypeStringify, { allowDangerousHtml: true });
+  processor.use(rehypeStringify, { allowDangerousHtml: true });
   const file = await processor.process(String(source ?? ""));
   return String(file);
 }
