@@ -163,6 +163,18 @@ const resolvedLocaleSwitchHrefs = {
       </div>
       <p class="container atlas-copyright">© 2024-2026 Atlasez</p>
     </footer>
+    <script>
+      // 個人を識別せず、Cloudflareが付与する国コードと日別ページビューだけを送る。
+      const siteAnalyticsEndpoint = "/api/site-analytics";
+      void fetch(siteAnalyticsEndpoint, {
+        method: "POST",
+        keepalive: true,
+        headers: { "content-type": "application/json" },
+        body: "{}",
+      }).catch(() => {
+        // 統計送信の失敗はサイト閲覧を妨げない。
+      });
+    </script>
   </body>
 </html>
 
