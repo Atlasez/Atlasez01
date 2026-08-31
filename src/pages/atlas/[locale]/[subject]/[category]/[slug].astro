@@ -2161,6 +2161,45 @@ const structuredData = {
           break;
         }
       }
+
+      // Directiveで生成された枠はすでに `.defi` などの要素になっているため、
+      // 上の旧形式向け処理ではラベルが追加されない。公開ページでも管理画面と
+      // 同じ通し番号（定義1、命題2…）を付け、タイトルがある場合だけ括弧内へ
+      // 残す。本文が空になった場合でも番号だけは失われないよう、DOMから再計算する。
+      const statementLabel = (wrapper: HTMLElement) => {
+        const byDirective: Record<string, string> = {
+          defi: "定義", definition: "定義", prop: "命題", proposition: "命題",
+          thm: "定理", theorem: "定理", lemma: "補題", cor: "系", corollary: "系",
+          example: "例",
+        };
+        const directive = wrapper.dataset.directive?.toLowerCase();
+        if (directive && byDirective[directive]) return byDirective[directive];
+        return labelToClass[Object.keys(labelToClass).find((label) =>
+          wrapper.classList.contains(labelToClass[label]),
+        ) ?? ""] ?? null;
+      };
+      const statements = [...mathBody.children].filter((node): node is HTMLElement =>
+        node instanceof HTMLElement && node.matches(".defi,.prop,.thm,.lemma,.cor,.example"),
+      );
+      let statementNumber = 0;
+      for (const wrapper of statements) {
+        const label = statementLabel(wrapper);
+        if (!label) continue;
+        const title = wrapper.querySelector<HTMLElement>(":scope > p > .thmtitle, :scope > .thmtitle");
+        if (!title) continue;
+        const source = title.dataset.authoredStatementTitle ?? title.textContent?.trim() ?? "";
+        const authored = source
+          .replace(new RegExp(`^${label}\\s*\\d*\\s*[.．。:：]?\\s*`, "u"), "")
+          .replace(/^[（(]\\s*(.*?)\\s*[）)]$/u, "$1")
+          .replace(/[.．。:：]\\s*$/u, "")
+          .trim();
+        title.dataset.authoredStatementTitle = source;
+        statementNumber += 1;
+        title.textContent = `${label}${statementNumber}${authored ? `(${authored})` : ""}`;
+        wrapper.dataset.statementNumber = String(statementNumber);
+        wrapper.dataset.statementLabel = label;
+      }
+
       const removeProofLabel = (container: Element) => {
         const strong = container.querySelector(":scope > strong");
         if (strong && proofLead.test((strong.textContent ?? "").trim())) {
