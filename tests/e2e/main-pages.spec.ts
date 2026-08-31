@@ -464,6 +464,13 @@ test.describe("学習サイト", () => {
     );
   });
 
+  test("[[ref:識別子]]を同一記事の命題アンカーへ変換する", async ({ page }) => {
+    await page.goto("atlas/ja/mathematics/overview/test-mathematics/");
+    const reference = page.locator("a.math-statement-reference").first();
+    await expect(reference).toHaveAttribute("href", "#defi-id-test");
+    await expect(reference).toHaveText("定義1");
+  });
+
   test("旧数学サイトから移行した図を読み込み、スマホ幅に収める", async ({
     page,
   }) => {
@@ -538,6 +545,7 @@ test.describe("学習サイト", () => {
   test("数学記事の証明矢印・folding境界・命題枠を整える", async ({ page }) => {
     await page.goto("atlas/ja/mathematics/module-theory/module-homomorphisms/");
     const toggle = page.locator("[data-proof-toggle]");
+    await expect(toggle).toHaveCSS("z-index", "60");
     await expect(toggle).toHaveText("▼ 証明を展開");
     await expect(toggle).toHaveCSS("justify-content", "center");
     await expect(page.locator("details.folding").first()).toHaveCSS(

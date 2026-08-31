@@ -997,6 +997,41 @@ const structuredData = {
     max-width: 100%;
     width: auto;
   }
+  /* TikZ is compiled to inline SVG at build time. Keep the diagram inside
+     the article column on narrow screens and let it follow the article color
+     for uncoloured strokes/text. */
+  .article-body.math-article :global(.tikz-diagram) {
+    box-sizing: border-box;
+    color: var(--text-primary);
+    margin: 1.5rem auto;
+    max-width: 100%;
+    overflow-x: auto;
+    text-align: center;
+  }
+  .article-body.math-article :global(.tikz-diagram > svg) {
+    display: inline-block;
+    height: auto;
+    max-width: 100%;
+    vertical-align: middle;
+  }
+  .article-body.math-article :global(.tikz-error) {
+    background: color-mix(in srgb, var(--danger, #b42318) 7%, var(--background-primary));
+    border: 1px solid color-mix(in srgb, var(--danger, #b42318) 30%, var(--border-default));
+    border-left: 3px solid var(--danger, #b42318);
+    border-radius: .35rem;
+    color: var(--text-primary);
+    display: grid;
+    gap: .25rem;
+    margin: 1rem 0;
+    padding: .7rem .85rem;
+    text-align: start;
+  }
+  .article-body.math-article :global(.tikz-error span) {
+    color: var(--text-secondary);
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: .82em;
+    overflow-wrap: anywhere;
+  }
   .article-body.math-article :global(strong),
   .article-body.math-article :global(b) {
     font-weight: 700;
@@ -1150,6 +1185,10 @@ const structuredData = {
   .proof-toggle {
     position: sticky;
     top: 1rem;
+    /* folding 枠が後続の本文で重なっても、証明の一括開閉操作を
+       常に前面で押せるようにする。目次（45）より上、ヘッダー外の
+       記事内操作として十分なスタッキングレベルを確保する。 */
+    z-index: 60;
     /* ブロック幅を確保して auto マージンで右端へ寄せつつ、
        flex の中央揃えでラベルが常にボタン中央に来るようにする。 */
     display: flex;
@@ -2126,6 +2165,51 @@ const structuredData = {
           break;
         }
       }
+
+      // Directiveで生成された枠はすでに `.defi` などの要素になっているため、
+      // 上の旧形式向け処理ではラベルが追加されない。公開ページでも管理画面と
+      // 同じ通し番号（定義1、命題2…）を付け、タイトルがある場合だけ括弧内へ
+      // 残す。本文が空になった場合でも番号だけは失われないよう、DOMから再計算する。
+      const statementLabel = (wrapper: HTMLElement) => {
+        const byDirective: Record<string, string> = {
+          defi: "定義", definition: "定義", prop: "命題", proposition: "命題",
+          thm: "定理", theorem: "定理", lemma: "補題", cor: "系", corollary: "系",
+          example: "例",
+        };
+        const directive = wrapper.dataset.directive?.toLowerCase();
+        if (directive && byDirective[directive]) return byDirective[directive];
+        return Object.keys(labelToClass).find((label) =>
+          wrapper.classList.contains(labelToClass[label]),
+        ) ?? null;
+      };
+      const statements = [...mathBody.children].filter((node): node is HTMLElement =>
+        node instanceof HTMLElement && node.matches(".defi,.prop,.thm,.lemma,.cor,.example"),
+      );
+      let statementNumber = 0;
+      for (const wrapper of statements) {
+        const label = statementLabel(wrapper);
+        if (!label) continue;
+        const title = wrapper.querySelector<HTMLElement>(":scope > p > .thmtitle, :scope > .thmtitle");
+        if (!title) continue;
+        const source = title.dataset.authoredStatementTitle ?? title.textContent?.trim() ?? "";
+        const hasAuthoredNumber = new RegExp(`^${label}\\s*\\d+\\b`, "u").test(source);
+        const authored = source
+          .replace(new RegExp(`^${label}\\s*\\d*\\s*[.．。:：]?\\s*`, "u"), "")
+          .replace(/^[（(]\\s*(.*?)\\s*[）)]$/u, "$1")
+          .replace(/[.．。:：]\\s*$/u, "")
+          .trim();
+        title.dataset.authoredStatementTitle = source;
+        statementNumber += 1;
+        // Older articles already contain a carefully formatted numbered label;
+        // preserve it verbatim. New directive titles receive the missing
+        // Japanese label and article-wide number.
+        title.textContent = hasAuthoredNumber
+          ? source
+          : `${label}${statementNumber}${authored ? `(${authored})` : ""}`;
+        wrapper.dataset.statementNumber = String(statementNumber);
+        wrapper.dataset.statementLabel = label;
+      }
+
       const removeProofLabel = (container: Element) => {
         const strong = container.querySelector(":scope > strong");
         if (strong && proofLead.test((strong.textContent ?? "").trim())) {
@@ -2213,8 +2297,12 @@ const structuredData = {
       });
       const tocSubLists = new Map<string, HTMLOListElement>();
       theoremCards.forEach((card, index) => {
-        const id = `math-block-${index + 1}`;
-        card.id = id;
+        // Preserve an authored directive id (`{#group}`) so [[ref:group]]
+        // can resolve to the statement.  Legacy statements without an id
+        // still receive the generated anchor used by the old reference
+        // format.
+        const id = card.id || `math-block-${index + 1}`;
+        if (!card.id) card.id = id;
         if (!tocList || tocList.querySelector(`[data-math-toc="${id}"]`)) return;
         const title = card.querySelector<HTMLElement>(":scope > p > .thmtitle")?.textContent?.trim()
           || card.querySelector<HTMLElement>(":scope > .thmtitle")?.textContent?.trim()
@@ -2267,8 +2355,10 @@ const structuredData = {
           return {};
         }
       })();
-      if (Object.keys(referenceMap).length > 0) {
-        const referencePattern = /\[([^\]\n]+)\]/gu;
+      if (Object.keys(referenceMap).length > 0 || mathBody.textContent?.includes("[[ref:")) {
+        // New editor references use [[ref:identifier]]. Keep the legacy
+        // [記事タイトル:命題 7] form below for older imported articles.
+        const referencePattern = /\[\[ref:([A-Za-z][A-Za-z0-9_-]*)\]\]|\[([^\]\n]+)\]/gu;
         const walker = document.createTreeWalker(mathBody, NodeFilter.SHOW_TEXT);
         const textNodes: Text[] = [];
         let current = walker.nextNode();
@@ -2286,7 +2376,27 @@ const structuredData = {
           referencePattern.lastIndex = 0;
           let match: RegExpExecArray | null;
           while ((match = referencePattern.exec(value))) {
-            const reference = match[1]?.trim() ?? "";
+            const referenceId = match[1]?.trim() ?? "";
+            const reference = match[2]?.trim() ?? "";
+            if (referenceId) {
+              const target = document.getElementById(referenceId);
+              fragment.append(value.slice(cursor, match.index));
+              if (target?.dataset.statementNumber && target.dataset.statementLabel) {
+                const link = document.createElement("a");
+                link.className = "article-reference math-statement-reference";
+                link.href = `#${target.id || referenceId}`;
+                link.dataset.articleReference = referenceId;
+                link.textContent = `${target.dataset.statementLabel}${target.dataset.statementNumber}`;
+                fragment.append(link);
+              } else {
+                // Do not hide an unresolved identifier.  It remains useful
+                // source text until the referenced statement is published.
+                fragment.append(match[0]);
+              }
+              cursor = match.index + match[0].length;
+              changed = true;
+              continue;
+            }
             const parts = reference.match(
               /^(.+?)\s*:\s*(?:定義|命題|定理|補題|系|例)\s*(\d+)\s*$/u,
             );

@@ -130,6 +130,13 @@ describe("math article directives", () => {
     expect(plainText(tree)).toContain('data-directive="folding"');
   });
 
+  it("gives compact proof directives the folding class used by the arrow CSS", async () => {
+    const tree = await parse("::: proof\n本文\n:::");
+    expect(plainText(tree)).toContain(
+      '<details class="proof-details folding" data-directive="proof" open>',
+    );
+  });
+
   it("renders a directive whose body has no blank line after its marker", async () => {
     const tree = await parse(
       ["::: remark", "補足の本文", "複数行の本文", ":::"].join("\n"),

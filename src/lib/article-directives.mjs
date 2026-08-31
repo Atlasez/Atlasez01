@@ -217,7 +217,11 @@ const directiveMarkup = (marker) => {
 
   if (marker.name === "proof") {
     return {
-      open: `<details class="proof-details" data-directive="proof" open>`,
+      // Keep the common folding class on every proof variant.  Compact
+      // directives (for example `::: proof`) bypass the AST container path,
+      // so without this class their summary never receives the disclosure
+      // arrow styling used by published mathematics pages.
+      open: `<details class="proof-details folding" data-directive="proof" open>`,
       title: titleParagraph(marker, { tagName: "summary" }),
       bodyOpen: `<div class="proof-details-inner">`,
       close: "</div></details>",

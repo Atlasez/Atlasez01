@@ -22,6 +22,14 @@ const TIKZ_RENDER_CACHE_SIZE = 8;
 let renderQueue = Promise.resolve();
 const renderCache = new Map();
 
+const escapeHtml = (value) =>
+  String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+
 function extractDeclarations(source) {
   let body = source;
   const packages = [];
@@ -111,4 +119,13 @@ export async function renderTikzSource(source) {
     if (renderCache.get(cacheKey) === result) renderCache.delete(cacheKey);
   });
   return result;
+}
+
+/** Keep one invalid TikZ block from making Astro drop the entire article. */
+export function tikzErrorHtml(error) {
+  const message =
+    error instanceof Error
+      ? error.message
+      : "TikZをSVGに変換できませんでした。";
+  return `<div class="tikz-error" role="img" aria-label="TikZエラー"><strong>TikZを描画できませんでした</strong><span>${escapeHtml(message)}</span></div>`;
 }
