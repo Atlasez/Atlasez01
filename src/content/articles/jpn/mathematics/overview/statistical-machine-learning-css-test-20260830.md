@@ -1,18 +1,18 @@
 ---
-articleId: ja-mathematics-statistical-machine-learning-css-test-20260830
-locale: ja
-title: 統計的機械学習の基礎：確率モデルと正則化（表示テスト・公開後削除予定）
-slug: statistical-machine-learning-css-test-20260830
-subject: mathematics
-category: overview
+articleId: "ja-mathematics-overview-statistical-machine-learning-css-test-20260830"
+locale: "ja"
+title: "統計的機械学習の基礎：確率モデルと正則化（表示テスト・公開後削除予定）"
+slug: "statistical-machine-learning-css-test-20260830"
+subject: "mathematics"
+category: "overview"
 concepts:
-  - id: math.linear-algebra.vector-space
+  - id: "math.linear-algebra.vector-space"
 authors: [editorial-workspace]
-reviewers: [ukyoukay0@gmail.com]
-status: published
-createdAt: 2026-08-31
+reviewers: ["ukyoukay0@gmail.com"]
+status: draft
+createdAt: 2026-08-30
 updatedAt: 2026-08-31
-summary: 確率モデル、最尤推定、ベイズ推論、回帰、正則化、評価指標を、例・命題・証明と数式で横断的に確認する表示テスト記事です。
+summary: "確率モデル、最尤推定、ベイズ推論、回帰、正則化、評価指標を、例・命題・証明と数式で横断的に確認する表示テスト記事です。"
 difficulty: basic
 estimatedMinutes: 10
 tags: []
