@@ -8,8 +8,8 @@ category: overview
 concepts:
   - id: math.overview.what-is-mathematics
 authors: [editorial-workspace]
-reviewers: [yuta.k20030828@gmail.com]
-status: published
+reviewers: [ukyoukay0@gmail.com]
+status: draft
 createdAt: 2026-08-31
 updatedAt: 2026-08-31
 summary: 数学分野の枠を含むテスト記事
