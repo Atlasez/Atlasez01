@@ -2174,9 +2174,9 @@ const structuredData = {
         };
         const directive = wrapper.dataset.directive?.toLowerCase();
         if (directive && byDirective[directive]) return byDirective[directive];
-        return labelToClass[Object.keys(labelToClass).find((label) =>
+        return Object.keys(labelToClass).find((label) =>
           wrapper.classList.contains(labelToClass[label]),
-        ) ?? ""] ?? null;
+        ) ?? null;
       };
       const statements = [...mathBody.children].filter((node): node is HTMLElement =>
         node instanceof HTMLElement && node.matches(".defi,.prop,.thm,.lemma,.cor,.example"),
