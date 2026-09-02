@@ -1,7 +1,6 @@
 ---
 import AtlasLayout from "../../../layouts/AtlasLayout.astro";
 import LearningMap from "../../../components/LearningMap.astro";
-import Breadcrumb from "../../../components/Breadcrumb.astro";
 import {
   atlasPath,
   articlePath,
@@ -132,10 +131,6 @@ const views = [
         <h1 id="subjects-heading" class="visually-hidden">
           {t(locale, "subjects")}
         </h1>
-
-        <div data-home-map-breadcrumb>
-          <Breadcrumb items={[{ label: t(locale, "breadcrumbHome") }]} />
-        </div>
 
         {/* ブラウザのタブのように、ページ遷移せず表示を切り替える */}
         <div class="view-bar">
@@ -497,10 +492,6 @@ const views = [
   const contextSearchItems = [
     ...document.querySelectorAll<HTMLElement>("[data-context-search-item]"),
   ];
-  const homeMapBreadcrumb = document.querySelector<HTMLElement>(
-    "[data-home-map-breadcrumb]",
-  );
-
   function applyContextSearch(view: string, rawQuery: string): void {
     if (view === "map") return;
     const query = rawQuery.trim().toLocaleLowerCase();
@@ -538,11 +529,6 @@ const views = [
     if (!detail?.view || detail.view === "map") return;
     applyContextSearch(detail.view, detail.query ?? "");
   });
-  const homeBreadcrumb = document.querySelector<HTMLElement>(
-    "[data-home-map-breadcrumb] .breadcrumb",
-  );
-  const homeBreadcrumbList = homeBreadcrumb?.querySelector<HTMLOListElement>("ol");
-  const homeBreadcrumbTemplate = homeBreadcrumbList?.innerHTML ?? "";
   const homeCategoryDetails = [
     ...document.querySelectorAll<HTMLDetailsElement>("[data-category-key]"),
   ];
@@ -592,51 +578,11 @@ const views = [
     homeCategoryDetails.forEach((details) => {
       if (details === selected) details.open = true;
     });
-    if (!homeBreadcrumbList) return;
-    homeBreadcrumbList.innerHTML = homeBreadcrumbTemplate;
-    if (!selected) {
-      // 概要地図で分野ノードを選択した場合も、現在地をパンくずに反映する。
-      // カテゴリ未選択時は「アトラス › 分野」が現在のコンテキストになる。
-      if (!mapSubject) return;
-      const subjectDetails = homeCategoryDetails.find((details) =>
-        details.dataset.categoryKey?.startsWith(`${mapSubject}/`),
-      )?.closest(".subject-list-details");
-      const subjectLink = subjectDetails?.querySelector<HTMLAnchorElement>(
-        ".subject-list-head > a",
-      );
-      const current = homeBreadcrumbList.lastElementChild;
-      if (!current) return;
-      const subjectCrumb = document.createElement("li");
-      const subjectCurrent = document.createElement("span");
-      subjectCurrent.setAttribute("aria-current", "page");
-      subjectCurrent.textContent = subjectLink?.textContent?.trim() ?? mapSubject;
-      subjectCrumb.append(subjectCurrent);
-      homeBreadcrumbList.append(subjectCrumb);
-      return;
-    }
+    if (!selected) return;
     const subjectDetails = selected.closest<HTMLDetailsElement>(
       ".subject-list-details",
     );
     if (subjectDetails) subjectDetails.open = true;
-    const subjectLink = subjectDetails?.querySelector<HTMLAnchorElement>(
-      ".subject-list-head > a",
-    );
-    const categoryLink = selected.querySelector<HTMLAnchorElement>(
-      ".category-list-head > a",
-    );
-    const current = homeBreadcrumbList.lastElementChild;
-    if (!current || !subjectLink || !categoryLink) return;
-    const subjectCrumb = document.createElement("li");
-    const subjectAnchor = document.createElement("a");
-    subjectAnchor.href = subjectLink.href;
-    subjectAnchor.textContent = subjectLink.textContent?.trim() ?? "";
-    subjectCrumb.append(subjectAnchor);
-    const categoryCrumb = document.createElement("li");
-    const categoryCurrent = document.createElement("span");
-    categoryCurrent.setAttribute("aria-current", "page");
-    categoryCurrent.textContent = categoryLink.textContent?.trim() ?? "";
-    categoryCrumb.append(categoryCurrent);
-    homeBreadcrumbList.append(subjectCrumb, categoryCrumb);
   }
 
   window.addEventListener("atlas-map-category-change", (event) => {
@@ -676,7 +622,6 @@ const views = [
         ?.scrollIntoView({ block: "nearest" });
     }
     if (layout) layout.dataset.activeView = view;
-    homeMapBreadcrumb?.toggleAttribute("hidden", view !== "map");
     applyContextSearch(view, "");
     window.dispatchEvent(new CustomEvent("atlas:view-change", { detail: { view } }));
     try {

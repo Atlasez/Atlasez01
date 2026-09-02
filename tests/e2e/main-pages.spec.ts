@@ -235,9 +235,6 @@ test.describe("学習サイト", () => {
 
   test("総合学習地図の分野名から分野地図へ移動できる", async ({ page }) => {
     await page.goto("atlas/ja/?view=map");
-    await expect(page.locator("[data-home-map-breadcrumb]")).toContainText(
-      "アトラス",
-    );
     const mathematics = page.getByRole("link", {
       name: "数学の学習地図を開く",
       exact: true,
@@ -253,6 +250,14 @@ test.describe("学習サイト", () => {
       "aria-selected",
       "true",
     );
+  });
+
+  test("総合ホームの各表示にパンくずを表示しない", async ({ page }) => {
+    for (const view of ["tiles", "list", "map"]) {
+      await page.goto(`atlas/ja/?view=${view}`);
+      await expect(page.locator("[data-home-map-breadcrumb]")).toHaveCount(0);
+      await expect(page.locator(".home-main .breadcrumb")).toHaveCount(0);
+    }
   });
 
   test("総合リストを記事まで段階的に展開できる", async ({ page }) => {
