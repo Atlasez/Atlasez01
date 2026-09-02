@@ -266,6 +266,19 @@ test.describe("学習サイト", () => {
     );
   });
 
+  test("総合学習地図の概念検索もカテゴリ地図へ直接進む", async ({ page }) => {
+    await page.goto("atlas/ja/?view=map");
+    await page.locator("[data-context-search-input]").fill("群");
+    await page.getByRole("button", { name: "検索", exact: true }).click();
+    await expect(page).toHaveURL(
+      /\/atlas\/ja\/mathematics\/group-theory\/\?view=map&selected=[^&]+$/,
+    );
+    await expect(page.locator(".category-main h1")).toHaveText("群論");
+    await expect(page.locator("[data-category-breadcrumb]")).toContainText(
+      "群論",
+    );
+  });
+
   test("総合学習地図では分野地図への補助リンクを表示しない", async ({
     page,
   }) => {

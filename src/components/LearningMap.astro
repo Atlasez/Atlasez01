@@ -2361,13 +2361,17 @@ const categoryMetaJson = JSON.stringify(
         setStatus(ja ? "一致する概念がありません" : "No matching concept");
         return;
       }
-      renderCategory(catKeyOf(found));
-      const element = cy.getElementById(found.id);
-      cy.elements().unselect();
-      element.select();
-      cy.animate({ center: { eles: element }, zoom: 1.2, duration: 300 });
-      showDetail(found.id);
-      syncUrl();
+      // 検索結果もカテゴリノードのクリックと同じ正規入口へ送る。
+      // ここで地図を直接描画してから `syncUrl()` すると、総合ホームや
+      // 分野ページに `?category=...&subject=...` を残したままになり、
+      // 同じカテゴリに複数のURL/表示状態が生じる。カテゴリページを
+      // 最初から開けば、検索結果の選択状態も正規URLだけで復元できる。
+      window.location.assign(
+        categoryPagePath(
+          catKeyOf(found),
+          `&selected=${encodeURIComponent(found.id)}`,
+        ),
+      );
     };
     applyContextSearch = searchConcept;
 
