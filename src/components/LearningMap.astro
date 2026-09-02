@@ -2005,11 +2005,11 @@ const categoryMetaJson = JSON.stringify(
     /** URL に今の表示状態を書き戻す */
     function syncUrl(): void {
       const url = new URL(location.href);
-      if (focused) url.searchParams.set("category", focused);
-      else url.searchParams.delete("category");
-      const subject = container?.dataset.fixedSubject || focused?.split("/")[0] || "";
-      if (subject) url.searchParams.set("subject", subject);
-      else url.searchParams.delete("subject");
+      // カテゴリは常にカテゴリページのパスで表現する。埋め込み地図の
+      // 状態を query に書き戻すと、総合・分野ページに別のカテゴリ表示を
+      // 作る旧URLを再生成してしまうため、旧パラメータは消去するだけにする。
+      url.searchParams.delete("category");
+      url.searchParams.delete("subject");
       history.replaceState(null, "", url);
     }
 
