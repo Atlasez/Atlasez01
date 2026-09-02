@@ -118,7 +118,7 @@ const summary =
         ]}
       />
     </div>
-    <h1>{subjectName}</h1>
+    <h1 data-subject-page-heading>{subjectName}</h1>
     <p class="reading">{localizedName(subject.data.description, locale)}</p>
     <p class="visually-hidden" aria-live="polite" data-context-search-status></p>
 
@@ -497,6 +497,10 @@ const summary =
   const subjectBreadcrumbList = subjectBreadcrumb?.querySelector<HTMLOListElement>("ol");
   const subjectBreadcrumbCurrent = subjectBreadcrumbList?.lastElementChild;
   const subjectBreadcrumbTemplate = subjectBreadcrumbCurrent?.innerHTML ?? "";
+  const subjectHeading = subjectLayout?.querySelector<HTMLElement>(
+    "[data-subject-page-heading]",
+  );
+  const subjectHeadingTemplate = subjectHeading?.textContent ?? "";
   const categoryDetails = [
     ...document.querySelectorAll<HTMLDetailsElement>(".toc-category-details"),
   ];
@@ -513,6 +517,7 @@ const summary =
       ?.remove();
     if (!selected) {
       subjectBreadcrumbCurrent.innerHTML = subjectBreadcrumbTemplate;
+      if (subjectHeading) subjectHeading.textContent = subjectHeadingTemplate;
       return;
     }
     const categoryLink = selected.querySelector<HTMLAnchorElement>("summary a");
@@ -532,6 +537,7 @@ const summary =
     categoryCurrent.textContent = categoryName;
     categoryCrumb.append(categoryCurrent);
     subjectBreadcrumbList.append(categoryCrumb);
+    if (subjectHeading) subjectHeading.textContent = categoryName;
   }
 
   window.addEventListener("atlas-map-category-change", (event) => {

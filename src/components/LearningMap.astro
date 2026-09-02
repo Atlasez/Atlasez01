@@ -1572,9 +1572,18 @@ const categoryMetaJson = JSON.stringify(
         subjectOverride || container.dataset.fixedSubject || "",
         "",
       ];
+      const categoryLabel = categoryKey
+        ? categoryName.get(categoryKey) ?? category
+        : "";
       window.dispatchEvent(
         new CustomEvent("atlas-map-category-change", {
-          detail: { subject, category, categoryKey },
+          detail: {
+            subject,
+            category,
+            categoryKey,
+            subjectName: subjectName.get(subject) ?? subject,
+            categoryName: categoryLabel,
+          },
         }),
       );
     };

@@ -1007,6 +1007,32 @@ test.describe("学習サイト", () => {
     expect(upcomingBox?.y ?? 0).toBeGreaterThan(recentBox?.y ?? 0);
   });
 
+  test("学習地図のカテゴリ直リンクでも見出しとパンくずを表示する", async ({
+    page,
+  }) => {
+    await page.goto(
+      "atlas/ja/map/?subject=mathematics&category=mathematics%2Fgroup-theory",
+    );
+
+    await expect(page.locator("[data-map-page-heading]")).toHaveText("群論");
+    const breadcrumb = page.locator("[data-map-page-breadcrumb]");
+    await expect(breadcrumb).toContainText("アトラス");
+    await expect(breadcrumb).toContainText("数学");
+    await expect(breadcrumb).toContainText("群論");
+    await expect(
+      breadcrumb.getByRole("link", { name: "数学", exact: true }),
+    ).toHaveAttribute("href", /\/atlas\/ja\/mathematics\/$/);
+
+    // 折りたたんで概要へ戻ると、地図ページ本来の文脈に復元する。
+    await page.getByRole("button", { name: /群論を折りたたむ/ }).click();
+    await expect(page.locator("[data-map-page-heading]")).toHaveText(
+      "学習地図",
+    );
+    await expect(breadcrumb).toContainText("アトラス");
+    await expect(breadcrumb).toContainText("学習地図");
+    await expect(breadcrumb).not.toContainText("数学");
+  });
+
   test("経路検索は地図の枠内のボタンから開く", async ({ page }) => {
     await page.goto("atlas/ja/map/");
     const zoomLevel = page.locator("[data-map-zoom-level]");

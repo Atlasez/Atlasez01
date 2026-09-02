@@ -25,14 +25,16 @@ const locale = Astro.params.locale as Locale;
     LOCALES.map((l) => [l, atlasPath(l, "map")]),
   )}
 >
-  <div class="container" data-map-page>
-    <Breadcrumb
-      items={[
-        { label: t(locale, "breadcrumbHome"), href: atlasPath(locale) },
-        { label: t(locale, "map") },
-      ]}
-    />
-    <h1>{t(locale, "map")}</h1>
+  <div class="container" data-map-page data-map-page-locale={locale}>
+    <div data-map-page-breadcrumb>
+      <Breadcrumb
+        items={[
+          { label: t(locale, "breadcrumbHome"), href: atlasPath(locale) },
+          { label: t(locale, "map") },
+        ]}
+      />
+    </div>
+    <h1 data-map-page-heading>{t(locale, "map")}</h1>
     <p class="reading">
       {
         locale === "ja"
@@ -43,3 +45,110 @@ const locale = Astro.params.locale as Locale;
     <LearningMap locale={locale} />
   </div>
 </AtlasLayout>
+
+<script>
+  const mapPage = document.querySelector<HTMLElement>("[data-map-page]");
+  const mapPageHeading = mapPage?.querySelector<HTMLElement>(
+    "[data-map-page-heading]",
+  );
+  const mapPageBreadcrumb = mapPage?.querySelector<HTMLElement>(
+    "[data-map-page-breadcrumb] .breadcrumb",
+  );
+  const mapPageBreadcrumbList = mapPageBreadcrumb?.querySelector<HTMLOListElement>(
+    "ol",
+  );
+  const mapPageHeadingTemplate = mapPageHeading?.textContent ?? "";
+  const mapPageBreadcrumbTemplate = mapPageBreadcrumbList?.innerHTML ?? "";
+  const mapPageLocale = mapPage?.dataset.mapPageLocale ?? "ja";
+  const mapPageHome = mapPageBreadcrumbList?.firstElementChild;
+  const mapPageHomeLabel = mapPageHome?.textContent?.trim() ?? "Atlas";
+  const mapPageHomeHref =
+    mapPageHome?.querySelector<HTMLAnchorElement>("a")?.href ?? "/";
+
+  type MapCategoryChange = {
+    subject?: string;
+    categoryKey?: string | null;
+    subjectName?: string;
+    categoryName?: string;
+  };
+
+  function atlasSubjectPath(subject: string): string {
+    const prefix = location.pathname.split("/atlas/")[0] || "";
+    return `${prefix}/atlas/${mapPageLocale}/${encodeURIComponent(subject)}/`;
+  }
+
+  function createBreadcrumb(label: string, href?: string): HTMLLIElement {
+    const item = document.createElement("li");
+    if (href) {
+      const link = document.createElement("a");
+      link.href = href;
+      link.textContent = label;
+      item.append(link);
+    } else {
+      const current = document.createElement("span");
+      current.setAttribute("aria-current", "page");
+      current.textContent = label;
+      item.append(current);
+    }
+    return item;
+  }
+
+  function restoreMapPageContext(): void {
+    if (mapPageHeading) mapPageHeading.textContent = mapPageHeadingTemplate;
+    if (mapPageBreadcrumbList) {
+      mapPageBreadcrumbList.innerHTML = mapPageBreadcrumbTemplate;
+    }
+  }
+
+  function syncMapPageContext(detail: MapCategoryChange): void {
+    const categoryKey = detail.categoryKey ?? "";
+    if (!categoryKey) {
+      restoreMapPageContext();
+      return;
+    }
+    const [subject, categorySlug] = categoryKey.split("/");
+    const subjectName = detail.subjectName || subject;
+    const categoryName = detail.categoryName || categorySlug;
+    if (mapPageHeading) mapPageHeading.textContent = categoryName;
+    if (mapPageBreadcrumbList) {
+      mapPageBreadcrumbList.replaceChildren(
+        createBreadcrumb(mapPageHomeLabel, mapPageHomeHref),
+        createBreadcrumb(subjectName, atlasSubjectPath(subject)),
+        createBreadcrumb(categoryName),
+      );
+    }
+  }
+
+  window.addEventListener("atlas-map-category-change", (event) => {
+    syncMapPageContext(
+      (event as CustomEvent<MapCategoryChange>).detail ?? {},
+    );
+  });
+
+  // 地図の初期化とページスクリプトの実行順が変わっても、直リンクの
+  // category パラメータから同じ見出し・パンくずを復元する。
+  const initialCategory = new URL(location.href).searchParams.get("category");
+  if (initialCategory) {
+    const canvas = document.querySelector<HTMLElement>("#learning-map");
+    const categories = JSON.parse(canvas?.dataset.categories ?? "[]") as Array<{
+      subject: string;
+      slug: string;
+      name: string;
+    }>;
+    const subjects = JSON.parse(canvas?.dataset.subjects ?? "[]") as Array<{
+      slug: string;
+      name: string;
+    }>;
+    const [subject, categorySlug] = initialCategory.split("/");
+    const category = categories.find(
+      (item) => `${item.subject}/${item.slug}` === initialCategory,
+    );
+    const subjectMeta = subjects.find((item) => item.slug === subject);
+    syncMapPageContext({
+      subject,
+      categoryKey: initialCategory,
+      subjectName: subjectMeta?.name ?? subject,
+      categoryName: category?.name ?? categorySlug,
+    });
+  }
+</script>
