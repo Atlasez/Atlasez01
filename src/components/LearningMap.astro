@@ -1015,7 +1015,8 @@ const categoryMetaJson = JSON.stringify(
     const data = await loadGraphData();
     const nodeById = new Map(data.nodes.map((n) => [n.id, n]));
     const base = (container.dataset.base ?? "/").replace(/\/$/, "");
-    const mapRoot = `${base}/atlas/${locale}/map/`;
+    const categoryPagePath = (key: string, query = ""): string =>
+      `${base}/atlas/${locale}/${key.split("/").map(encodeURIComponent).join("/")}/?view=map${query}`;
     const label = (n: GraphNode) =>
       locale === "en" && n.name.en ? n.name.en : n.name.ja;
     const ja = locale === "ja";
@@ -2062,7 +2063,10 @@ const categoryMetaJson = JSON.stringify(
               const concept = nodeById.get(conceptId);
               if (!concept) return;
               const child = document.createElement("a");
-              child.href = `${mapRoot}?subject=${encodeURIComponent(concept.subject)}&category=${encodeURIComponent(catKeyOf(concept))}&selected=${encodeURIComponent(concept.id)}`;
+              child.href = categoryPagePath(
+                catKeyOf(concept),
+                `&selected=${encodeURIComponent(concept.id)}`,
+              );
               child.textContent = label(concept);
               children.append(child);
             });
@@ -2136,8 +2140,10 @@ const categoryMetaJson = JSON.stringify(
     // カテゴリを押したら中に入る
     cy.on("tap", 'node[kind = "category"]', (ev) => {
       const key = ev.target.data("catKey") as string;
-      renderCategory(key, true);
-      syncUrl();
+      // カテゴリ選択時に地図を一度描画してから親ページへ通知すると、
+      // 分野ページのURLを一瞬挟む余地がある。最初から正規のカテゴリ
+      // ページへ移動し、総合地図・分野地図の両方で同じ入口に揃える。
+      window.location.assign(categoryPagePath(key));
     });
 
     // 通常は詳細を開き、記事リンクまたは経路の始点・終点を選べるようにする。
@@ -2274,8 +2280,7 @@ const categoryMetaJson = JSON.stringify(
 
     cy.on("dbltap", 'node[kind = "concept"].outside', (ev) => {
       const key = ev.target.data("catKey") as string;
-      renderCategory(key, true);
-      syncUrl();
+      window.location.assign(categoryPagePath(key));
     });
 
     // 全画面の切り替えなどで枠の大きさが変わったら測り直す

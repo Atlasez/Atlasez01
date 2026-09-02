@@ -440,6 +440,23 @@ test.describe("学習サイト", () => {
     ).toBeVisible();
   });
 
+  test("記事の概念リンクはカテゴリ地図へ直接進む", async ({ page }) => {
+    await page.goto("atlas/ja/mathematics/group-theory/group-definition/");
+    const conceptLinks = page.locator(".article-concept-nodes a");
+    await expect(conceptLinks).not.toHaveCount(0);
+    const hrefs = await conceptLinks.evaluateAll((links) =>
+      links.map((link) => link.getAttribute("href") ?? ""),
+    );
+    expect(
+      hrefs.every((href) =>
+        href.includes("/atlas/ja/mathematics/group-theory/?view=map&selected="),
+      ),
+    ).toBe(true);
+    expect(hrefs.some((href) => href.includes("/atlas/ja/map/?subject="))).toBe(
+      false,
+    );
+  });
+
   test("スマホの目次ボタンは外寸を保ったまま文字だけ少し大きくする", async ({
     page,
   }) => {
