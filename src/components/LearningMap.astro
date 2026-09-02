@@ -1240,6 +1240,10 @@ const categoryMetaJson = JSON.stringify(
             "border-opacity": 0.5,
             padding: "24px",
             "z-index": 0,
+            // 親の分野枠はクリック対象にせず、子カテゴリのタップを優先する。
+            // これがないとカテゴリのクリックイベントが親へバブルし、
+            // 分野トップを経由するURLが生成される。
+            events: "no",
           },
         },
         {
