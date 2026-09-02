@@ -260,6 +260,32 @@ test.describe("学習サイト", () => {
     }
   });
 
+  test("総合ホームのタイルから分野を開くとタイル表示になる", async ({
+    page,
+  }) => {
+    // 分野ページに保存された表示設定があっても、タイルの導線はタイル表示を明示する。
+    await page.goto("atlas/ja/mathematics/?view=list");
+    await expect(page.getByRole("tab", { name: "リスト表示" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+
+    await page.goto("atlas/ja/?view=tiles");
+    const mathematicsTile = page.locator(
+      '[data-view-panel="tiles"] a.subject-name',
+      { hasText: "数学" },
+    );
+    await expect(mathematicsTile).toHaveAttribute(
+      "href",
+      "/atlas/ja/mathematics/?view=tiles",
+    );
+    await mathematicsTile.click();
+    await expect(page.getByRole("tab", { name: "タイル表示" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+  });
+
   test("総合リストを記事まで段階的に展開できる", async ({ page }) => {
     await page.goto("atlas/ja/?view=list");
     await expect(page.locator(".list-group[open]")).not.toHaveCount(0);

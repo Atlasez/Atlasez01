@@ -164,7 +164,9 @@ const summary =
               data-context-search-item
               data-search-text={localizedName(category.name, locale)}
             >
-              <a href={atlasPath(locale, subject.data.slug, category.slug)}>
+              <a
+                href={`${atlasPath(locale, subject.data.slug, category.slug)}?view=tiles`}
+              >
                 <span class="category-name">
                   {localizedName(category.name, locale)}
                 </span>
