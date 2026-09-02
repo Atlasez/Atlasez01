@@ -219,14 +219,41 @@ test.describe("学習サイト", () => {
           detail: {
             subject: "mathematics",
             categoryKey: "mathematics/group-theory",
+            navigate: true,
           },
         }),
       );
     });
-    await expect(page.locator("[data-map-subject-link]")).toHaveCount(0);
+    await expect(page).toHaveURL(
+      /\/atlas\/ja\/mathematics\/group-theory\/\?view=map$/,
+    );
+    await expect(page.locator("[data-category-breadcrumb]")).toContainText(
+      "群論",
+    );
     await page.getByRole("tab", { name: "リスト表示" }).click();
     await expect(page).toHaveURL(
       /\/atlas\/ja\/mathematics\/group-theory\/\?view=list$/,
+    );
+  });
+
+  test("総合学習地図のカテゴリ直リンクはカテゴリ地図へ正規化する", async ({
+    page,
+  }) => {
+    await page.goto(
+      "atlas/ja/?view=map&category=mathematics%2Fgroup-theory&subject=mathematics",
+    );
+    await expect(page).toHaveURL(
+      /\/atlas\/ja\/mathematics\/group-theory\/\?view=map$/,
+    );
+    await expect(page.locator(".category-main h1")).toHaveText("群論");
+    await expect(page.locator("[data-category-breadcrumb]")).toContainText(
+      "アトラス",
+    );
+    await expect(page.locator("[data-category-breadcrumb]")).toContainText(
+      "数学",
+    );
+    await expect(page.locator("[data-category-breadcrumb]")).toContainText(
+      "群論",
     );
   });
 
@@ -984,6 +1011,36 @@ test.describe("学習サイト", () => {
     await expect(page.locator(".category-main h1")).toHaveText("群論");
   });
 
+  test("分野学習地図からカテゴリを開くとカテゴリ地図へ正規化する", async ({
+    page,
+  }) => {
+    await page.goto("atlas/ja/mathematics/?view=map");
+    await page.evaluate(() => {
+      window.dispatchEvent(
+        new CustomEvent("atlas-map-category-change", {
+          detail: {
+            subject: "mathematics",
+            categoryKey: "mathematics/group-theory",
+            navigate: true,
+          },
+        }),
+      );
+    });
+    await expect(page).toHaveURL(
+      /\/atlas\/ja\/mathematics\/group-theory\/\?view=map$/,
+    );
+    await expect(page.locator(".category-main h1")).toHaveText("群論");
+    await expect(page.locator("[data-category-breadcrumb]")).toContainText(
+      "アトラス",
+    );
+    await expect(page.locator("[data-category-breadcrumb]")).toContainText(
+      "数学",
+    );
+    await expect(page.locator("[data-category-breadcrumb]")).toContainText(
+      "群論",
+    );
+  });
+
   test("カテゴリの更新情報を分野と同じ右カラム構成で表示する", async ({
     page,
   }) => {
@@ -1005,6 +1062,32 @@ test.describe("学習サイト", () => {
     expect(upcomingBox).not.toBeNull();
     expect(recentBox?.x ?? 0).toBeGreaterThan(mainBox?.x ?? 0);
     expect(upcomingBox?.y ?? 0).toBeGreaterThan(recentBox?.y ?? 0);
+  });
+
+  test("学習地図のカテゴリ直リンクでも見出しとパンくずを表示する", async ({
+    page,
+  }) => {
+    await page.goto(
+      "atlas/ja/map/?subject=mathematics&category=mathematics%2Fgroup-theory",
+    );
+
+    await expect(page.locator("[data-map-page-heading]")).toHaveText("群論");
+    const breadcrumb = page.locator("[data-map-page-breadcrumb]");
+    await expect(breadcrumb).toContainText("アトラス");
+    await expect(breadcrumb).toContainText("数学");
+    await expect(breadcrumb).toContainText("群論");
+    await expect(
+      breadcrumb.getByRole("link", { name: "数学", exact: true }),
+    ).toHaveAttribute("href", /\/atlas\/ja\/mathematics\/$/);
+
+    // 折りたたんで概要へ戻ると、地図ページ本来の文脈に復元する。
+    await page.getByRole("button", { name: /群論を折りたたむ/ }).click();
+    await expect(page.locator("[data-map-page-heading]")).toHaveText(
+      "学習地図",
+    );
+    await expect(breadcrumb).toContainText("アトラス");
+    await expect(breadcrumb).toContainText("学習地図");
+    await expect(breadcrumb).not.toContainText("数学");
   });
 
   test("経路検索は地図の枠内のボタンから開く", async ({ page }) => {

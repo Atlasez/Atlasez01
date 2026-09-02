@@ -1567,14 +1567,28 @@ const categoryMetaJson = JSON.stringify(
      * 地図は独立ページにも埋め込まれるため、親がいなくても安全な
      * CustomEvent にしている。
      */
-    const notifyCategorySelection = (categoryKey: string | null, subjectOverride = "") => {
+    const notifyCategorySelection = (
+      categoryKey: string | null,
+      subjectOverride = "",
+      navigate = false,
+    ) => {
       const [subject, category] = categoryKey?.split("/") ?? [
         subjectOverride || container.dataset.fixedSubject || "",
         "",
       ];
+      const categoryLabel = categoryKey
+        ? categoryName.get(categoryKey) ?? category
+        : "";
       window.dispatchEvent(
         new CustomEvent("atlas-map-category-change", {
-          detail: { subject, category, categoryKey },
+          detail: {
+            subject,
+            category,
+            categoryKey,
+            subjectName: subjectName.get(subject) ?? subject,
+            categoryName: categoryLabel,
+            navigate,
+          },
         }),
       );
     };
@@ -1809,9 +1823,9 @@ const categoryMetaJson = JSON.stringify(
     }
 
     /** 詳細: 1 カテゴリの概念と、外につながる概念だけを描く */
-    function renderCategory(key: string): void {
+    function renderCategory(key: string, navigate = false): void {
       focused = key;
-      notifyCategorySelection(key);
+      notifyCategorySelection(key, "", navigate);
       hideAll();
       if (backButton) backButton.hidden = false;
 
@@ -2122,7 +2136,7 @@ const categoryMetaJson = JSON.stringify(
     // カテゴリを押したら中に入る
     cy.on("tap", 'node[kind = "category"]', (ev) => {
       const key = ev.target.data("catKey") as string;
-      renderCategory(key);
+      renderCategory(key, true);
       syncUrl();
     });
 
@@ -2260,7 +2274,7 @@ const categoryMetaJson = JSON.stringify(
 
     cy.on("dbltap", 'node[kind = "concept"].outside', (ev) => {
       const key = ev.target.data("catKey") as string;
-      renderCategory(key);
+      renderCategory(key, true);
       syncUrl();
     });
 

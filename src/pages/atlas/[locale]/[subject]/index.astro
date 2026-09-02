@@ -118,7 +118,7 @@ const summary =
         ]}
       />
     </div>
-    <h1>{subjectName}</h1>
+    <h1 data-subject-page-heading>{subjectName}</h1>
     <p class="reading">{localizedName(subject.data.description, locale)}</p>
     <p class="visually-hidden" aria-live="polite" data-context-search-status></p>
 
@@ -395,6 +395,13 @@ const summary =
     return view === "tiles" ? path : `${path}?view=${encodeURIComponent(view)}`;
   }
 
+  // 分野地図にカテゴリを指定したURLは、カテゴリトップの地図へ正規化する。
+  // 総合地図から分野を経由しても、カテゴリ一覧から入った場合と同じ
+  // 見出し・パンくず・更新情報のページ構成を表示するための処理。
+  if (mapCategoryKey && new URL(location.href).searchParams.get("view") === "map") {
+    window.location.replace(categoryPath(mapCategoryKey, "map"));
+  }
+
   function activateSubjectView(view: string, focus = false): void {
     if (!subjectTabs.some((tab) => tab.dataset.viewTab === view)) view = "tiles";
     if (mapCategoryKey && view !== "map") {
@@ -497,6 +504,10 @@ const summary =
   const subjectBreadcrumbList = subjectBreadcrumb?.querySelector<HTMLOListElement>("ol");
   const subjectBreadcrumbCurrent = subjectBreadcrumbList?.lastElementChild;
   const subjectBreadcrumbTemplate = subjectBreadcrumbCurrent?.innerHTML ?? "";
+  const subjectHeading = subjectLayout?.querySelector<HTMLElement>(
+    "[data-subject-page-heading]",
+  );
+  const subjectHeadingTemplate = subjectHeading?.textContent ?? "";
   const categoryDetails = [
     ...document.querySelectorAll<HTMLDetailsElement>(".toc-category-details"),
   ];
@@ -513,6 +524,7 @@ const summary =
       ?.remove();
     if (!selected) {
       subjectBreadcrumbCurrent.innerHTML = subjectBreadcrumbTemplate;
+      if (subjectHeading) subjectHeading.textContent = subjectHeadingTemplate;
       return;
     }
     const categoryLink = selected.querySelector<HTMLAnchorElement>("summary a");
@@ -532,18 +544,24 @@ const summary =
     categoryCurrent.textContent = categoryName;
     categoryCrumb.append(categoryCurrent);
     subjectBreadcrumbList.append(categoryCrumb);
+    if (subjectHeading) subjectHeading.textContent = categoryName;
   }
 
   window.addEventListener("atlas-map-category-change", (event) => {
     const detail = (event as CustomEvent<{
       subject?: string;
       categoryKey?: string | null;
+      navigate?: boolean;
     }>).detail;
     const currentSubject = subjectLayout?.querySelector<HTMLAnchorElement>(
       ".breadcrumb li:nth-child(2) a",
     )?.href;
     if (detail.subject && currentSubject && !currentSubject.includes(`/${detail.subject}/`)) return;
     mapCategoryKey = detail.categoryKey ?? null;
+    if (detail.categoryKey && detail.navigate) {
+      window.location.assign(categoryPath(detail.categoryKey, "map"));
+      return;
+    }
     syncSubjectMapCategory(detail.categoryKey ?? null);
   });
 
