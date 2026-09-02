@@ -973,6 +973,40 @@ test.describe("学習サイト", () => {
     }
   });
 
+  test("分野のタイルからカテゴリの学習地図へ進んでもパンくずを保つ", async ({
+    page,
+  }) => {
+    await page.goto("atlas/ja/mathematics/?view=tiles");
+    await page.getByRole("link", { name: /^群論 記事:/ }).click();
+    await expect(page).toHaveURL(/\/atlas\/ja\/mathematics\/group-theory\/$/);
+    await page.getByRole("tab", { name: "学習地図" }).click();
+    await expect(page.locator("[data-category-breadcrumb]")).toBeVisible();
+    await expect(page.locator(".category-main h1")).toHaveText("群論");
+  });
+
+  test("カテゴリの更新情報を分野と同じ右カラム構成で表示する", async ({
+    page,
+  }) => {
+    await page.goto("atlas/ja/mathematics/group-theory/?view=map");
+    const recent = page.locator(".recent");
+    const main = page.locator(".category-main");
+    await expect(recent.locator(".section-title")).toHaveCount(2);
+    await expect(recent.locator(".recent-scroll")).toHaveCSS(
+      "max-height",
+      "416px",
+    );
+    const [mainBox, recentBox, upcomingBox] = await Promise.all([
+      main.boundingBox(),
+      recent.boundingBox(),
+      page.locator(".upcoming").boundingBox(),
+    ]);
+    expect(mainBox).not.toBeNull();
+    expect(recentBox).not.toBeNull();
+    expect(upcomingBox).not.toBeNull();
+    expect(recentBox?.x ?? 0).toBeGreaterThan(mainBox?.x ?? 0);
+    expect(upcomingBox?.y ?? 0).toBeGreaterThan(recentBox?.y ?? 0);
+  });
+
   test("経路検索は地図の枠内のボタンから開く", async ({ page }) => {
     await page.goto("atlas/ja/map/");
     const zoomLevel = page.locator("[data-map-zoom-level]");
