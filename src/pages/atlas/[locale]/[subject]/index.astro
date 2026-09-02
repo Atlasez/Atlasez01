@@ -395,6 +395,13 @@ const summary =
     return view === "tiles" ? path : `${path}?view=${encodeURIComponent(view)}`;
   }
 
+  // 分野地図にカテゴリを指定したURLは、カテゴリトップの地図へ正規化する。
+  // 総合地図から分野を経由しても、カテゴリ一覧から入った場合と同じ
+  // 見出し・パンくず・更新情報のページ構成を表示するための処理。
+  if (mapCategoryKey && new URL(location.href).searchParams.get("view") === "map") {
+    window.location.replace(categoryPath(mapCategoryKey, "map"));
+  }
+
   function activateSubjectView(view: string, focus = false): void {
     if (!subjectTabs.some((tab) => tab.dataset.viewTab === view)) view = "tiles";
     if (mapCategoryKey && view !== "map") {
@@ -544,12 +551,17 @@ const summary =
     const detail = (event as CustomEvent<{
       subject?: string;
       categoryKey?: string | null;
+      navigate?: boolean;
     }>).detail;
     const currentSubject = subjectLayout?.querySelector<HTMLAnchorElement>(
       ".breadcrumb li:nth-child(2) a",
     )?.href;
     if (detail.subject && currentSubject && !currentSubject.includes(`/${detail.subject}/`)) return;
     mapCategoryKey = detail.categoryKey ?? null;
+    if (detail.categoryKey && detail.navigate) {
+      window.location.assign(categoryPath(detail.categoryKey, "map"));
+      return;
+    }
     syncSubjectMapCategory(detail.categoryKey ?? null);
   });
 
