@@ -96,15 +96,16 @@ const items = articles.map((a) => ({
   >
     <div class="content-columns">
       <section class="category-main">
+        <div data-category-breadcrumb>
+          <Breadcrumb
+            items={[
+              { label: t(locale, "breadcrumbHome"), href: atlasPath(locale) },
+              { label: subjectName, href: atlasPath(locale, subject.data.slug) },
+              { label: categoryName },
+            ]}
+          />
+        </div>
         <h1>{categoryName}</h1>
-
-    <Breadcrumb
-      items={[
-        { label: t(locale, "breadcrumbHome"), href: atlasPath(locale) },
-        { label: subjectName, href: atlasPath(locale, subject.data.slug) },
-        { label: categoryName },
-      ]}
-    />
 
     <div class="view-bar">
       <div
@@ -483,10 +484,6 @@ const items = articles.map((a) => ({
   const contextSearchItems = [
     ...document.querySelectorAll<HTMLElement>("[data-context-search-item]"),
   ];
-  const categoryMapBreadcrumb = categoryLayout?.querySelector<HTMLElement>(
-    ".breadcrumb",
-  );
-
   function applyContextSearch(rawQuery: string): void {
     const query = rawQuery.trim().toLocaleLowerCase();
     let visible = 0;
@@ -520,7 +517,6 @@ const items = articles.map((a) => ({
     }
     if (mapPanel) mapPanel.hidden = !mapActive;
     if (categoryLayout) categoryLayout.dataset.activeView = view;
-    categoryMapBreadcrumb?.toggleAttribute("hidden", mapActive);
     applyContextSearch("");
     window.dispatchEvent(new CustomEvent("atlas:view-change", { detail: { view } }));
     for (const tab of tabs) {

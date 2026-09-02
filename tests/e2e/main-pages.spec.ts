@@ -948,6 +948,46 @@ test.describe("学習サイト", () => {
     await expect(list).toHaveAttribute("data-view", "list");
   });
 
+  test("カテゴリのパンくずと見出しを表示タブ間で一貫させる", async ({
+    page,
+  }) => {
+    await page.goto("atlas/ja/?view=list");
+    await page
+      .locator(
+        '[data-view-panel="list"] a[href="/atlas/ja/mathematics/group-theory/?view=list"]',
+      )
+      .click();
+
+    const breadcrumb = page.locator("[data-category-breadcrumb]");
+    const heading = page.locator(".category-main h1");
+    const expectHeader = async () => {
+      await expect(breadcrumb).toBeVisible();
+      await expect(breadcrumb).toContainText("アトラス");
+      await expect(heading).toHaveText("群論");
+      expect(
+        await page.locator(".category-main").evaluate((main) => {
+          const crumb = main.querySelector("[data-category-breadcrumb]");
+          const title = main.querySelector("h1");
+          return Boolean(
+            crumb &&
+            title &&
+            crumb.compareDocumentPosition(title) &
+              Node.DOCUMENT_POSITION_FOLLOWING,
+          );
+        }),
+      ).toBe(true);
+    };
+
+    await expect(page).toHaveURL(
+      /\/atlas\/ja\/mathematics\/group-theory\/\?view=list$/,
+    );
+    await expectHeader();
+    for (const view of ["学習地図", "リスト表示", "学習地図"]) {
+      await page.getByRole("tab", { name: view }).click();
+      await expectHeader();
+    }
+  });
+
   test("経路検索は地図の枠内のボタンから開く", async ({ page }) => {
     await page.goto("atlas/ja/map/");
     const zoomLevel = page.locator("[data-map-zoom-level]");
