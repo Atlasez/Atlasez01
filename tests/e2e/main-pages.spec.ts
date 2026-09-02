@@ -325,9 +325,9 @@ test.describe("学習サイト", () => {
         const heading = main.querySelector("h1");
         return Boolean(
           breadcrumb &&
-            heading &&
-            (breadcrumb.compareDocumentPosition(heading) &
-              Node.DOCUMENT_POSITION_FOLLOWING),
+          heading &&
+          breadcrumb.compareDocumentPosition(heading) &
+            Node.DOCUMENT_POSITION_FOLLOWING,
         );
       }),
     ).toBe(true);
