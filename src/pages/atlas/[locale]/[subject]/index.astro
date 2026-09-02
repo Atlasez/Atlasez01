@@ -110,9 +110,6 @@ const summary =
   >
   <div class="content-columns">
     <section class="subject-main">
-    <h1>{subjectName}</h1>
-    <p class="reading">{localizedName(subject.data.description, locale)}</p>
-
     <div data-subject-breadcrumb>
       <Breadcrumb
         items={[
@@ -121,6 +118,8 @@ const summary =
         ]}
       />
     </div>
+    <h1>{subjectName}</h1>
+    <p class="reading">{localizedName(subject.data.description, locale)}</p>
     <p class="visually-hidden" aria-live="polite" data-context-search-status></p>
 
     <div class="view-bar">
@@ -165,7 +164,9 @@ const summary =
               data-context-search-item
               data-search-text={localizedName(category.name, locale)}
             >
-              <a href={atlasPath(locale, subject.data.slug, category.slug)}>
+              <a
+                href={`${atlasPath(locale, subject.data.slug, category.slug)}?view=tiles`}
+              >
                 <span class="category-name">
                   {localizedName(category.name, locale)}
                 </span>
@@ -362,10 +363,6 @@ const summary =
   const contextSearchItems = [
     ...document.querySelectorAll<HTMLElement>("[data-context-search-item]"),
   ];
-  const subjectMapBreadcrumb = subjectLayout?.querySelector<HTMLElement>(
-    "[data-subject-breadcrumb]",
-  );
-
   function applyContextSearch(view: string, rawQuery: string): void {
     if (view === "map") return;
     const query = rawQuery.trim().toLocaleLowerCase();
@@ -415,7 +412,6 @@ const summary =
       panel.hidden = panel.dataset.viewPanel !== view;
     }
     if (subjectLayout) subjectLayout.dataset.activeView = view;
-    subjectMapBreadcrumb?.toggleAttribute("hidden", view === "map");
     applyContextSearch(view, "");
     window.dispatchEvent(new CustomEvent("atlas:view-change", { detail: { view } }));
     try {

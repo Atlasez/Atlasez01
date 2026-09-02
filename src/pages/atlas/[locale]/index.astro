@@ -1,7 +1,6 @@
 ---
 import AtlasLayout from "../../../layouts/AtlasLayout.astro";
 import LearningMap from "../../../components/LearningMap.astro";
-import Breadcrumb from "../../../components/Breadcrumb.astro";
 import {
   atlasPath,
   articlePath,
@@ -133,10 +132,6 @@ const views = [
           {t(locale, "subjects")}
         </h1>
 
-        <div data-home-map-breadcrumb>
-          <Breadcrumb items={[{ label: t(locale, "breadcrumbHome") }]} />
-        </div>
-
         {/* ブラウザのタブのように、ページ遷移せず表示を切り替える */}
         <div class="view-bar">
           <div
@@ -162,9 +157,6 @@ const views = [
               ))
             }
           </div>
-          <a class="map-subject-link" data-map-subject-link hidden href="#">
-            {locale === "ja" ? "分野の学習地図" : "Subject learning map"}
-          </a>
           <p class="section-meta">{summary}</p>
         </div>
         <p class="visually-hidden" aria-live="polite" data-context-search-status></p>
@@ -222,7 +214,7 @@ const views = [
                               {published ? (
                                 <a
                                   class="subject-name subject-link"
-                                  href={atlasPath(locale, s.data.slug)}
+                                  href={`${atlasPath(locale, s.data.slug)}?view=tiles`}
                                 >
                                   {name}
                                 </a>
@@ -497,10 +489,6 @@ const views = [
   const contextSearchItems = [
     ...document.querySelectorAll<HTMLElement>("[data-context-search-item]"),
   ];
-  const homeMapBreadcrumb = document.querySelector<HTMLElement>(
-    "[data-home-map-breadcrumb]",
-  );
-
   function applyContextSearch(view: string, rawQuery: string): void {
     if (view === "map") return;
     const query = rawQuery.trim().toLocaleLowerCase();
@@ -538,17 +526,9 @@ const views = [
     if (!detail?.view || detail.view === "map") return;
     applyContextSearch(detail.view, detail.query ?? "");
   });
-  const homeBreadcrumb = document.querySelector<HTMLElement>(
-    "[data-home-map-breadcrumb] .breadcrumb",
-  );
-  const homeBreadcrumbList = homeBreadcrumb?.querySelector<HTMLOListElement>("ol");
-  const homeBreadcrumbTemplate = homeBreadcrumbList?.innerHTML ?? "";
   const homeCategoryDetails = [
     ...document.querySelectorAll<HTMLDetailsElement>("[data-category-key]"),
   ];
-  const mapSubjectLink = document.querySelector<HTMLAnchorElement>(
-    "[data-map-subject-link]",
-  );
   let mapCategoryKey = new URL(location.href).searchParams.get("category");
   let mapSubject = new URL(location.href).searchParams.get("subject");
 
@@ -566,66 +546,28 @@ const views = [
     return view === "tiles" ? path : `${path}?view=${encodeURIComponent(view)}`;
   }
 
-  function updateMapSubjectLink(subject: string | null): void {
-    mapSubject = subject || null;
-    if (!mapSubjectLink || !mapSubject) {
-      if (mapSubjectLink) mapSubjectLink.hidden = true;
-      return;
-    }
-    const subjectDetails = homeCategoryDetails.find((details) =>
-      details.dataset.categoryKey?.startsWith(`${mapSubject}/`),
-    )?.closest(".subject-list-details");
-    const name = subjectDetails?.querySelector(".subject-list-head > a")?.textContent?.trim() ?? mapSubject;
-    mapSubjectLink.href = atlasSubjectPath(mapSubject, "map");
-    mapSubjectLink.textContent = layout?.dataset.atlasLocale === "ja"
-      ? `${name}の学習地図を開く`
-      : `Open ${name} learning map`;
-    mapSubjectLink.hidden = false;
-  }
-
   function syncHomeMapContext(categoryKey: string | null): void {
     mapCategoryKey = categoryKey || null;
-    updateMapSubjectLink(categoryKey?.split("/")[0] ?? mapSubject);
+    if (categoryKey) mapSubject = categoryKey.split("/")[0] ?? mapSubject;
     const selected = homeCategoryDetails.find(
       (details) => details.dataset.categoryKey === mapCategoryKey,
     );
     homeCategoryDetails.forEach((details) => {
       if (details === selected) details.open = true;
     });
-    if (!homeBreadcrumbList) return;
-    homeBreadcrumbList.innerHTML = homeBreadcrumbTemplate;
     if (!selected) return;
     const subjectDetails = selected.closest<HTMLDetailsElement>(
       ".subject-list-details",
     );
     if (subjectDetails) subjectDetails.open = true;
-    const subjectLink = subjectDetails?.querySelector<HTMLAnchorElement>(
-      ".subject-list-head > a",
-    );
-    const categoryLink = selected.querySelector<HTMLAnchorElement>(
-      ".category-list-head > a",
-    );
-    const current = homeBreadcrumbList.lastElementChild;
-    if (!current || !subjectLink || !categoryLink) return;
-    const subjectCrumb = document.createElement("li");
-    const subjectAnchor = document.createElement("a");
-    subjectAnchor.href = subjectLink.href;
-    subjectAnchor.textContent = subjectLink.textContent?.trim() ?? "";
-    subjectCrumb.append(subjectAnchor);
-    const categoryCrumb = document.createElement("li");
-    const categoryCurrent = document.createElement("span");
-    categoryCurrent.setAttribute("aria-current", "page");
-    categoryCurrent.textContent = categoryLink.textContent?.trim() ?? "";
-    categoryCrumb.append(categoryCurrent);
-    current.replaceWith(subjectCrumb, categoryCrumb);
   }
 
   window.addEventListener("atlas-map-category-change", (event) => {
     const detail = (event as CustomEvent<{ subject?: string; categoryKey?: string | null }>).detail;
-    updateMapSubjectLink(detail.subject ?? detail.categoryKey?.split("/")[0] ?? null);
+    mapSubject = detail.subject ?? detail.categoryKey?.split("/")[0] ?? mapSubject;
     syncHomeMapContext(detail.categoryKey ?? null);
   });
-  updateMapSubjectLink(mapSubject);
+  syncHomeMapContext(mapCategoryKey);
 
   function activate(view: string, focus = false): void {
     if (!tabs.some((tab) => tab.dataset.viewTab === view)) view = "tiles";
@@ -656,7 +598,6 @@ const views = [
         ?.scrollIntoView({ block: "nearest" });
     }
     if (layout) layout.dataset.activeView = view;
-    homeMapBreadcrumb?.toggleAttribute("hidden", view === "map");
     applyContextSearch(view, "");
     window.dispatchEvent(new CustomEvent("atlas:view-change", { detail: { view } }));
     try {
@@ -840,16 +781,6 @@ const views = [
   }
   .view-panel > :global(.map-section) {
     margin-top: 0;
-  }
-  .map-subject-link {
-    align-self: center;
-    display: inline-flex;
-    min-height: var(--touch-target);
-    align-items: center;
-    padding-inline: var(--space-2);
-    color: var(--accent-primary);
-    font-size: calc(0.84rem * var(--text-scale));
-    font-weight: 700;
   }
   /* JSが無いときは3つとも並ぶ。どの表示かが分かるよう区切りを入れる */
   .view-panel:not([hidden]) + .view-panel:not([hidden]) {
