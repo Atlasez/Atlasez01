@@ -235,6 +235,9 @@ test.describe("学習サイト", () => {
 
   test("総合学習地図の分野名から分野地図へ移動できる", async ({ page }) => {
     await page.goto("atlas/ja/?view=map");
+    await expect(page.locator("[data-home-map-breadcrumb]")).toContainText(
+      "アトラス",
+    );
     const mathematics = page.getByRole("link", {
       name: "数学の学習地図を開く",
       exact: true,
@@ -312,6 +315,22 @@ test.describe("学習サイト", () => {
     page,
   }) => {
     await page.goto("atlas/ja/mathematics/");
+
+    await expect(page.locator("[data-subject-breadcrumb]")).toContainText(
+      "アトラス",
+    );
+    expect(
+      await page.locator(".subject-main").evaluate((main) => {
+        const breadcrumb = main.querySelector("[data-subject-breadcrumb]");
+        const heading = main.querySelector("h1");
+        return Boolean(
+          breadcrumb &&
+            heading &&
+            (breadcrumb.compareDocumentPosition(heading) &
+              Node.DOCUMENT_POSITION_FOLLOWING),
+        );
+      }),
+    ).toBe(true);
 
     expect(await page.locator("[data-view-tab]").allTextContents()).toEqual([
       "タイル表示",

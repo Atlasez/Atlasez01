@@ -110,9 +110,6 @@ const summary =
   >
   <div class="content-columns">
     <section class="subject-main">
-    <h1>{subjectName}</h1>
-    <p class="reading">{localizedName(subject.data.description, locale)}</p>
-
     <div data-subject-breadcrumb>
       <Breadcrumb
         items={[
@@ -121,6 +118,8 @@ const summary =
         ]}
       />
     </div>
+    <h1>{subjectName}</h1>
+    <p class="reading">{localizedName(subject.data.description, locale)}</p>
     <p class="visually-hidden" aria-live="polite" data-context-search-status></p>
 
     <div class="view-bar">
