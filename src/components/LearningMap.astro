@@ -2366,6 +2366,11 @@ const categoryMetaJson = JSON.stringify(
       // 分野ページに `?category=...&subject=...` を残したままになり、
       // 同じカテゴリに複数のURL/表示状態が生じる。カテゴリページを
       // 最初から開けば、検索結果の選択状態も正規URLだけで復元できる。
+      try {
+        sessionStorage.setItem("atlasez-pending-context-search", rawQuery.trim());
+      } catch {
+        // sessionStorage が使えない環境でもカテゴリ遷移自体は続行する。
+      }
       window.location.assign(
         categoryPagePath(
           catKeyOf(found),

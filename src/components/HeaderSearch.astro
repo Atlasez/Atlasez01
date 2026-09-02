@@ -194,11 +194,6 @@ const action = atlasPath(locale, "search");
       if (submitter?.hasAttribute("data-global-search")) return;
       if (!contextHost) return;
       event.preventDefault();
-      try {
-        sessionStorage.setItem(pendingQueryKey, input.value);
-      } catch {
-        // sessionStorage が使えない環境でも検索自体は続行する。
-      }
       document.dispatchEvent(
         new CustomEvent("atlas:context-search", {
           detail: { view: activeView(), query: input.value },
