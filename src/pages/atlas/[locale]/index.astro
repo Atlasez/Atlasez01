@@ -546,14 +546,6 @@ const views = [
     return view === "tiles" ? path : `${path}?view=${encodeURIComponent(view)}`;
   }
 
-  // カテゴリを開いた地図は、総合ホームの一時的な表示ではなく、
-  // カテゴリトップの学習地図を正規の入口にする。これにより、
-  // トップの地図から入った場合もリスト表示などから入った場合も、
-  // 見出し・パンくず・更新情報が同じページ構成になる。
-  if (mapCategoryKey && new URL(location.href).searchParams.get("view") === "map") {
-    window.location.replace(categoryPath(mapCategoryKey, "map"));
-  }
-
   function syncHomeMapContext(categoryKey: string | null): void {
     mapCategoryKey = categoryKey || null;
     if (categoryKey) mapSubject = categoryKey.split("/")[0] ?? mapSubject;

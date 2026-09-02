@@ -236,12 +236,21 @@ test.describe("学習サイト", () => {
     );
   });
 
-  test("総合学習地図のカテゴリ直リンクはカテゴリ地図へ正規化する", async ({
+  test("総合学習地図からカテゴリを開くとカテゴリ地図へ直接進む", async ({
     page,
   }) => {
-    await page.goto(
-      "atlas/ja/?view=map&category=mathematics%2Fgroup-theory&subject=mathematics",
-    );
+    await page.goto("atlas/ja/?view=map");
+    await page.evaluate(() => {
+      window.dispatchEvent(
+        new CustomEvent("atlas-map-category-change", {
+          detail: {
+            subject: "mathematics",
+            categoryKey: "mathematics/group-theory",
+            navigate: true,
+          },
+        }),
+      );
+    });
     await expect(page).toHaveURL(
       /\/atlas\/ja\/mathematics\/group-theory\/\?view=map$/,
     );
@@ -1011,7 +1020,7 @@ test.describe("学習サイト", () => {
     await expect(page.locator(".category-main h1")).toHaveText("群論");
   });
 
-  test("分野学習地図からカテゴリを開くとカテゴリ地図へ正規化する", async ({
+  test("分野学習地図からカテゴリを開くとカテゴリ地図へ直接進む", async ({
     page,
   }) => {
     await page.goto("atlas/ja/mathematics/?view=map");
