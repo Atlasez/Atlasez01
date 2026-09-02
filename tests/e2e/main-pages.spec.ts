@@ -219,6 +219,7 @@ test.describe("学習サイト", () => {
           detail: {
             subject: "mathematics",
             categoryKey: "mathematics/group-theory",
+            navigate: true,
           },
         }),
       );

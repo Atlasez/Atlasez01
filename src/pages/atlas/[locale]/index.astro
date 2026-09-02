@@ -571,9 +571,13 @@ const views = [
   }
 
   window.addEventListener("atlas-map-category-change", (event) => {
-    const detail = (event as CustomEvent<{ subject?: string; categoryKey?: string | null }>).detail;
+    const detail = (event as CustomEvent<{
+      subject?: string;
+      categoryKey?: string | null;
+      navigate?: boolean;
+    }>).detail;
     mapSubject = detail.subject ?? detail.categoryKey?.split("/")[0] ?? mapSubject;
-    if (detail.categoryKey) {
+    if (detail.categoryKey && detail.navigate) {
       window.location.assign(categoryPath(detail.categoryKey, "map"));
       return;
     }
