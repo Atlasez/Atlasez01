@@ -223,10 +223,36 @@ test.describe("学習サイト", () => {
         }),
       );
     });
-    await expect(page.locator("[data-map-subject-link]")).toHaveCount(0);
+    await expect(page).toHaveURL(
+      /\/atlas\/ja\/mathematics\/group-theory\/\?view=map$/,
+    );
+    await expect(page.locator("[data-category-breadcrumb]")).toContainText(
+      "群論",
+    );
     await page.getByRole("tab", { name: "リスト表示" }).click();
     await expect(page).toHaveURL(
       /\/atlas\/ja\/mathematics\/group-theory\/\?view=list$/,
+    );
+  });
+
+  test("総合学習地図のカテゴリ直リンクはカテゴリ地図へ正規化する", async ({
+    page,
+  }) => {
+    await page.goto(
+      "atlas/ja/?view=map&category=mathematics%2Fgroup-theory&subject=mathematics",
+    );
+    await expect(page).toHaveURL(
+      /\/atlas\/ja\/mathematics\/group-theory\/\?view=map$/,
+    );
+    await expect(page.locator(".category-main h1")).toHaveText("群論");
+    await expect(page.locator("[data-category-breadcrumb]")).toContainText(
+      "アトラス",
+    );
+    await expect(page.locator("[data-category-breadcrumb]")).toContainText(
+      "数学",
+    );
+    await expect(page.locator("[data-category-breadcrumb]")).toContainText(
+      "群論",
     );
   });
 
