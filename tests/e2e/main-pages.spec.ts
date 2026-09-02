@@ -223,33 +223,18 @@ test.describe("学習サイト", () => {
         }),
       );
     });
-    await expect(page.locator("[data-map-subject-link]")).toHaveAttribute(
-      "href",
-      /\/atlas\/ja\/mathematics\/\?view=map$/,
-    );
+    await expect(page.locator("[data-map-subject-link]")).toHaveCount(0);
     await page.getByRole("tab", { name: "リスト表示" }).click();
     await expect(page).toHaveURL(
       /\/atlas\/ja\/mathematics\/group-theory\/\?view=list$/,
     );
   });
 
-  test("総合学習地図の分野名から分野地図へ移動できる", async ({ page }) => {
+  test("総合学習地図では分野地図への補助リンクを表示しない", async ({
+    page,
+  }) => {
     await page.goto("atlas/ja/?view=map");
-    const mathematics = page.getByRole("link", {
-      name: "数学の学習地図を開く",
-      exact: true,
-    });
-    await expect(mathematics).toBeVisible();
-    await expect(mathematics).toHaveAttribute(
-      "href",
-      "/atlas/ja/mathematics/?view=map",
-    );
-    await mathematics.click();
-    await expect(page).toHaveURL(/\/atlas\/ja\/mathematics\/\?view=map$/);
-    await expect(page.getByRole("tab", { name: "学習地図" })).toHaveAttribute(
-      "aria-selected",
-      "true",
-    );
+    await expect(page.locator("[data-map-subject-link]")).toHaveCount(0);
   });
 
   test("総合ホームの各表示にパンくずを表示しない", async ({ page }) => {

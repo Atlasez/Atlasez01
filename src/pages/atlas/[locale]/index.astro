@@ -157,9 +157,6 @@ const views = [
               ))
             }
           </div>
-          <a class="map-subject-link" data-map-subject-link hidden href="#">
-            {locale === "ja" ? "分野の学習地図" : "Subject learning map"}
-          </a>
           <p class="section-meta">{summary}</p>
         </div>
         <p class="visually-hidden" aria-live="polite" data-context-search-status></p>
@@ -532,9 +529,6 @@ const views = [
   const homeCategoryDetails = [
     ...document.querySelectorAll<HTMLDetailsElement>("[data-category-key]"),
   ];
-  const mapSubjectLink = document.querySelector<HTMLAnchorElement>(
-    "[data-map-subject-link]",
-  );
   let mapCategoryKey = new URL(location.href).searchParams.get("category");
   let mapSubject = new URL(location.href).searchParams.get("subject");
 
@@ -552,26 +546,9 @@ const views = [
     return view === "tiles" ? path : `${path}?view=${encodeURIComponent(view)}`;
   }
 
-  function updateMapSubjectLink(subject: string | null): void {
-    mapSubject = subject || null;
-    if (!mapSubjectLink || !mapSubject) {
-      if (mapSubjectLink) mapSubjectLink.hidden = true;
-      return;
-    }
-    const subjectDetails = homeCategoryDetails.find((details) =>
-      details.dataset.categoryKey?.startsWith(`${mapSubject}/`),
-    )?.closest(".subject-list-details");
-    const name = subjectDetails?.querySelector(".subject-list-head > a")?.textContent?.trim() ?? mapSubject;
-    mapSubjectLink.href = atlasSubjectPath(mapSubject, "map");
-    mapSubjectLink.textContent = layout?.dataset.atlasLocale === "ja"
-      ? `${name}の学習地図を開く`
-      : `Open ${name} learning map`;
-    mapSubjectLink.hidden = false;
-  }
-
   function syncHomeMapContext(categoryKey: string | null): void {
     mapCategoryKey = categoryKey || null;
-    updateMapSubjectLink(categoryKey?.split("/")[0] ?? mapSubject);
+    if (categoryKey) mapSubject = categoryKey.split("/")[0] ?? mapSubject;
     const selected = homeCategoryDetails.find(
       (details) => details.dataset.categoryKey === mapCategoryKey,
     );
@@ -587,10 +564,9 @@ const views = [
 
   window.addEventListener("atlas-map-category-change", (event) => {
     const detail = (event as CustomEvent<{ subject?: string; categoryKey?: string | null }>).detail;
-    updateMapSubjectLink(detail.subject ?? detail.categoryKey?.split("/")[0] ?? null);
+    mapSubject = detail.subject ?? detail.categoryKey?.split("/")[0] ?? mapSubject;
     syncHomeMapContext(detail.categoryKey ?? null);
   });
-  updateMapSubjectLink(mapSubject);
   syncHomeMapContext(mapCategoryKey);
 
   function activate(view: string, focus = false): void {
@@ -805,16 +781,6 @@ const views = [
   }
   .view-panel > :global(.map-section) {
     margin-top: 0;
-  }
-  .map-subject-link {
-    align-self: center;
-    display: inline-flex;
-    min-height: var(--touch-target);
-    align-items: center;
-    padding-inline: var(--space-2);
-    color: var(--accent-primary);
-    font-size: calc(0.84rem * var(--text-scale));
-    font-weight: 700;
   }
   /* JSが無いときは3つとも並ぶ。どの表示かが分かるよう区切りを入れる */
   .view-panel:not([hidden]) + .view-panel:not([hidden]) {
