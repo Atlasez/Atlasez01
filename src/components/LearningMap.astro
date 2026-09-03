@@ -1015,7 +1015,8 @@ const categoryMetaJson = JSON.stringify(
     const data = await loadGraphData();
     const nodeById = new Map(data.nodes.map((n) => [n.id, n]));
     const base = (container.dataset.base ?? "/").replace(/\/$/, "");
-    const mapRoot = `${base}/atlas/${locale}/map/`;
+    const categoryPagePath = (key: string, query = ""): string =>
+      `${base}/atlas/${locale}/${key.split("/").map(encodeURIComponent).join("/")}/?view=map${query}`;
     const label = (n: GraphNode) =>
       locale === "en" && n.name.en ? n.name.en : n.name.ja;
     const ja = locale === "ja";
@@ -1239,6 +1240,10 @@ const categoryMetaJson = JSON.stringify(
             "border-opacity": 0.5,
             padding: "24px",
             "z-index": 0,
+            // 親の分野枠はクリック対象にせず、子カテゴリのタップを優先する。
+            // これがないとカテゴリのクリックイベントが親へバブルし、
+            // 分野トップを経由するURLが生成される。
+            events: "no",
           },
         },
         {
@@ -2000,11 +2005,11 @@ const categoryMetaJson = JSON.stringify(
     /** URL に今の表示状態を書き戻す */
     function syncUrl(): void {
       const url = new URL(location.href);
-      if (focused) url.searchParams.set("category", focused);
-      else url.searchParams.delete("category");
-      const subject = container?.dataset.fixedSubject || focused?.split("/")[0] || "";
-      if (subject) url.searchParams.set("subject", subject);
-      else url.searchParams.delete("subject");
+      // カテゴリは常にカテゴリページのパスで表現する。埋め込み地図の
+      // 状態を query に書き戻すと、総合・分野ページに別のカテゴリ表示を
+      // 作る旧URLを再生成してしまうため、旧パラメータは消去するだけにする。
+      url.searchParams.delete("category");
+      url.searchParams.delete("subject");
       history.replaceState(null, "", url);
     }
 
@@ -2062,7 +2067,10 @@ const categoryMetaJson = JSON.stringify(
               const concept = nodeById.get(conceptId);
               if (!concept) return;
               const child = document.createElement("a");
-              child.href = `${mapRoot}?subject=${encodeURIComponent(concept.subject)}&category=${encodeURIComponent(catKeyOf(concept))}&selected=${encodeURIComponent(concept.id)}`;
+              child.href = categoryPagePath(
+                catKeyOf(concept),
+                `&selected=${encodeURIComponent(concept.id)}`,
+              );
               child.textContent = label(concept);
               children.append(child);
             });
@@ -2136,8 +2144,10 @@ const categoryMetaJson = JSON.stringify(
     // カテゴリを押したら中に入る
     cy.on("tap", 'node[kind = "category"]', (ev) => {
       const key = ev.target.data("catKey") as string;
-      renderCategory(key, true);
-      syncUrl();
+      // カテゴリ選択時に地図を一度描画してから親ページへ通知すると、
+      // 分野ページのURLを一瞬挟む余地がある。最初から正規のカテゴリ
+      // ページへ移動し、総合地図・分野地図の両方で同じ入口に揃える。
+      window.location.assign(categoryPagePath(key));
     });
 
     // 通常は詳細を開き、記事リンクまたは経路の始点・終点を選べるようにする。
@@ -2274,8 +2284,7 @@ const categoryMetaJson = JSON.stringify(
 
     cy.on("dbltap", 'node[kind = "concept"].outside', (ev) => {
       const key = ev.target.data("catKey") as string;
-      renderCategory(key, true);
-      syncUrl();
+      window.location.assign(categoryPagePath(key));
     });
 
     // 全画面の切り替えなどで枠の大きさが変わったら測り直す
@@ -2352,13 +2361,22 @@ const categoryMetaJson = JSON.stringify(
         setStatus(ja ? "一致する概念がありません" : "No matching concept");
         return;
       }
-      renderCategory(catKeyOf(found));
-      const element = cy.getElementById(found.id);
-      cy.elements().unselect();
-      element.select();
-      cy.animate({ center: { eles: element }, zoom: 1.2, duration: 300 });
-      showDetail(found.id);
-      syncUrl();
+      // 検索結果もカテゴリノードのクリックと同じ正規入口へ送る。
+      // ここで地図を直接描画してから `syncUrl()` すると、総合ホームや
+      // 分野ページに `?category=...&subject=...` を残したままになり、
+      // 同じカテゴリに複数のURL/表示状態が生じる。カテゴリページを
+      // 最初から開けば、検索結果の選択状態も正規URLだけで復元できる。
+      try {
+        sessionStorage.setItem("atlasez-pending-context-search", rawQuery.trim());
+      } catch {
+        // sessionStorage が使えない環境でもカテゴリ遷移自体は続行する。
+      }
+      window.location.assign(
+        categoryPagePath(
+          catKeyOf(found),
+          `&selected=${encodeURIComponent(found.id)}`,
+        ),
+      );
     };
     applyContextSearch = searchConcept;
 

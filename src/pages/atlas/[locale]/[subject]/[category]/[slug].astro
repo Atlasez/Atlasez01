@@ -327,7 +327,7 @@ const structuredData = {
               {
                 conceptNames.map((concept) => (
                   <a
-                    href={`${atlasPath(locale, "map")}?subject=${encodeURIComponent(entry.data.subject)}&category=${encodeURIComponent(`${entry.data.subject}/${entry.data.category}`)}&selected=${encodeURIComponent(concept.id)}`}
+                    href={`${atlasPath(locale, entry.data.subject, entry.data.category)}?view=map&selected=${encodeURIComponent(concept.id)}`}
                   >
                     {concept.name}
                   </a>

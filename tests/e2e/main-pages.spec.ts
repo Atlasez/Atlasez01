@@ -236,12 +236,21 @@ test.describe("学習サイト", () => {
     );
   });
 
-  test("総合学習地図のカテゴリ直リンクはカテゴリ地図へ正規化する", async ({
+  test("総合学習地図からカテゴリを開くとカテゴリ地図へ直接進む", async ({
     page,
   }) => {
-    await page.goto(
-      "atlas/ja/?view=map&category=mathematics%2Fgroup-theory&subject=mathematics",
-    );
+    await page.goto("atlas/ja/?view=map");
+    await page.evaluate(() => {
+      window.dispatchEvent(
+        new CustomEvent("atlas-map-category-change", {
+          detail: {
+            subject: "mathematics",
+            categoryKey: "mathematics/group-theory",
+            navigate: true,
+          },
+        }),
+      );
+    });
     await expect(page).toHaveURL(
       /\/atlas\/ja\/mathematics\/group-theory\/\?view=map$/,
     );
@@ -252,6 +261,19 @@ test.describe("学習サイト", () => {
     await expect(page.locator("[data-category-breadcrumb]")).toContainText(
       "数学",
     );
+    await expect(page.locator("[data-category-breadcrumb]")).toContainText(
+      "群論",
+    );
+  });
+
+  test("総合学習地図の概念検索もカテゴリ地図へ直接進む", async ({ page }) => {
+    await page.goto("atlas/ja/?view=map");
+    await page.locator("[data-context-search-input]").fill("群");
+    await page.getByRole("button", { name: "検索", exact: true }).click();
+    await expect(page).toHaveURL(
+      /\/atlas\/ja\/mathematics\/group-theory\/\?view=map&selected=[^&]+$/,
+    );
+    await expect(page.locator(".category-main h1")).toHaveText("群論");
     await expect(page.locator("[data-category-breadcrumb]")).toContainText(
       "群論",
     );
@@ -429,6 +451,23 @@ test.describe("学習サイト", () => {
     await expect(
       page.getByRole("button", { name: "報告を送信" }),
     ).toBeVisible();
+  });
+
+  test("記事の概念リンクはカテゴリ地図へ直接進む", async ({ page }) => {
+    await page.goto("atlas/ja/mathematics/group-theory/group-definition/");
+    const conceptLinks = page.locator(".article-concept-nodes a");
+    await expect(conceptLinks).not.toHaveCount(0);
+    const hrefs = await conceptLinks.evaluateAll((links) =>
+      links.map((link) => link.getAttribute("href") ?? ""),
+    );
+    expect(
+      hrefs.every((href) =>
+        href.includes("/atlas/ja/mathematics/group-theory/?view=map&selected="),
+      ),
+    ).toBe(true);
+    expect(hrefs.some((href) => href.includes("/atlas/ja/map/?subject="))).toBe(
+      false,
+    );
   });
 
   test("スマホの目次ボタンは外寸を保ったまま文字だけ少し大きくする", async ({
@@ -1011,7 +1050,7 @@ test.describe("学習サイト", () => {
     await expect(page.locator(".category-main h1")).toHaveText("群論");
   });
 
-  test("分野学習地図からカテゴリを開くとカテゴリ地図へ正規化する", async ({
+  test("分野学習地図からカテゴリを開くとカテゴリ地図へ直接進む", async ({
     page,
   }) => {
     await page.goto("atlas/ja/mathematics/?view=map");
