@@ -2545,8 +2545,9 @@ const structuredData = {
       // 本文中の参照リンクにホバーしたとき、リンク先の定義・命題カードを
       // X のプレビューのように表示する。タイトルそのものをトリガーにはせず、
       // 実際に読者がクリックできる本文リンクへだけ動作を付与する。
-      // 現時点では検証対象の巡回群記事だけに限定し、他の記事の挙動は変えない。
-      if (articleMeta.dataset.articleId === "ja-mathematics-cyclic-groups") {
+      // 数学分野の記事で、実際に本文参照リンクが生成された場合だけ有効にする。
+      // 参照のない記事にはプレビューDOMやイベントを追加しない。
+      if (articleMeta.dataset.subjectSlug === "mathematics") {
         const articleMain = mathBody.closest<HTMLElement>(".article-main");
         const localCards = new Map<string, HTMLElement>();
         theoremCards.forEach((card, index) => {

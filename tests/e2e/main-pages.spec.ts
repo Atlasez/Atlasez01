@@ -497,8 +497,22 @@ test.describe("学習サイト", () => {
     await page.keyboard.press("Escape");
     await expect(preview).toBeHidden();
 
-    // 適用対象は巡回群だけ。別の記事にはプレビューDOMもトリガーも生成しない。
+    // 数学分野全体で同じ仕様を使う。同一記事内の参照もプレビューできる。
     await page.goto("atlas/ja/mathematics/group-theory/subgroups/");
+    const localTrigger = page
+      .locator(
+        '.article-body a[data-theorem-preview-trigger][href*="#math-block-5"]',
+      )
+      .first();
+    await expect(localTrigger).toContainText("部分群の定義:命題 5");
+    await localTrigger.dispatchEvent("pointerenter");
+    await expect(page.locator("[data-theorem-preview]")).toBeVisible();
+    await expect(page.locator("[data-theorem-preview]")).toContainText(
+      "部分群",
+    );
+
+    // 参照リンクのない記事にはプレビューDOMを生成しない。
+    await page.goto("atlas/ja/mathematics/group-theory/group-definition/");
     await expect(page.locator("[data-theorem-preview]")).toHaveCount(0);
     await expect(page.locator("[data-theorem-preview-trigger]")).toHaveCount(0);
   });
