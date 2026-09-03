@@ -448,6 +448,13 @@ test.describe("学習サイト", () => {
     await expect(page.locator(".back-to-toc")).toHaveCount(0);
     await expect(page.getByLabel("報告の種類")).toBeVisible();
     await expect(page.getByLabel("内容")).toBeVisible();
+    const shareButton = page.getByRole("button", { name: "記事を共有" });
+    await expect(shareButton).toBeVisible();
+    await expect(shareButton.locator("svg")).toHaveAttribute(
+      "viewBox",
+      "0 0 24 24",
+    );
+    await expect(shareButton.locator("circle")).toHaveCount(3);
     await expect(
       page.getByRole("button", { name: "報告を送信" }),
     ).toBeVisible();

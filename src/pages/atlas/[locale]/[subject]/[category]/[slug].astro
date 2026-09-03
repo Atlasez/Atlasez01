@@ -391,7 +391,23 @@ const structuredData = {
             aria-label={t(locale, "shareArticle")}
             title={t(locale, "shareArticle")}
           >
-            <span aria-hidden="true">↗</span>
+            <svg
+              class="article-share-icon"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <path
+                d="m8.05 10.9 7.9-4.65M8.05 13.1l7.9 4.65"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-width="2.2"
+              />
+              <circle cx="6" cy="12" r="2.25" fill="currentColor" />
+              <circle cx="18" cy="5" r="2.25" fill="currentColor" />
+              <circle cx="18" cy="19" r="2.25" fill="currentColor" />
+            </svg>
           </button>
           <button
             type="button"
@@ -872,6 +888,11 @@ const structuredData = {
     border-color: var(--accent-primary);
     color: var(--accent-primary);
     background: var(--accent-subtle);
+  }
+  .article-share-icon {
+    display: block;
+    width: 1.35rem;
+    height: 1.35rem;
   }
   .article-action-status {
     align-self: center;
