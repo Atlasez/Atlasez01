@@ -1253,9 +1253,9 @@ const structuredData = {
     cursor: help;
     text-decoration: none;
   }
-  /* 群の定義ページだけで使う、定理・定義の内容プレビュー。
+  /* 本文中の定理・定義参照リンクに表示する内容プレビュー。
      ポップオーバー本体は本文のDOMへ動的に追加するため、子要素は
-     :global() で指定し、他の記事にはトリガー自体を生成しない。 */
+     :global() で指定する。 */
   .article-main :global(.theorem-preview-trigger) {
     cursor: help;
     text-decoration: underline dotted color-mix(in srgb, currentColor 55%, transparent);
@@ -1286,6 +1286,29 @@ const structuredData = {
     font-size: 0.88rem;
     line-height: 1.65;
     margin: 0.45rem 0 0;
+  }
+  .article-main :global(.theorem-preview-body > *) {
+    margin-block: 0.55rem;
+  }
+  .article-main :global(.theorem-preview-body > :first-child) {
+    margin-top: 0;
+  }
+  .article-main :global(.theorem-preview-body > :last-child) {
+    margin-bottom: 0;
+  }
+  .article-main :global(.theorem-preview-body .katex-display),
+  .article-main :global(.theorem-preview-body mjx-container[display="true"]) {
+    box-sizing: border-box;
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-block: 0.15rem;
+    width: 100%;
+  }
+  .article-main :global(.theorem-preview-body mjx-container),
+  .article-main :global(.theorem-preview-body .katex) {
+    max-width: 100%;
   }
   .article-main :global(.theorem-preview-link) {
     display: inline-block;
@@ -2309,154 +2332,6 @@ const structuredData = {
         node instanceof HTMLElement && node.matches(".defi,.prop,.thm,.lemma,.cor,.example,.math-definition,.math-theorem"),
       );
 
-      // Xの参考UIのような定理プレビューは、日本語の群論記事で有効にする。
-      // 記事IDで絞ることで、他の数学記事・英語記事・定理カードの既存表示には
-      // イベントや装飾を追加しない。
-      const theoremPreviewArticleIds = new Set([
-        "ja-mathematics-group-definition",
-        "ja-mathematics-cyclic-groups",
-      ]);
-      if (theoremPreviewArticleIds.has(articleMeta.dataset.articleId ?? "")) {
-        const articleMain = mathBody.closest<HTMLElement>(".article-main");
-        if (articleMain && theoremCards.length > 0) {
-          type TheoremPreview = {
-            id: string;
-            title: string;
-            body: string;
-            label: string;
-            number: string;
-          };
-          const previews = new Map<HTMLElement, TheoremPreview>();
-          const preview = document.createElement("aside");
-          preview.className = "theorem-preview";
-          preview.dataset.theoremPreview = "true";
-          preview.hidden = true;
-          preview.setAttribute("role", "dialog");
-          preview.setAttribute("aria-modal", "false");
-          const previewTitle = document.createElement("p");
-          previewTitle.className = "theorem-preview-heading";
-          const previewBody = document.createElement("p");
-          previewBody.className = "theorem-preview-body";
-          const previewLink = document.createElement("a");
-          previewLink.className = "theorem-preview-link";
-          previewLink.dataset.theoremPreviewLink = "true";
-          previewLink.textContent = "本文の該当箇所を見る →";
-          preview.append(previewTitle, previewBody, previewLink);
-          articleMain.append(preview);
-
-          let activeTrigger: HTMLElement | null = null;
-          let hideTimer: number | undefined;
-          const cancelHide = () => {
-            if (hideTimer !== undefined) window.clearTimeout(hideTimer);
-            hideTimer = undefined;
-          };
-          const isEngaged = () => {
-            if (!activeTrigger) return false;
-            return (
-              activeTrigger.matches(":hover") ||
-              document.activeElement === activeTrigger ||
-              preview.matches(":hover") ||
-              preview.contains(document.activeElement)
-            );
-          };
-          const hidePreview = () => {
-            cancelHide();
-            if (!activeTrigger) return;
-            activeTrigger.removeAttribute("aria-expanded");
-            activeTrigger = null;
-            preview.hidden = true;
-            preview.removeAttribute("aria-labelledby");
-          };
-          const scheduleHide = () => {
-            cancelHide();
-            hideTimer = window.setTimeout(() => {
-              hideTimer = undefined;
-              if (!isEngaged()) hidePreview();
-            }, 140);
-          };
-          const positionPreview = () => {
-            if (!activeTrigger || preview.hidden) return;
-            const triggerRect = activeTrigger.getBoundingClientRect();
-            const margin = 12;
-            const previewRect = preview.getBoundingClientRect();
-            const maxLeft = Math.max(margin, window.innerWidth - previewRect.width - margin);
-            const left = Math.min(Math.max(margin, triggerRect.left), maxLeft);
-            const below = triggerRect.bottom + 8;
-            const above = triggerRect.top - previewRect.height - 8;
-            const top = below + previewRect.height + margin <= window.innerHeight
-              ? below
-              : Math.max(margin, above);
-            preview.style.left = `${Math.round(left)}px`;
-            preview.style.top = `${Math.round(top)}px`;
-          };
-          const showPreview = (trigger: HTMLElement) => {
-            const data = previews.get(trigger);
-            if (!data) return;
-            cancelHide();
-            activeTrigger = trigger;
-            previewTitle.textContent = data.title;
-            previewBody.textContent = data.body || "この定理の本文を確認できます。";
-            previewLink.href = `#${data.id}`;
-            preview.setAttribute("aria-labelledby", "theorem-preview-title");
-            previewTitle.id = "theorem-preview-title";
-            trigger.setAttribute("aria-expanded", "true");
-            preview.hidden = false;
-            positionPreview();
-          };
-          const bindTrigger = (trigger: HTMLElement, data: TheoremPreview) => {
-            previews.set(trigger, data);
-            trigger.classList.add("theorem-preview-trigger");
-            trigger.dataset.theoremPreviewTrigger = data.id;
-            trigger.tabIndex = 0;
-            trigger.setAttribute("role", "button");
-            trigger.setAttribute("aria-haspopup", "dialog");
-            trigger.addEventListener("pointerenter", () => showPreview(trigger));
-            trigger.addEventListener("pointerleave", scheduleHide);
-            trigger.addEventListener("focus", () => showPreview(trigger));
-            trigger.addEventListener("blur", scheduleHide);
-            trigger.addEventListener("click", () => {
-              // クリック時は先にfocusイベントが発火するため、ここで
-              // トグルするとタップ直後に閉じてしまう。タップでは表示を
-              // 維持し、Escapeまたは別の場所への移動で閉じる。
-              if (activeTrigger !== trigger || preview.hidden) showPreview(trigger);
-            });
-            trigger.addEventListener("keydown", (event) => {
-              if (event.key === "Enter" || event.key === " ") {
-                event.preventDefault();
-                if (activeTrigger === trigger && !preview.hidden) hidePreview();
-                else showPreview(trigger);
-              } else if (event.key === "Escape") {
-                event.preventDefault();
-                hidePreview();
-              }
-            });
-          };
-
-          theoremCards.forEach((card, index) => {
-            if (!card.id) card.id = `math-block-${index + 1}`;
-            const title = card.querySelector<HTMLElement>(":scope > p > .thmtitle, :scope > .thmtitle");
-            const label = card.dataset.statementLabel;
-            const number = card.dataset.statementNumber;
-            if (!title || !label || !number || !card.id) return;
-            const titleText = title.textContent?.replace(/\s+/gu, " ").trim() || `${label} ${number}`;
-            const cardText = card.textContent?.replace(/\s+/gu, " ").trim() || "";
-            const body = cardText.startsWith(titleText)
-              ? cardText.slice(titleText.length).trim()
-              : cardText;
-            bindTrigger(title, { id: card.id, title: titleText, body: body.slice(0, 260), label, number });
-          });
-
-          preview.addEventListener("pointerenter", cancelHide);
-          preview.addEventListener("pointerleave", scheduleHide);
-          previewLink.addEventListener("click", hidePreview);
-          window.addEventListener("resize", positionPreview, { passive: true });
-          window.addEventListener("scroll", positionPreview, { passive: true });
-          document.addEventListener("keydown", (event) => {
-            if (event.key === "Escape" && !preview.hidden) hidePreview();
-          });
-        }
-      }
-
       const removeProofLabel = (container: Element) => {
         const strong = container.querySelector(":scope > strong");
         if (strong && proofLead.test((strong.textContent ?? "").trim())) {
@@ -2671,6 +2546,227 @@ const structuredData = {
           fragment.append(value.slice(cursor));
           node.parentNode?.replaceChild(fragment, node);
         });
+      }
+
+      // 本文中の参照リンクにホバーしたとき、リンク先の定義・命題カードを
+      // X のプレビューのように表示する。タイトルそのものをトリガーにはせず、
+      // 実際に読者がクリックできる本文リンクへだけ動作を付与する。
+      // 現時点では検証対象の巡回群記事だけに限定し、他の記事の挙動は変えない。
+      if (articleMeta.dataset.articleId === "ja-mathematics-cyclic-groups") {
+        const articleMain = mathBody.closest<HTMLElement>(".article-main");
+        const localCards = new Map<string, HTMLElement>();
+        theoremCards.forEach((card, index) => {
+          if (!card.id) card.id = `math-block-${index + 1}`;
+          localCards.set(card.id, card);
+        });
+        const referenceLinks = [...mathBody.querySelectorAll<HTMLAnchorElement>(
+          "a.article-reference:not(.article-reference-pending)",
+        )];
+        const references = referenceLinks.flatMap((link) => {
+          try {
+            const url = new URL(link.href, window.location.href);
+            const id = decodeURIComponent(url.hash.slice(1));
+            if (!id) return [];
+            return [{ link, href: url.href, id, samePage: url.origin === window.location.origin && url.pathname === window.location.pathname }];
+          } catch {
+            return [];
+          }
+        });
+
+        if (articleMain && references.length > 0) {
+          type TheoremPreview = {
+            id: string;
+            href: string;
+            title: string;
+            card?: HTMLElement;
+          };
+          const previews = new Map<HTMLAnchorElement, TheoremPreview>();
+          const preview = document.createElement("aside");
+          preview.className = "theorem-preview";
+          preview.dataset.theoremPreview = "true";
+          preview.hidden = true;
+          preview.setAttribute("role", "dialog");
+          preview.setAttribute("aria-modal", "false");
+          const previewTitle = document.createElement("p");
+          previewTitle.className = "theorem-preview-heading";
+          const previewBody = document.createElement("div");
+          previewBody.className = "theorem-preview-body";
+          const previewLink = document.createElement("a");
+          previewLink.className = "theorem-preview-link";
+          previewLink.dataset.theoremPreviewLink = "true";
+          previewLink.textContent = "本文の該当箇所を見る →";
+          preview.append(previewTitle, previewBody, previewLink);
+          articleMain.append(preview);
+
+          const remoteCards = new Map<string, Promise<HTMLElement | null>>();
+          const loadRemoteCard = (href: string, id: string) => {
+            const key = `${href}#${id}`;
+            const cached = remoteCards.get(key);
+            if (cached) return cached;
+            const pending = new Promise<HTMLElement | null>((resolve) => {
+              const frame = document.createElement("iframe");
+              frame.title = "";
+              frame.tabIndex = -1;
+              frame.setAttribute("aria-hidden", "true");
+              frame.style.cssText = "position:fixed;left:-10000px;top:-10000px;width:2px;height:2px;border:0;opacity:0;pointer-events:none";
+              let attempts = 0;
+              let timer: number | undefined;
+              let finished = false;
+              const finish = (card: HTMLElement | null) => {
+                if (finished) return;
+                finished = true;
+                if (timer !== undefined) window.clearTimeout(timer);
+                frame.remove();
+                resolve(card ? card.cloneNode(true) as HTMLElement : null);
+              };
+              const inspect = () => {
+                if (finished) return;
+                const card = frame.contentDocument?.getElementById(id);
+                if (card && card.nodeType === Node.ELEMENT_NODE) {
+                  finish(card as HTMLElement);
+                  return;
+                }
+                attempts += 1;
+                if (attempts >= 100) finish(null);
+                else timer = window.setTimeout(inspect, 100);
+              };
+              frame.addEventListener("load", () => {
+                // The target card is assigned by the article's own module after
+                // the iframe load event. Give that module a tick, then poll.
+                timer = window.setTimeout(inspect, 120);
+              }, { once: true });
+              articleMain.append(frame);
+              frame.src = href;
+              // A cached iframe may have completed before the load listener is
+              // observed by some browsers; this fallback keeps the lookup live.
+              timer = window.setTimeout(inspect, 500);
+            });
+            remoteCards.set(key, pending);
+            return pending;
+          };
+
+          const renderCard = (card: HTMLElement, fallbackTitle: string) => {
+            const clone = card.cloneNode(true) as HTMLElement;
+            clone.removeAttribute("id");
+            clone.querySelectorAll<HTMLElement>("[data-theorem-preview-trigger]").forEach((node) => {
+              node.classList.remove("theorem-preview-trigger");
+              node.removeAttribute("data-theorem-preview-trigger");
+              node.removeAttribute("aria-expanded");
+              node.removeAttribute("aria-haspopup");
+            });
+            const title = clone.querySelector<HTMLElement>(":scope > p > .thmtitle, :scope > .thmtitle, .thmtitle");
+            if (title) {
+              previewTitle.replaceChildren(...[...title.childNodes].map((node) => node.cloneNode(true)));
+              title.remove();
+            } else {
+              previewTitle.textContent = fallbackTitle;
+            }
+            previewBody.replaceChildren(...[...clone.childNodes].map((node) => node.cloneNode(true)));
+          };
+
+          let activeTrigger: HTMLAnchorElement | null = null;
+          let hideTimer: number | undefined;
+          const cancelHide = () => {
+            if (hideTimer !== undefined) window.clearTimeout(hideTimer);
+            hideTimer = undefined;
+          };
+          const isEngaged = () => Boolean(
+            activeTrigger && (
+              activeTrigger.matches(":hover") ||
+              document.activeElement === activeTrigger ||
+              preview.matches(":hover") ||
+              preview.contains(document.activeElement)
+            ),
+          );
+          const hidePreview = () => {
+            cancelHide();
+            if (!activeTrigger) return;
+            activeTrigger.removeAttribute("aria-expanded");
+            activeTrigger = null;
+            preview.hidden = true;
+            preview.removeAttribute("aria-labelledby");
+          };
+          const scheduleHide = () => {
+            cancelHide();
+            hideTimer = window.setTimeout(() => {
+              hideTimer = undefined;
+              if (!isEngaged()) hidePreview();
+            }, 140);
+          };
+          const positionPreview = () => {
+            if (!activeTrigger || preview.hidden) return;
+            const triggerRect = activeTrigger.getBoundingClientRect();
+            const margin = 12;
+            const previewRect = preview.getBoundingClientRect();
+            const maxLeft = Math.max(margin, window.innerWidth - previewRect.width - margin);
+            const left = Math.min(Math.max(margin, triggerRect.left), maxLeft);
+            const below = triggerRect.bottom + 8;
+            const above = triggerRect.top - previewRect.height - 8;
+            const top = below + previewRect.height + margin <= window.innerHeight
+              ? below
+              : Math.max(margin, above);
+            preview.style.left = `${Math.round(left)}px`;
+            preview.style.top = `${Math.round(top)}px`;
+          };
+          const showPreview = async (trigger: HTMLAnchorElement) => {
+            const data = previews.get(trigger);
+            if (!data) return;
+            cancelHide();
+            activeTrigger = trigger;
+            previewTitle.textContent = data.title;
+            previewBody.textContent = "読み込み中…";
+            previewLink.href = data.href;
+            preview.setAttribute("aria-labelledby", "theorem-preview-title");
+            previewTitle.id = "theorem-preview-title";
+            trigger.setAttribute("aria-expanded", "true");
+            preview.hidden = false;
+            positionPreview();
+            const card = data.card ?? await loadRemoteCard(data.href, data.id);
+            if (card && activeTrigger === trigger) {
+              renderCard(card, data.title);
+              positionPreview();
+            } else if (activeTrigger === trigger) {
+              previewBody.textContent = "リンク先の本文を読み込めませんでした。";
+              positionPreview();
+            }
+          };
+          const bindTrigger = (trigger: HTMLAnchorElement, data: TheoremPreview) => {
+            previews.set(trigger, data);
+            trigger.classList.add("theorem-preview-trigger");
+            trigger.dataset.theoremPreviewTrigger = data.id;
+            trigger.setAttribute("aria-haspopup", "dialog");
+            trigger.addEventListener("pointerenter", () => { void showPreview(trigger); });
+            trigger.addEventListener("pointerleave", scheduleHide);
+            trigger.addEventListener("focus", () => { void showPreview(trigger); });
+            trigger.addEventListener("blur", scheduleHide);
+            trigger.addEventListener("keydown", (event) => {
+              if (event.key === "Escape") {
+                event.preventDefault();
+                hidePreview();
+              }
+            });
+          };
+
+          references.forEach(({ link, href, id, samePage }) => {
+            const card = samePage ? localCards.get(id) : undefined;
+            if (!card && samePage) return;
+            bindTrigger(link, {
+              id,
+              href,
+              title: link.textContent?.replace(/\s+/gu, " ").trim() || id,
+              card,
+            });
+          });
+
+          preview.addEventListener("pointerenter", cancelHide);
+          preview.addEventListener("pointerleave", scheduleHide);
+          previewLink.addEventListener("click", hidePreview);
+          window.addEventListener("resize", positionPreview, { passive: true });
+          window.addEventListener("scroll", positionPreview, { passive: true });
+          document.addEventListener("keydown", (event) => {
+            if (event.key === "Escape" && !preview.hidden) hidePreview();
+          });
+        }
       }
     }
   }

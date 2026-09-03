@@ -460,24 +460,32 @@ test.describe("学習サイト", () => {
     ).toBeVisible();
   });
 
-  test("対象の群論記事で定理タイトルから内容プレビューを開ける", async ({
+  test("巡回群本文の参照リンクからリンク先カードを数式付きでプレビューできる", async ({
     page,
   }) => {
-    await page.goto("atlas/ja/mathematics/group-theory/group-definition/");
-    const trigger = page.locator("[data-theorem-preview-trigger]").first();
+    await page.goto("atlas/ja/mathematics/group-theory/cyclic-groups/");
+    const trigger = page
+      .locator(".article-body a[data-theorem-preview-trigger]")
+      .first();
     const preview = page.locator("[data-theorem-preview]");
 
+    await expect(trigger).toContainText("群の生成系:命題 3");
     await expect(trigger).toHaveAttribute(
       "data-theorem-preview-trigger",
-      "math-block-1",
+      "math-block-3",
     );
+    // 定理タイトル自体はトリガーにしない。
+    await expect(
+      page.locator(".article-body .thmtitle.theorem-preview-trigger"),
+    ).toHaveCount(0);
     await trigger.hover();
     await expect(preview).toBeVisible();
-    await expect(preview).toContainText("定義 1");
-    await expect(preview).toContainText("群");
+    await expect(preview).toContainText("命題 3");
+    await expect(preview).toContainText("生成する部分群");
+    await expect(preview.locator("mjx-container")).not.toHaveCount(0);
     await expect(
       preview.locator("[data-theorem-preview-link]"),
-    ).toHaveAttribute("href", "#math-block-1");
+    ).toHaveAttribute("href", /generating-sets\/#math-block-3$/);
 
     await page.keyboard.press("Escape");
     await expect(preview).toBeHidden();
@@ -487,24 +495,7 @@ test.describe("学習サイト", () => {
     await page.keyboard.press("Escape");
     await expect(preview).toBeHidden();
 
-    await page.goto("atlas/ja/mathematics/group-theory/cyclic-groups/");
-    const cyclicTrigger = page
-      .locator("[data-theorem-preview-trigger]")
-      .first();
-    const cyclicPreview = page.locator("[data-theorem-preview]");
-    await expect(cyclicTrigger).toHaveAttribute(
-      "data-theorem-preview-trigger",
-      "math-block-1",
-    );
-    await cyclicTrigger.hover();
-    await expect(cyclicPreview).toBeVisible();
-    await expect(cyclicPreview).toContainText("定義 1");
-    await expect(cyclicPreview).toContainText("巡回");
-    await expect(
-      cyclicPreview.locator("[data-theorem-preview-link]"),
-    ).toHaveAttribute("href", "#math-block-1");
-
-    // 対象記事以外ではプレビューDOMもトリガーも生成しない。
+    // 適用対象は巡回群だけ。別の記事にはプレビューDOMもトリガーも生成しない。
     await page.goto("atlas/ja/mathematics/group-theory/subgroups/");
     await expect(page.locator("[data-theorem-preview]")).toHaveCount(0);
     await expect(page.locator("[data-theorem-preview-trigger]")).toHaveCount(0);
