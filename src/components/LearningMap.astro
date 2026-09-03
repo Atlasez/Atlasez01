@@ -1240,10 +1240,9 @@ const categoryMetaJson = JSON.stringify(
             "border-opacity": 0.5,
             padding: "24px",
             "z-index": 0,
-            // 親の分野枠はクリック対象にせず、子カテゴリのタップを優先する。
-            // これがないとカテゴリのクリックイベントが親へバブルし、
-            // 分野トップを経由するURLが生成される。
-            events: "no",
+            // 分野の背景自体をタップしたときは、分野学習地図へ進める。
+            // Cytoscapeのcompound childは親より前面でヒットするため、
+            // 子カテゴリのクリックを維持したまま親枠にも導線を持たせる。
           },
         },
         {
