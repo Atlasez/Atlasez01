@@ -1232,6 +1232,51 @@ const structuredData = {
     cursor: help;
     text-decoration: none;
   }
+  /* 群の定義ページだけで使う、定理・定義の内容プレビュー。
+     ポップオーバー本体は本文のDOMへ動的に追加するため、子要素は
+     :global() で指定し、他の記事にはトリガー自体を生成しない。 */
+  .article-main :global(.theorem-preview-trigger) {
+    cursor: help;
+    text-decoration: underline dotted color-mix(in srgb, currentColor 55%, transparent);
+    text-underline-offset: 0.16em;
+  }
+  .article-main :global(.theorem-preview) {
+    background: var(--background-primary);
+    border: 1px solid var(--border-strong);
+    border-radius: 0.45rem;
+    box-shadow: 0 0.8rem 2.2rem rgb(0 0 0 / 18%);
+    color: var(--text-primary);
+    max-height: min(22rem, calc(100vh - 1.5rem));
+    overflow: auto;
+    padding: 0.8rem 0.95rem 0.9rem;
+    position: fixed;
+    width: min(23rem, calc(100vw - 1.5rem));
+    z-index: 60;
+  }
+  .article-main :global(.theorem-preview-heading) {
+    color: var(--text-primary);
+    font-size: 0.98rem;
+    font-weight: 750;
+    line-height: 1.45;
+    margin: 0;
+  }
+  .article-main :global(.theorem-preview-body) {
+    color: var(--text-secondary);
+    font-size: 0.88rem;
+    line-height: 1.65;
+    margin: 0.45rem 0 0;
+  }
+  .article-main :global(.theorem-preview-link) {
+    display: inline-block;
+    font-size: 0.82rem;
+    font-weight: 650;
+    margin-top: 0.65rem;
+  }
+  .article-main :global(.theorem-preview-trigger:focus-visible) {
+    border-radius: 0.2rem;
+    outline: 3px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
   .proof-toggle:hover { background: var(--accent-hover); }
   .proof-toggle:focus-visible { outline-offset: 3px; }
   .article-body.math-article :global(.katex-display),
@@ -2239,6 +2284,154 @@ const structuredData = {
         wrapper.dataset.statementLabel = label;
       }
 
+      const theoremCards = [...mathBody.children].filter((node): node is HTMLElement =>
+        node instanceof HTMLElement && node.matches(".defi,.prop,.thm,.lemma,.cor,.example,.math-definition,.math-theorem"),
+      );
+
+      // Xの参考UIのような定理プレビューは、まず日本語の「群の定義」記事
+      // だけで有効にする。記事IDで絞ることで、他の数学記事・英語記事・
+      // 定理カードの既存表示には一切イベントや装飾を追加しない。
+      if (articleMeta.dataset.articleId === "ja-mathematics-group-definition") {
+        const articleMain = mathBody.closest<HTMLElement>(".article-main");
+        if (articleMain && theoremCards.length > 0) {
+          type TheoremPreview = {
+            id: string;
+            title: string;
+            body: string;
+            label: string;
+            number: string;
+          };
+          const previews = new Map<HTMLElement, TheoremPreview>();
+          const preview = document.createElement("aside");
+          preview.className = "theorem-preview";
+          preview.dataset.theoremPreview = "true";
+          preview.hidden = true;
+          preview.setAttribute("role", "dialog");
+          preview.setAttribute("aria-modal", "false");
+          const previewTitle = document.createElement("p");
+          previewTitle.className = "theorem-preview-heading";
+          const previewBody = document.createElement("p");
+          previewBody.className = "theorem-preview-body";
+          const previewLink = document.createElement("a");
+          previewLink.className = "theorem-preview-link";
+          previewLink.dataset.theoremPreviewLink = "true";
+          previewLink.textContent = "本文の該当箇所を見る →";
+          preview.append(previewTitle, previewBody, previewLink);
+          articleMain.append(preview);
+
+          let activeTrigger: HTMLElement | null = null;
+          let hideTimer: number | undefined;
+          const cancelHide = () => {
+            if (hideTimer !== undefined) window.clearTimeout(hideTimer);
+            hideTimer = undefined;
+          };
+          const isEngaged = () => {
+            if (!activeTrigger) return false;
+            return (
+              activeTrigger.matches(":hover") ||
+              document.activeElement === activeTrigger ||
+              preview.matches(":hover") ||
+              preview.contains(document.activeElement)
+            );
+          };
+          const hidePreview = () => {
+            cancelHide();
+            if (!activeTrigger) return;
+            activeTrigger.removeAttribute("aria-expanded");
+            activeTrigger = null;
+            preview.hidden = true;
+            preview.removeAttribute("aria-labelledby");
+          };
+          const scheduleHide = () => {
+            cancelHide();
+            hideTimer = window.setTimeout(() => {
+              hideTimer = undefined;
+              if (!isEngaged()) hidePreview();
+            }, 140);
+          };
+          const positionPreview = () => {
+            if (!activeTrigger || preview.hidden) return;
+            const triggerRect = activeTrigger.getBoundingClientRect();
+            const margin = 12;
+            const previewRect = preview.getBoundingClientRect();
+            const maxLeft = Math.max(margin, window.innerWidth - previewRect.width - margin);
+            const left = Math.min(Math.max(margin, triggerRect.left), maxLeft);
+            const below = triggerRect.bottom + 8;
+            const above = triggerRect.top - previewRect.height - 8;
+            const top = below + previewRect.height + margin <= window.innerHeight
+              ? below
+              : Math.max(margin, above);
+            preview.style.left = `${Math.round(left)}px`;
+            preview.style.top = `${Math.round(top)}px`;
+          };
+          const showPreview = (trigger: HTMLElement) => {
+            const data = previews.get(trigger);
+            if (!data) return;
+            cancelHide();
+            activeTrigger = trigger;
+            previewTitle.textContent = data.title;
+            previewBody.textContent = data.body || "この定理の本文を確認できます。";
+            previewLink.href = `#${data.id}`;
+            preview.setAttribute("aria-labelledby", "theorem-preview-title");
+            previewTitle.id = "theorem-preview-title";
+            trigger.setAttribute("aria-expanded", "true");
+            preview.hidden = false;
+            positionPreview();
+          };
+          const bindTrigger = (trigger: HTMLElement, data: TheoremPreview) => {
+            previews.set(trigger, data);
+            trigger.classList.add("theorem-preview-trigger");
+            trigger.dataset.theoremPreviewTrigger = data.id;
+            trigger.tabIndex = 0;
+            trigger.setAttribute("role", "button");
+            trigger.setAttribute("aria-haspopup", "dialog");
+            trigger.addEventListener("pointerenter", () => showPreview(trigger));
+            trigger.addEventListener("pointerleave", scheduleHide);
+            trigger.addEventListener("focus", () => showPreview(trigger));
+            trigger.addEventListener("blur", scheduleHide);
+            trigger.addEventListener("click", () => {
+              // クリック時は先にfocusイベントが発火するため、ここで
+              // トグルするとタップ直後に閉じてしまう。タップでは表示を
+              // 維持し、Escapeまたは別の場所への移動で閉じる。
+              if (activeTrigger !== trigger || preview.hidden) showPreview(trigger);
+            });
+            trigger.addEventListener("keydown", (event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                if (activeTrigger === trigger && !preview.hidden) hidePreview();
+                else showPreview(trigger);
+              } else if (event.key === "Escape") {
+                event.preventDefault();
+                hidePreview();
+              }
+            });
+          };
+
+          theoremCards.forEach((card, index) => {
+            if (!card.id) card.id = `math-block-${index + 1}`;
+            const title = card.querySelector<HTMLElement>(":scope > p > .thmtitle, :scope > .thmtitle");
+            const label = card.dataset.statementLabel;
+            const number = card.dataset.statementNumber;
+            if (!title || !label || !number || !card.id) return;
+            const titleText = title.textContent?.replace(/\s+/gu, " ").trim() || `${label} ${number}`;
+            const cardText = card.textContent?.replace(/\s+/gu, " ").trim() || "";
+            const body = cardText.startsWith(titleText)
+              ? cardText.slice(titleText.length).trim()
+              : cardText;
+            bindTrigger(title, { id: card.id, title: titleText, body: body.slice(0, 260), label, number });
+          });
+
+          preview.addEventListener("pointerenter", cancelHide);
+          preview.addEventListener("pointerleave", scheduleHide);
+          previewLink.addEventListener("click", hidePreview);
+          window.addEventListener("resize", positionPreview, { passive: true });
+          window.addEventListener("scroll", positionPreview, { passive: true });
+          document.addEventListener("keydown", (event) => {
+            if (event.key === "Escape" && !preview.hidden) hidePreview();
+          });
+        }
+      }
+
       const removeProofLabel = (container: Element) => {
         const strong = container.querySelector(":scope > strong");
         if (strong && proofLead.test((strong.textContent ?? "").trim())) {
@@ -2314,9 +2507,6 @@ const structuredData = {
       // `.thmtitle` は数式を含む見出し文字列を MathJax が置き換える前に
       // 保存しているので、目次から数式だけが消えることも防げる。
       const tocList = document.querySelector<HTMLOListElement>(".toc-list");
-      const theoremCards = [...mathBody.children].filter((node): node is HTMLElement =>
-        node instanceof HTMLElement && node.matches(".defi,.prop,.thm,.lemma,.cor,.example,.math-definition,.math-theorem"),
-      );
       const tocHeadingItems = new Map<string, HTMLLIElement>();
       tocList?.querySelectorAll<HTMLAnchorElement>("a[data-toc-link]").forEach((link) => {
         const item = link.closest("li");

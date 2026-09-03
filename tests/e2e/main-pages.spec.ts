@@ -453,6 +453,39 @@ test.describe("学習サイト", () => {
     ).toBeVisible();
   });
 
+  test("群の定義だけ定理タイトルから内容プレビューを開ける", async ({
+    page,
+  }) => {
+    await page.goto("atlas/ja/mathematics/group-theory/group-definition/");
+    const trigger = page.locator("[data-theorem-preview-trigger]").first();
+    const preview = page.locator("[data-theorem-preview]");
+
+    await expect(trigger).toHaveAttribute(
+      "data-theorem-preview-trigger",
+      "math-block-1",
+    );
+    await trigger.hover();
+    await expect(preview).toBeVisible();
+    await expect(preview).toContainText("定義 1");
+    await expect(preview).toContainText("群");
+    await expect(
+      preview.locator("[data-theorem-preview-link]"),
+    ).toHaveAttribute("href", "#math-block-1");
+
+    await page.keyboard.press("Escape");
+    await expect(preview).toBeHidden();
+
+    await trigger.focus();
+    await expect(preview).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(preview).toBeHidden();
+
+    // 対象記事以外ではプレビューDOMもトリガーも生成しない。
+    await page.goto("atlas/ja/mathematics/group-theory/subgroups/");
+    await expect(page.locator("[data-theorem-preview]")).toHaveCount(0);
+    await expect(page.locator("[data-theorem-preview-trigger]")).toHaveCount(0);
+  });
+
   test("記事の概念リンクはカテゴリ地図へ直接進む", async ({ page }) => {
     await page.goto("atlas/ja/mathematics/group-theory/group-definition/");
     const conceptLinks = page.locator(".article-concept-nodes a");
