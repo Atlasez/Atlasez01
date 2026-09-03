@@ -460,7 +460,7 @@ test.describe("学習サイト", () => {
     ).toBeVisible();
   });
 
-  test("群の定義だけ定理タイトルから内容プレビューを開ける", async ({
+  test("対象の群論記事で定理タイトルから内容プレビューを開ける", async ({
     page,
   }) => {
     await page.goto("atlas/ja/mathematics/group-theory/group-definition/");
@@ -486,6 +486,23 @@ test.describe("学習サイト", () => {
     await expect(preview).toBeVisible();
     await page.keyboard.press("Escape");
     await expect(preview).toBeHidden();
+
+    await page.goto("atlas/ja/mathematics/group-theory/cyclic-groups/");
+    const cyclicTrigger = page
+      .locator("[data-theorem-preview-trigger]")
+      .first();
+    const cyclicPreview = page.locator("[data-theorem-preview]");
+    await expect(cyclicTrigger).toHaveAttribute(
+      "data-theorem-preview-trigger",
+      "math-block-1",
+    );
+    await cyclicTrigger.hover();
+    await expect(cyclicPreview).toBeVisible();
+    await expect(cyclicPreview).toContainText("定義 1");
+    await expect(cyclicPreview).toContainText("巡回");
+    await expect(
+      cyclicPreview.locator("[data-theorem-preview-link]"),
+    ).toHaveAttribute("href", "#math-block-1");
 
     // 対象記事以外ではプレビューDOMもトリガーも生成しない。
     await page.goto("atlas/ja/mathematics/group-theory/subgroups/");

@@ -2309,10 +2309,14 @@ const structuredData = {
         node instanceof HTMLElement && node.matches(".defi,.prop,.thm,.lemma,.cor,.example,.math-definition,.math-theorem"),
       );
 
-      // Xの参考UIのような定理プレビューは、まず日本語の「群の定義」記事
-      // だけで有効にする。記事IDで絞ることで、他の数学記事・英語記事・
-      // 定理カードの既存表示には一切イベントや装飾を追加しない。
-      if (articleMeta.dataset.articleId === "ja-mathematics-group-definition") {
+      // Xの参考UIのような定理プレビューは、日本語の群論記事で有効にする。
+      // 記事IDで絞ることで、他の数学記事・英語記事・定理カードの既存表示には
+      // イベントや装飾を追加しない。
+      const theoremPreviewArticleIds = new Set([
+        "ja-mathematics-group-definition",
+        "ja-mathematics-cyclic-groups",
+      ]);
+      if (theoremPreviewArticleIds.has(articleMeta.dataset.articleId ?? "")) {
         const articleMain = mathBody.closest<HTMLElement>(".article-main");
         if (articleMain && theoremCards.length > 0) {
           type TheoremPreview = {
