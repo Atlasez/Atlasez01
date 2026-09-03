@@ -1799,6 +1799,76 @@ const structuredData = {
 </script>
 
 <script>
+  // 数学以外の記事でも、[[ref:記事タイトル]] と旧形式の
+  // [記事タイトル:定義 1] を公開状況に応じてリンク化する。
+  // 数学記事は上の数式処理内で同じ変換を行うため、ここでは対象外にする。
+  const referenceBody = document.querySelector<HTMLElement>(".article-body");
+  const referenceMeta = document.querySelector<HTMLElement>("[data-article-actions]");
+  if (referenceBody && referenceMeta?.dataset.subjectSlug !== "mathematics") {
+    const referenceMap = (() => {
+      try {
+        const parsed = JSON.parse(referenceBody.dataset.articleReferenceMap ?? "{}");
+        return parsed && typeof parsed === "object"
+          ? parsed as Record<string, string>
+          : {};
+      } catch {
+        return {};
+      }
+    })();
+    const referencePattern = /\[\[ref:([^\]\n]+)\]\]|\[([^\]\n]+)\]/gu;
+    const walker = document.createTreeWalker(referenceBody, NodeFilter.SHOW_TEXT);
+    const textNodes: Text[] = [];
+    let current = walker.nextNode();
+    while (current) {
+      textNodes.push(current as Text);
+      current = walker.nextNode();
+    }
+    textNodes.forEach((node) => {
+      const parent = node.parentElement;
+      if (!parent || parent.closest("a,code,pre,script,style")) return;
+      const value = node.nodeValue ?? "";
+      let changed = false;
+      let cursor = 0;
+      const fragment = document.createDocumentFragment();
+      referencePattern.lastIndex = 0;
+      let match: RegExpExecArray | null;
+      while ((match = referencePattern.exec(value))) {
+        const referenceId = match[1]?.trim() ?? "";
+        const reference = match[2]?.trim() ?? "";
+        const rawReference = referenceId || reference;
+        const legacyParts = reference.match(
+          /^(.+?)\s*:\s*(?:定義|命題|定理|補題|系|例)\s*\d+\s*$/u,
+        );
+        const title = referenceId || legacyParts?.[1]?.trim() || "";
+        if (!title) continue;
+        fragment.append(value.slice(cursor, match.index));
+        const href = referenceId ? referenceMap[referenceId] : referenceMap[reference];
+        if (href) {
+          const link = document.createElement("a");
+          link.className = "article-reference";
+          link.href = referenceId ? href : `${href}#math-block-${reference.match(/(\d+)\s*$/u)?.[1] ?? ""}`;
+          link.dataset.articleReference = rawReference;
+          link.textContent = rawReference;
+          fragment.append(link);
+        } else {
+          const pending = document.createElement("span");
+          pending.className = "article-reference article-reference-pending";
+          pending.dataset.articleReference = rawReference;
+          pending.title = "参照先の記事が公開されるとリンクになります";
+          pending.textContent = rawReference;
+          fragment.append(pending);
+        }
+        cursor = match.index + match[0].length;
+        changed = true;
+      }
+      if (!changed) return;
+      fragment.append(value.slice(cursor));
+      node.parentNode?.replaceChild(fragment, node);
+    });
+  }
+</script>
+
+<script>
   // 記事本文のどこまで来たかを画面上端の帯で示す
   const progressBar = document.querySelector<HTMLElement>("[data-reading-progress]");
   const articleBody = document.querySelector<HTMLElement>(".article-body");
