@@ -474,6 +474,10 @@ test.describe("学習サイト", () => {
       "data-theorem-preview-trigger",
       "math-block-3",
     );
+    await expect(trigger).toHaveAttribute(
+      "href",
+      /generating-sets\/#math-block-3$/,
+    );
     // 定理タイトル自体はトリガーにしない。
     await expect(
       page.locator(".article-body .thmtitle.theorem-preview-trigger"),
@@ -483,9 +487,7 @@ test.describe("学習サイト", () => {
     await expect(preview).toContainText("命題 3");
     await expect(preview).toContainText("生成する部分群");
     await expect(preview.locator("mjx-container")).not.toHaveCount(0);
-    await expect(
-      preview.locator("[data-theorem-preview-link]"),
-    ).toHaveAttribute("href", /generating-sets\/#math-block-3$/);
+    await expect(preview.locator("[data-theorem-preview-link]")).toHaveCount(0);
 
     await page.keyboard.press("Escape");
     await expect(preview).toBeHidden();

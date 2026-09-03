@@ -1310,12 +1310,6 @@ const structuredData = {
   .article-main :global(.theorem-preview-body .katex) {
     max-width: 100%;
   }
-  .article-main :global(.theorem-preview-link) {
-    display: inline-block;
-    font-size: 0.82rem;
-    font-weight: 650;
-    margin-top: 0.65rem;
-  }
   .article-main :global(.theorem-preview-trigger:focus-visible) {
     border-radius: 0.2rem;
     outline: 3px solid var(--focus-ring);
@@ -2591,11 +2585,7 @@ const structuredData = {
           previewTitle.className = "theorem-preview-heading";
           const previewBody = document.createElement("div");
           previewBody.className = "theorem-preview-body";
-          const previewLink = document.createElement("a");
-          previewLink.className = "theorem-preview-link";
-          previewLink.dataset.theoremPreviewLink = "true";
-          previewLink.textContent = "本文の該当箇所を見る →";
-          preview.append(previewTitle, previewBody, previewLink);
+          preview.append(previewTitle, previewBody);
           articleMain.append(preview);
 
           const remoteCards = new Map<string, Promise<HTMLElement | null>>();
@@ -2715,7 +2705,6 @@ const structuredData = {
             activeTrigger = trigger;
             previewTitle.textContent = data.title;
             previewBody.textContent = "読み込み中…";
-            previewLink.href = data.href;
             preview.setAttribute("aria-labelledby", "theorem-preview-title");
             previewTitle.id = "theorem-preview-title";
             trigger.setAttribute("aria-expanded", "true");
@@ -2760,7 +2749,6 @@ const structuredData = {
 
           preview.addEventListener("pointerenter", cancelHide);
           preview.addEventListener("pointerleave", scheduleHide);
-          previewLink.addEventListener("click", hidePreview);
           window.addEventListener("resize", positionPreview, { passive: true });
           window.addEventListener("scroll", positionPreview, { passive: true });
           document.addEventListener("keydown", (event) => {
