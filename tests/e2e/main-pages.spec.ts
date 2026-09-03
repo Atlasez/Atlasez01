@@ -455,6 +455,12 @@ test.describe("学習サイト", () => {
       "0 0 24 24",
     );
     await expect(shareButton.locator("circle")).toHaveCount(3);
+    const copyButton = page.getByRole("button", { name: "リンクをコピー" });
+    await expect(copyButton).toBeVisible();
+    await expect(copyButton.locator("svg")).toHaveAttribute(
+      "viewBox",
+      "0 0 24 24",
+    );
     await expect(
       page.getByRole("button", { name: "報告を送信" }),
     ).toBeVisible();

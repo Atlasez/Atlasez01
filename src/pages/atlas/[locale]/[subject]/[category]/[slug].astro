@@ -416,7 +416,21 @@ const structuredData = {
             aria-label={t(locale, "copyLink")}
             title={t(locale, "copyLink")}
           >
-            <span aria-hidden="true">🔗</span>
+            <svg
+              class="article-copy-icon"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <path
+                d="M10.6 13.4a4.2 4.2 0 0 0 5.95.01l2.1-2.1a4.2 4.2 0 0 0-5.95-5.95l-1.2 1.2M13.4 10.6a4.2 4.2 0 0 0-5.95-.01l-2.1 2.1a4.2 4.2 0 0 0 5.95 5.95l1.2-1.2"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2.4"
+              />
+            </svg>
           </button>
           <span
             class="article-action-status"
@@ -893,6 +907,11 @@ const structuredData = {
     display: block;
     width: 1.35rem;
     height: 1.35rem;
+  }
+  .article-copy-icon {
+    display: block;
+    width: 1.45rem;
+    height: 1.45rem;
   }
   .article-action-status {
     align-self: center;
