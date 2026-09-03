@@ -56,13 +56,20 @@ const related = relatedArticles(entry, map, byConcept);
 const next = nextArticles(entry, map, byConcept, sameLocale);
 const translations = translationArticles(entry, all);
 
-// 本文中の旧Google Sites由来の参照（`[記事タイトル:命題 7]`）を、
+// 本文中の参照（`[記事タイトル:命題 7]` / `[[ref:記事タイトル]]`）を、
 // 同じ言語の公開記事へのリンクへ戻すための最小マップ。本文全体ではなく、
 // 実際に参照されているタイトルだけを埋め込むので、ページサイズも抑える。
+const referencedArticleTitles = new Set<string>();
+for (const match of entry.body?.matchAll(/\[([^\]:]+):\s*(?:定義|命題|定理|補題|系|例)\s*\d+\]/gu) ?? []) {
+  const title = match[1]?.trim();
+  if (title) referencedArticleTitles.add(title);
+}
+for (const match of entry.body?.matchAll(/\[\[ref:([^\]\n]+)\]\]/gu) ?? []) {
+  const title = match[1]?.trim();
+  if (title) referencedArticleTitles.add(title);
+}
 const articleReferenceMap = Object.fromEntries(
-  [...((entry.body ?? "").matchAll(/\[([^\]:]+):\s*(?:定義|命題|定理|補題|系|例)\s*\d+\]/gu) ?? [])]
-    .map((match) => match[1]?.trim())
-    .filter((title): title is string => Boolean(title))
+  [...referencedArticleTitles]
     .flatMap((title) => {
       const target = all.find(
         (article) =>
@@ -2490,7 +2497,9 @@ const structuredData = {
       if (Object.keys(referenceMap).length > 0 || mathBody.textContent?.includes("[[ref:")) {
         // New editor references use [[ref:identifier]]. Keep the legacy
         // [記事タイトル:命題 7] form below for older imported articles.
-        const referencePattern = /\[\[ref:([A-Za-z][A-Za-z0-9_-]*)\]\]|\[([^\]\n]+)\]/gu;
+        // [[ref:...]] は記事タイトル（日本語を含む）または、同一記事内の
+        // directive id を受け付ける。公開前のタイトルも保留表示へ変換する。
+        const referencePattern = /\[\[ref:([^\]\n]+)\]\]|\[([^\]\n]+)\]/gu;
         const walker = document.createTreeWalker(mathBody, NodeFilter.SHOW_TEXT);
         const textNodes: Text[] = [];
         let current = walker.nextNode();
@@ -2520,10 +2529,20 @@ const structuredData = {
                 link.dataset.articleReference = referenceId;
                 link.textContent = `${target.dataset.statementLabel} ${target.dataset.statementNumber}`;
                 fragment.append(link);
+              } else if (referenceMap[referenceId]) {
+                const link = document.createElement("a");
+                link.className = "article-reference";
+                link.href = referenceMap[referenceId];
+                link.dataset.articleReference = referenceId;
+                link.textContent = referenceId;
+                fragment.append(link);
               } else {
-                // Do not hide an unresolved identifier.  It remains useful
-                // source text until the referenced statement is published.
-                fragment.append(match[0]);
+                const pending = document.createElement("span");
+                pending.className = "article-reference article-reference-pending";
+                pending.dataset.articleReference = referenceId;
+                pending.title = "参照先の記事が公開されるとリンクになります";
+                pending.textContent = referenceId;
+                fragment.append(pending);
               }
               cursor = match.index + match[0].length;
               changed = true;
