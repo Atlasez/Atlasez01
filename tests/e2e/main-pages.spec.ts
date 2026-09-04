@@ -493,6 +493,7 @@ test.describe("学習サイト", () => {
     await expect(preview).toContainText("命題 3");
     await expect(preview).toContainText("生成する部分群");
     await expect(preview.locator("mjx-container")).not.toHaveCount(0);
+    await expect(page.locator("iframe")).toHaveCount(0);
     await expect(preview.locator("[data-theorem-preview-link]")).toHaveCount(0);
 
     await page.keyboard.press("Escape");
