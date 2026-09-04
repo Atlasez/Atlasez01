@@ -2702,44 +2702,45 @@ const structuredData = {
             const key = `${href}#${id}`;
             const cached = remoteCards.get(key);
             if (cached) return cached;
-            const pending = new Promise<HTMLElement | null>((resolve) => {
-              const frame = document.createElement("iframe");
-              frame.title = "";
-              frame.tabIndex = -1;
-              frame.setAttribute("aria-hidden", "true");
-              frame.style.cssText = "position:fixed;left:-10000px;top:-10000px;width:2px;height:2px;border:0;opacity:0;pointer-events:none";
-              let attempts = 0;
-              let timer: number | undefined;
-              let finished = false;
-              const finish = (card: HTMLElement | null) => {
-                if (finished) return;
-                finished = true;
-                if (timer !== undefined) window.clearTimeout(timer);
-                frame.remove();
-                resolve(card ? card.cloneNode(true) as HTMLElement : null);
-              };
-              const inspect = () => {
-                if (finished) return;
-                const card = frame.contentDocument?.getElementById(id);
-                if (card && card.nodeType === Node.ELEMENT_NODE) {
-                  finish(card as HTMLElement);
-                  return;
+            const pending = (async () => {
+              try {
+                // 本番は X-Frame-Options: DENY を返すためiframeでは取得できない。
+                // 同一オリジンのHTMLを取得し、静的HTML内の定理段落と数式を
+                // 対象番号まで再構成する。将来サーバー側でIDを出力する場合は
+                // その要素を優先してそのまま複製する。
+                const response = await fetch(href, { credentials: "same-origin" });
+                if (!response.ok) return null;
+                const html = await response.text();
+                const remoteDocument = new DOMParser().parseFromString(html, "text/html");
+                const remoteBody = remoteDocument.querySelector<HTMLElement>(".article-body");
+                if (!remoteBody) return null;
+                const directTarget = remoteBody.querySelector<HTMLElement>(`#${CSS.escape(id)}`);
+                if (directTarget) return directTarget.cloneNode(true) as HTMLElement;
+                const match = id.match(/^math-block-(\d+)$/u);
+                const targetNumber = match ? Number(match[1]) : NaN;
+                if (!Number.isFinite(targetNumber) || targetNumber < 1) return null;
+                const statements = [...remoteBody.children].filter((node): node is HTMLElement =>
+                  node.tagName === "P" && theoremLead.test((node.textContent ?? "").trim()),
+                );
+                const statement = statements[targetNumber - 1];
+                if (!statement) return null;
+                const card = document.createElement("div");
+                card.className = "math-theorem";
+                for (let node: Element | null = statement; node; node = node.nextElementSibling) {
+                  if (
+                    node !== statement && (
+                      ["H2", "H3"].includes(node.tagName) ||
+                      theoremLead.test((node.textContent ?? "").trim()) ||
+                      node.matches(".proof,.proof-details,details")
+                    )
+                  ) break;
+                  card.append(node.cloneNode(true));
                 }
-                attempts += 1;
-                if (attempts >= 100) finish(null);
-                else timer = window.setTimeout(inspect, 100);
-              };
-              frame.addEventListener("load", () => {
-                // The target card is assigned by the article's own module after
-                // the iframe load event. Give that module a tick, then poll.
-                timer = window.setTimeout(inspect, 120);
-              }, { once: true });
-              articleMain.append(frame);
-              frame.src = href;
-              // A cached iframe may have completed before the load listener is
-              // observed by some browsers; this fallback keeps the lookup live.
-              timer = window.setTimeout(inspect, 500);
-            });
+                return card;
+              } catch {
+                return null;
+              }
+            })();
             remoteCards.set(key, pending);
             return pending;
           };
