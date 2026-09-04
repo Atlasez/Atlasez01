@@ -448,9 +448,79 @@ test.describe("学習サイト", () => {
     await expect(page.locator(".back-to-toc")).toHaveCount(0);
     await expect(page.getByLabel("報告の種類")).toBeVisible();
     await expect(page.getByLabel("内容")).toBeVisible();
+    const shareButton = page.getByRole("button", { name: "記事を共有" });
+    await expect(shareButton).toBeVisible();
+    await expect(shareButton.locator("svg")).toHaveAttribute(
+      "viewBox",
+      "0 0 24 24",
+    );
+    await expect(shareButton.locator("circle")).toHaveCount(3);
+    const copyButton = page.getByRole("button", { name: "リンクをコピー" });
+    await expect(copyButton).toBeVisible();
+    await expect(copyButton.locator("svg")).toHaveAttribute(
+      "viewBox",
+      "0 0 24 24",
+    );
     await expect(
       page.getByRole("button", { name: "報告を送信" }),
     ).toBeVisible();
+  });
+
+  test("巡回群本文の参照リンクからリンク先カードを数式付きでプレビューできる", async ({
+    page,
+  }) => {
+    await page.goto("atlas/ja/mathematics/group-theory/cyclic-groups/");
+    const trigger = page
+      .locator(".article-body a[data-theorem-preview-trigger]")
+      .first();
+    const preview = page.locator("[data-theorem-preview]");
+
+    await expect(trigger).toContainText("群の生成系:命題 3");
+    await expect(trigger).toHaveAttribute(
+      "data-theorem-preview-trigger",
+      "math-block-3",
+    );
+    await expect(trigger).toHaveAttribute(
+      "href",
+      /generating-sets\/#math-block-3$/,
+    );
+    // 定理タイトル自体はトリガーにしない。
+    await expect(
+      page.locator(".article-body .thmtitle.theorem-preview-trigger"),
+    ).toHaveCount(0);
+    await trigger.hover();
+    await expect(preview).toBeVisible();
+    await expect(preview).toContainText("命題 3");
+    await expect(preview).toContainText("生成する部分群");
+    await expect(preview.locator("mjx-container")).not.toHaveCount(0);
+    await expect(preview.locator("[data-theorem-preview-link]")).toHaveCount(0);
+
+    await page.keyboard.press("Escape");
+    await expect(preview).toBeHidden();
+
+    await trigger.focus();
+    await expect(preview).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(preview).toBeHidden();
+
+    // 数学分野全体で同じ仕様を使う。同一記事内の参照もプレビューできる。
+    await page.goto("atlas/ja/mathematics/group-theory/subgroups/");
+    const localTrigger = page
+      .locator(
+        '.article-body a[data-theorem-preview-trigger][href*="#math-block-5"]',
+      )
+      .first();
+    await expect(localTrigger).toContainText("部分群の定義:命題 5");
+    await localTrigger.dispatchEvent("pointerenter");
+    await expect(page.locator("[data-theorem-preview]")).toBeVisible();
+    await expect(page.locator("[data-theorem-preview]")).toContainText(
+      "部分群",
+    );
+
+    // 参照リンクのない記事にはプレビューDOMを生成しない。
+    await page.goto("atlas/ja/mathematics/group-theory/group-definition/");
+    await expect(page.locator("[data-theorem-preview]")).toHaveCount(0);
+    await expect(page.locator("[data-theorem-preview-trigger]")).toHaveCount(0);
   });
 
   test("記事の概念リンクはカテゴリ地図へ直接進む", async ({ page }) => {

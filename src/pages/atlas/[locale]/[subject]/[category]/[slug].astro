@@ -56,13 +56,20 @@ const related = relatedArticles(entry, map, byConcept);
 const next = nextArticles(entry, map, byConcept, sameLocale);
 const translations = translationArticles(entry, all);
 
-// 本文中の旧Google Sites由来の参照（`[記事タイトル:命題 7]`）を、
+// 本文中の参照（`[記事タイトル:命題 7]` / `[[ref:記事タイトル]]`）を、
 // 同じ言語の公開記事へのリンクへ戻すための最小マップ。本文全体ではなく、
 // 実際に参照されているタイトルだけを埋め込むので、ページサイズも抑える。
+const referencedArticleTitles = new Set<string>();
+for (const match of entry.body?.matchAll(/\[([^\]:]+):\s*(?:定義|命題|定理|補題|系|例)\s*\d+\]/gu) ?? []) {
+  const title = match[1]?.trim();
+  if (title) referencedArticleTitles.add(title);
+}
+for (const match of entry.body?.matchAll(/\[\[ref:([^\]\n]+)\]\]/gu) ?? []) {
+  const title = match[1]?.trim();
+  if (title) referencedArticleTitles.add(title);
+}
 const articleReferenceMap = Object.fromEntries(
-  [...((entry.body ?? "").matchAll(/\[([^\]:]+):\s*(?:定義|命題|定理|補題|系|例)\s*\d+\]/gu) ?? [])]
-    .map((match) => match[1]?.trim())
-    .filter((title): title is string => Boolean(title))
+  [...referencedArticleTitles]
     .flatMap((title) => {
       const target = all.find(
         (article) =>
@@ -391,7 +398,23 @@ const structuredData = {
             aria-label={t(locale, "shareArticle")}
             title={t(locale, "shareArticle")}
           >
-            <span aria-hidden="true">↗</span>
+            <svg
+              class="article-share-icon"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <path
+                d="m8.05 10.9 7.9-4.65M8.05 13.1l7.9 4.65"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-width="2.2"
+              />
+              <circle cx="6" cy="12" r="2.25" fill="currentColor" />
+              <circle cx="18" cy="5" r="2.25" fill="currentColor" />
+              <circle cx="18" cy="19" r="2.25" fill="currentColor" />
+            </svg>
           </button>
           <button
             type="button"
@@ -400,7 +423,21 @@ const structuredData = {
             aria-label={t(locale, "copyLink")}
             title={t(locale, "copyLink")}
           >
-            <span aria-hidden="true">🔗</span>
+            <svg
+              class="article-copy-icon"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <path
+                d="M10.6 13.4a4.2 4.2 0 0 0 5.95.01l2.1-2.1a4.2 4.2 0 0 0-5.95-5.95l-1.2 1.2M13.4 10.6a4.2 4.2 0 0 0-5.95-.01l-2.1 2.1a4.2 4.2 0 0 0 5.95 5.95l1.2-1.2"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2.4"
+              />
+            </svg>
           </button>
           <span
             class="article-action-status"
@@ -873,6 +910,16 @@ const structuredData = {
     color: var(--accent-primary);
     background: var(--accent-subtle);
   }
+  .article-share-icon {
+    display: block;
+    width: 1.35rem;
+    height: 1.35rem;
+  }
+  .article-copy-icon {
+    display: block;
+    width: 1.45rem;
+    height: 1.45rem;
+  }
   .article-action-status {
     align-self: center;
     color: var(--text-secondary);
@@ -1231,6 +1278,68 @@ const structuredData = {
     color: var(--text-secondary);
     cursor: help;
     text-decoration: none;
+  }
+  /* 本文中の定理・定義参照リンクに表示する内容プレビュー。
+     ポップオーバー本体は本文のDOMへ動的に追加するため、子要素は
+     :global() で指定する。 */
+  .article-main :global(.theorem-preview-trigger) {
+    cursor: help;
+    text-decoration: underline dotted color-mix(in srgb, currentColor 55%, transparent);
+    text-underline-offset: 0.16em;
+  }
+  .article-main :global(.theorem-preview) {
+    background: var(--background-primary);
+    border: 1px solid var(--border-strong);
+    border-radius: 0.45rem;
+    box-shadow: 0 0.8rem 2.2rem rgb(0 0 0 / 18%);
+    color: var(--text-primary);
+    max-height: min(22rem, calc(100vh - 1.5rem));
+    overflow: auto;
+    padding: 0.8rem 0.95rem 0.9rem;
+    position: fixed;
+    width: min(23rem, calc(100vw - 1.5rem));
+    z-index: 60;
+  }
+  .article-main :global(.theorem-preview-heading) {
+    color: var(--text-primary);
+    font-size: 0.98rem;
+    font-weight: 750;
+    line-height: 1.45;
+    margin: 0;
+  }
+  .article-main :global(.theorem-preview-body) {
+    color: var(--text-secondary);
+    font-size: 0.88rem;
+    line-height: 1.65;
+    margin: 0.45rem 0 0;
+  }
+  .article-main :global(.theorem-preview-body > *) {
+    margin-block: 0.55rem;
+  }
+  .article-main :global(.theorem-preview-body > :first-child) {
+    margin-top: 0;
+  }
+  .article-main :global(.theorem-preview-body > :last-child) {
+    margin-bottom: 0;
+  }
+  .article-main :global(.theorem-preview-body .katex-display),
+  .article-main :global(.theorem-preview-body mjx-container[display="true"]) {
+    box-sizing: border-box;
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-block: 0.15rem;
+    width: 100%;
+  }
+  .article-main :global(.theorem-preview-body mjx-container),
+  .article-main :global(.theorem-preview-body .katex) {
+    max-width: 100%;
+  }
+  .article-main :global(.theorem-preview-trigger:focus-visible) {
+    border-radius: 0.2rem;
+    outline: 3px solid var(--focus-ring);
+    outline-offset: 2px;
   }
   .proof-toggle:hover { background: var(--accent-hover); }
   .proof-toggle:focus-visible { outline-offset: 3px; }
@@ -1686,6 +1795,76 @@ const structuredData = {
     window.addEventListener("scroll", checkCompletion, { passive: true });
     window.addEventListener("resize", checkCompletion);
     checkCompletion();
+  }
+</script>
+
+<script>
+  // 数学以外の記事でも、[[ref:記事タイトル]] と旧形式の
+  // [記事タイトル:定義 1] を公開状況に応じてリンク化する。
+  // 数学記事は上の数式処理内で同じ変換を行うため、ここでは対象外にする。
+  const referenceBody = document.querySelector<HTMLElement>(".article-body");
+  const referenceMeta = document.querySelector<HTMLElement>("[data-article-actions]");
+  if (referenceBody && referenceMeta?.dataset.subjectSlug !== "mathematics") {
+    const referenceMap = (() => {
+      try {
+        const parsed = JSON.parse(referenceBody.dataset.articleReferenceMap ?? "{}");
+        return parsed && typeof parsed === "object"
+          ? parsed as Record<string, string>
+          : {};
+      } catch {
+        return {};
+      }
+    })();
+    const referencePattern = /\[\[ref:([^\]\n]+)\]\]|\[([^\]\n]+)\]/gu;
+    const walker = document.createTreeWalker(referenceBody, NodeFilter.SHOW_TEXT);
+    const textNodes: Text[] = [];
+    let current = walker.nextNode();
+    while (current) {
+      textNodes.push(current as Text);
+      current = walker.nextNode();
+    }
+    textNodes.forEach((node) => {
+      const parent = node.parentElement;
+      if (!parent || parent.closest("a,code,pre,script,style")) return;
+      const value = node.nodeValue ?? "";
+      let changed = false;
+      let cursor = 0;
+      const fragment = document.createDocumentFragment();
+      referencePattern.lastIndex = 0;
+      let match: RegExpExecArray | null;
+      while ((match = referencePattern.exec(value))) {
+        const referenceId = match[1]?.trim() ?? "";
+        const reference = match[2]?.trim() ?? "";
+        const rawReference = referenceId || reference;
+        const legacyParts = reference.match(
+          /^(.+?)\s*:\s*(?:定義|命題|定理|補題|系|例)\s*\d+\s*$/u,
+        );
+        const title = referenceId || legacyParts?.[1]?.trim() || "";
+        if (!title) continue;
+        fragment.append(value.slice(cursor, match.index));
+        const href = referenceId ? referenceMap[referenceId] : referenceMap[reference];
+        if (href) {
+          const link = document.createElement("a");
+          link.className = "article-reference";
+          link.href = referenceId ? href : `${href}#math-block-${reference.match(/(\d+)\s*$/u)?.[1] ?? ""}`;
+          link.dataset.articleReference = rawReference;
+          link.textContent = rawReference;
+          fragment.append(link);
+        } else {
+          const pending = document.createElement("span");
+          pending.className = "article-reference article-reference-pending";
+          pending.dataset.articleReference = rawReference;
+          pending.title = "参照先の記事が公開されるとリンクになります";
+          pending.textContent = rawReference;
+          fragment.append(pending);
+        }
+        cursor = match.index + match[0].length;
+        changed = true;
+      }
+      if (!changed) return;
+      fragment.append(value.slice(cursor));
+      node.parentNode?.replaceChild(fragment, node);
+    });
   }
 </script>
 
@@ -2239,6 +2418,10 @@ const structuredData = {
         wrapper.dataset.statementLabel = label;
       }
 
+      const theoremCards = [...mathBody.children].filter((node): node is HTMLElement =>
+        node instanceof HTMLElement && node.matches(".defi,.prop,.thm,.lemma,.cor,.example,.math-definition,.math-theorem"),
+      );
+
       const removeProofLabel = (container: Element) => {
         const strong = container.querySelector(":scope > strong");
         if (strong && proofLead.test((strong.textContent ?? "").trim())) {
@@ -2314,9 +2497,6 @@ const structuredData = {
       // `.thmtitle` は数式を含む見出し文字列を MathJax が置き換える前に
       // 保存しているので、目次から数式だけが消えることも防げる。
       const tocList = document.querySelector<HTMLOListElement>(".toc-list");
-      const theoremCards = [...mathBody.children].filter((node): node is HTMLElement =>
-        node instanceof HTMLElement && node.matches(".defi,.prop,.thm,.lemma,.cor,.example,.math-definition,.math-theorem"),
-      );
       const tocHeadingItems = new Map<string, HTMLLIElement>();
       tocList?.querySelectorAll<HTMLAnchorElement>("a[data-toc-link]").forEach((link) => {
         const item = link.closest("li");
@@ -2387,7 +2567,9 @@ const structuredData = {
       if (Object.keys(referenceMap).length > 0 || mathBody.textContent?.includes("[[ref:")) {
         // New editor references use [[ref:identifier]]. Keep the legacy
         // [記事タイトル:命題 7] form below for older imported articles.
-        const referencePattern = /\[\[ref:([A-Za-z][A-Za-z0-9_-]*)\]\]|\[([^\]\n]+)\]/gu;
+        // [[ref:...]] は記事タイトル（日本語を含む）または、同一記事内の
+        // directive id を受け付ける。公開前のタイトルも保留表示へ変換する。
+        const referencePattern = /\[\[ref:([^\]\n]+)\]\]|\[([^\]\n]+)\]/gu;
         const walker = document.createTreeWalker(mathBody, NodeFilter.SHOW_TEXT);
         const textNodes: Text[] = [];
         let current = walker.nextNode();
@@ -2417,10 +2599,20 @@ const structuredData = {
                 link.dataset.articleReference = referenceId;
                 link.textContent = `${target.dataset.statementLabel} ${target.dataset.statementNumber}`;
                 fragment.append(link);
+              } else if (referenceMap[referenceId]) {
+                const link = document.createElement("a");
+                link.className = "article-reference";
+                link.href = referenceMap[referenceId];
+                link.dataset.articleReference = referenceId;
+                link.textContent = referenceId;
+                fragment.append(link);
               } else {
-                // Do not hide an unresolved identifier.  It remains useful
-                // source text until the referenced statement is published.
-                fragment.append(match[0]);
+                const pending = document.createElement("span");
+                pending.className = "article-reference article-reference-pending";
+                pending.dataset.articleReference = referenceId;
+                pending.title = "参照先の記事が公開されるとリンクになります";
+                pending.textContent = referenceId;
+                fragment.append(pending);
               }
               cursor = match.index + match[0].length;
               changed = true;
@@ -2456,6 +2648,222 @@ const structuredData = {
           fragment.append(value.slice(cursor));
           node.parentNode?.replaceChild(fragment, node);
         });
+      }
+
+      // 本文中の参照リンクにホバーしたとき、リンク先の定義・命題カードを
+      // X のプレビューのように表示する。タイトルそのものをトリガーにはせず、
+      // 実際に読者がクリックできる本文リンクへだけ動作を付与する。
+      // 数学分野の記事で、実際に本文参照リンクが生成された場合だけ有効にする。
+      // 参照のない記事にはプレビューDOMやイベントを追加しない。
+      if (articleMeta.dataset.subjectSlug === "mathematics") {
+        const articleMain = mathBody.closest<HTMLElement>(".article-main");
+        const localCards = new Map<string, HTMLElement>();
+        theoremCards.forEach((card, index) => {
+          if (!card.id) card.id = `math-block-${index + 1}`;
+          localCards.set(card.id, card);
+        });
+        const referenceLinks = [...mathBody.querySelectorAll<HTMLAnchorElement>(
+          "a.article-reference:not(.article-reference-pending)",
+        )];
+        const references = referenceLinks.flatMap((link) => {
+          try {
+            const url = new URL(link.href, window.location.href);
+            const id = decodeURIComponent(url.hash.slice(1));
+            if (!id) return [];
+            return [{ link, href: url.href, id, samePage: url.origin === window.location.origin && url.pathname === window.location.pathname }];
+          } catch {
+            return [];
+          }
+        });
+
+        if (articleMain && references.length > 0) {
+          type TheoremPreview = {
+            id: string;
+            href: string;
+            title: string;
+            card?: HTMLElement;
+          };
+          const previews = new Map<HTMLAnchorElement, TheoremPreview>();
+          const preview = document.createElement("aside");
+          preview.className = "theorem-preview";
+          preview.dataset.theoremPreview = "true";
+          preview.hidden = true;
+          preview.setAttribute("role", "dialog");
+          preview.setAttribute("aria-modal", "false");
+          const previewTitle = document.createElement("p");
+          previewTitle.className = "theorem-preview-heading";
+          const previewBody = document.createElement("div");
+          previewBody.className = "theorem-preview-body";
+          preview.append(previewTitle, previewBody);
+          articleMain.append(preview);
+
+          const remoteCards = new Map<string, Promise<HTMLElement | null>>();
+          const loadRemoteCard = (href: string, id: string) => {
+            const key = `${href}#${id}`;
+            const cached = remoteCards.get(key);
+            if (cached) return cached;
+            const pending = new Promise<HTMLElement | null>((resolve) => {
+              const frame = document.createElement("iframe");
+              frame.title = "";
+              frame.tabIndex = -1;
+              frame.setAttribute("aria-hidden", "true");
+              frame.style.cssText = "position:fixed;left:-10000px;top:-10000px;width:2px;height:2px;border:0;opacity:0;pointer-events:none";
+              let attempts = 0;
+              let timer: number | undefined;
+              let finished = false;
+              const finish = (card: HTMLElement | null) => {
+                if (finished) return;
+                finished = true;
+                if (timer !== undefined) window.clearTimeout(timer);
+                frame.remove();
+                resolve(card ? card.cloneNode(true) as HTMLElement : null);
+              };
+              const inspect = () => {
+                if (finished) return;
+                const card = frame.contentDocument?.getElementById(id);
+                if (card && card.nodeType === Node.ELEMENT_NODE) {
+                  finish(card as HTMLElement);
+                  return;
+                }
+                attempts += 1;
+                if (attempts >= 100) finish(null);
+                else timer = window.setTimeout(inspect, 100);
+              };
+              frame.addEventListener("load", () => {
+                // The target card is assigned by the article's own module after
+                // the iframe load event. Give that module a tick, then poll.
+                timer = window.setTimeout(inspect, 120);
+              }, { once: true });
+              articleMain.append(frame);
+              frame.src = href;
+              // A cached iframe may have completed before the load listener is
+              // observed by some browsers; this fallback keeps the lookup live.
+              timer = window.setTimeout(inspect, 500);
+            });
+            remoteCards.set(key, pending);
+            return pending;
+          };
+
+          const renderCard = (card: HTMLElement, fallbackTitle: string) => {
+            const clone = card.cloneNode(true) as HTMLElement;
+            clone.removeAttribute("id");
+            clone.querySelectorAll<HTMLElement>("[data-theorem-preview-trigger]").forEach((node) => {
+              node.classList.remove("theorem-preview-trigger");
+              node.removeAttribute("data-theorem-preview-trigger");
+              node.removeAttribute("aria-expanded");
+              node.removeAttribute("aria-haspopup");
+            });
+            const title = clone.querySelector<HTMLElement>(":scope > p > .thmtitle, :scope > .thmtitle, .thmtitle");
+            if (title) {
+              previewTitle.replaceChildren(...[...title.childNodes].map((node) => node.cloneNode(true)));
+              title.remove();
+            } else {
+              previewTitle.textContent = fallbackTitle;
+            }
+            previewBody.replaceChildren(...[...clone.childNodes].map((node) => node.cloneNode(true)));
+          };
+
+          let activeTrigger: HTMLAnchorElement | null = null;
+          let hideTimer: number | undefined;
+          const cancelHide = () => {
+            if (hideTimer !== undefined) window.clearTimeout(hideTimer);
+            hideTimer = undefined;
+          };
+          const isEngaged = () => Boolean(
+            activeTrigger && (
+              activeTrigger.matches(":hover") ||
+              document.activeElement === activeTrigger ||
+              preview.matches(":hover") ||
+              preview.contains(document.activeElement)
+            ),
+          );
+          const hidePreview = () => {
+            cancelHide();
+            if (!activeTrigger) return;
+            activeTrigger.removeAttribute("aria-expanded");
+            activeTrigger = null;
+            preview.hidden = true;
+            preview.removeAttribute("aria-labelledby");
+          };
+          const scheduleHide = () => {
+            cancelHide();
+            hideTimer = window.setTimeout(() => {
+              hideTimer = undefined;
+              if (!isEngaged()) hidePreview();
+            }, 140);
+          };
+          const positionPreview = () => {
+            if (!activeTrigger || preview.hidden) return;
+            const triggerRect = activeTrigger.getBoundingClientRect();
+            const margin = 12;
+            const previewRect = preview.getBoundingClientRect();
+            const maxLeft = Math.max(margin, window.innerWidth - previewRect.width - margin);
+            const left = Math.min(Math.max(margin, triggerRect.left), maxLeft);
+            const below = triggerRect.bottom + 8;
+            const above = triggerRect.top - previewRect.height - 8;
+            const top = below + previewRect.height + margin <= window.innerHeight
+              ? below
+              : Math.max(margin, above);
+            preview.style.left = `${Math.round(left)}px`;
+            preview.style.top = `${Math.round(top)}px`;
+          };
+          const showPreview = async (trigger: HTMLAnchorElement) => {
+            const data = previews.get(trigger);
+            if (!data) return;
+            cancelHide();
+            activeTrigger = trigger;
+            previewTitle.textContent = data.title;
+            previewBody.textContent = "読み込み中…";
+            preview.setAttribute("aria-labelledby", "theorem-preview-title");
+            previewTitle.id = "theorem-preview-title";
+            trigger.setAttribute("aria-expanded", "true");
+            preview.hidden = false;
+            positionPreview();
+            const card = data.card ?? await loadRemoteCard(data.href, data.id);
+            if (card && activeTrigger === trigger) {
+              renderCard(card, data.title);
+              positionPreview();
+            } else if (activeTrigger === trigger) {
+              previewBody.textContent = "リンク先の本文を読み込めませんでした。";
+              positionPreview();
+            }
+          };
+          const bindTrigger = (trigger: HTMLAnchorElement, data: TheoremPreview) => {
+            previews.set(trigger, data);
+            trigger.classList.add("theorem-preview-trigger");
+            trigger.dataset.theoremPreviewTrigger = data.id;
+            trigger.setAttribute("aria-haspopup", "dialog");
+            trigger.addEventListener("pointerenter", () => { void showPreview(trigger); });
+            trigger.addEventListener("pointerleave", scheduleHide);
+            trigger.addEventListener("focus", () => { void showPreview(trigger); });
+            trigger.addEventListener("blur", scheduleHide);
+            trigger.addEventListener("keydown", (event) => {
+              if (event.key === "Escape") {
+                event.preventDefault();
+                hidePreview();
+              }
+            });
+          };
+
+          references.forEach(({ link, href, id, samePage }) => {
+            const card = samePage ? localCards.get(id) : undefined;
+            if (!card && samePage) return;
+            bindTrigger(link, {
+              id,
+              href,
+              title: link.textContent?.replace(/\s+/gu, " ").trim() || id,
+              card,
+            });
+          });
+
+          preview.addEventListener("pointerenter", cancelHide);
+          preview.addEventListener("pointerleave", scheduleHide);
+          window.addEventListener("resize", positionPreview, { passive: true });
+          window.addEventListener("scroll", positionPreview, { passive: true });
+          document.addEventListener("keydown", (event) => {
+            if (event.key === "Escape" && !preview.hidden) hidePreview();
+          });
+        }
       }
     }
   }
