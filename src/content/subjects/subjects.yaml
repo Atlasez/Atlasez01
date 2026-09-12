@@ -410,12 +410,26 @@
   slug: informatics
   name: { ja: 情報, en: Informatics }
   status: preparing
-  order: 17
+  order: 160
   group: natural
   genre: mathematics-information
   description:
     ja: 情報科学とプログラミングの基礎。
     en: Foundations of computer science and programming.
+  categories:
+    - id: category-l0f-kog-i1y-p8y
+      slug: category-l0f-kog-i1y-p8y
+      name: { ja: "機械学習", en: "機械学習" }
+      order: 0
+      entryConceptIds: ["concentration-inequalities"]
+      outline:
+        - id: "b67be709-40cb-40b2-8df8-381d1b356bc8"
+          slug: "concentration-inequalities"
+          title: "集中不等式"
+          summary: "確率論と機械学習で用いる集中不等式の基礎"
+          conceptId: "concentration-inequalities"
+          order: 0
+      relatedCategoryIds: []
 - id: fisheries-science
   slug: fisheries-science
   name: { ja: 水産学, en: Fisheries Science }
