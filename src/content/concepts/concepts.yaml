@@ -1550,3 +1550,14 @@
       biology.cell-biology.cell-organelles,
       biology.plant-physiology.auxin,
     ]
+
+# 運営サイトから追加した概念
+- id: informatics.category-l0f-kog-i1y-p8y.concentration-inequalities
+  subject: informatics
+  category: category-l0f-kog-i1y-p8y
+  name:
+    ja: "集中不等式"
+  prerequisites: []
+  recommendedNext: []
+  related: []
+  alternatives: []
