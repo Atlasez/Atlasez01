@@ -151,7 +151,7 @@
   slug: mathematics
   name: { ja: 数学, en: Mathematics }
   status: published
-  order: 9
+  order: 80
   introSlug: what-is-mathematics
   group: natural
   genre: mathematics-information
@@ -161,38 +161,38 @@
   categories:
     - id: overview
       slug: overview
-      name: { ja: 概要, en: Overview }
+      name: { ja: "概要", en: "概要" }
       order: 0
       entryConceptIds: [math.overview.what-is-mathematics]
       relatedCategoryIds: []
     - id: set-theory
       slug: set-theory
-      name: { ja: 集合論, en: Set Theory }
-      order: 1
+      name: { ja: "集合論", en: "集合論" }
+      order: 10
       entryConceptIds: [math.set-theory.sets]
       relatedCategoryIds: [group-theory, linear-algebra]
     - id: group-theory
       slug: group-theory
-      name: { ja: 群論, en: Group Theory }
-      order: 2
+      name: { ja: "群論", en: "群論" }
+      order: 20
       entryConceptIds: [math.group-theory.group-definition]
       relatedCategoryIds: [set-theory, linear-algebra]
     - id: linear-algebra
       slug: linear-algebra
-      name: { ja: 線形代数, en: Linear Algebra }
-      order: 3
+      name: { ja: "線形代数", en: "線形代数" }
+      order: 30
       entryConceptIds: [math.linear-algebra.vector-space]
       relatedCategoryIds: [set-theory, group-theory]
     - id: ring-theory
       slug: ring-theory
-      name: { ja: 環論, en: Ring Theory }
-      order: 4
+      name: { ja: "環論", en: "環論" }
+      order: 40
       entryConceptIds: [math.ring-theory.ring-definition]
       relatedCategoryIds: [group-theory, module-theory]
     - id: module-theory
       slug: module-theory
-      name: { ja: 加群論, en: Module Theory }
-      order: 5
+      name: { ja: "加群論", en: "加群論" }
+      order: 50
       entryConceptIds: [math.module-theory.modules]
       relatedCategoryIds: [ring-theory, linear-algebra]
 - id: physics
