@@ -666,6 +666,32 @@ test.describe("学習サイト", () => {
     await expect(reference).toHaveText("定義 1");
   });
 
+  test("foldingタイトルは明示した太字だけを太字で表示する", async ({
+    page,
+  }) => {
+    await page.goto("atlas/ja/mathematics/overview/test-mathematics/");
+    const normal = page
+      .locator("details.folding")
+      .filter({ hasText: "通常のfoldingタイトル" })
+      .locator(":scope > summary");
+    const explicit = page
+      .locator("details.folding")
+      .filter({ hasText: "明示的に太字のfoldingタイトル" })
+      .locator(":scope > summary");
+    if ((await normal.count()) === 0 || (await explicit.count()) === 0) {
+      test.skip(
+        true,
+        "テスト記事が非公開状態のためfoldingタイトル検証をスキップ",
+      );
+    }
+    await expect(normal).toHaveCSS("font-weight", "400");
+    await expect(normal.locator("strong, b")).toHaveCount(0);
+    await expect(explicit.locator("strong, b").first()).toHaveCSS(
+      "font-weight",
+      "700",
+    );
+  });
+
   test("旧数学サイトから移行した図を読み込み、スマホ幅に収める", async ({
     page,
   }) => {
