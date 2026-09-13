@@ -1429,6 +1429,13 @@ const structuredData = {
      .proof-details-inner.folding-content の左borderは別ルールで維持する。 */
   .article-body :global(details.folding) { border: 0; border-radius: 0.45rem; margin-block: 1rem; overflow: hidden; }
   .article-body :global(details.folding > summary) { background: var(--background-secondary); cursor: pointer; list-style: none; padding: 0.55rem 0.8rem 0.55rem 2rem; position: relative; }
+  /* `base.css` gives every details summary a semibold weight for navigation.
+     Folding titles are article content, so they stay at the body weight unless
+     the author explicitly writes Markdown emphasis (`**...**`).  Proofs keep
+     their dedicated, stronger summary treatment above. */
+  .article-body :global(details.folding:not(.proof-details) > summary) { font-weight: 400; }
+  .article-body :global(details.folding:not(.proof-details) > summary strong),
+  .article-body :global(details.folding:not(.proof-details) > summary b) { font-weight: 700; }
   .article-body :global(details.folding > summary::-webkit-details-marker) { display: none; }
   /* 折りたたみの矢印は CSS の山形ではなく ▼ の文字を回転して示す。
      top を固定するとボタンの高さに追随せず中央から外れるため、
