@@ -1,5 +1,7 @@
 ---
 /** 個別記事ページ */
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { render } from "astro:content";
 import AtlasLayout from "../../../../../layouts/AtlasLayout.astro";
 import Breadcrumb from "../../../../../components/Breadcrumb.astro";
@@ -223,12 +225,30 @@ const conceptNames = entry.data.concepts.map((c) => {
   return { id: c.id, name: node ? localizedName(node.name, locale) : c.id };
 });
 const historyUrl = `${ORG.githubRepo}/commits/main/src/content/articles/${entry.id}.md`;
-const ogImage = new URL(
+// OG画像はimmutableで配信するため、記事・フォント・ロゴの変更をURLへ反映する。
+// 固定URLのまま画像だけを差し替えると、SNS/CDNが古い字形やレイアウトを
+// 長期間再利用し、公開HTMLとOG画像が食い違う。
+const ogImageVersion = createHash("sha256")
+  .update("atlasez-og-v3")
+  .update(readFileSync("public/images/atlasez-logo-og.png"))
+  .update(readFileSync("public/fonts/NotoSansJP-700-subset.woff2"))
+  .update(readFileSync("public/fonts/NotoSansJP-800-subset.woff2"))
+  .update(entry.data.locale)
+  .update(entry.data.title)
+  .update(entry.data.subject)
+  .update(entry.data.category)
+  .update(entry.data.slug)
+  .update(entry.data.updatedAt.toISOString())
+  .digest("hex")
+  .slice(0, 12);
+const ogImageUrl = new URL(
   withBase(
-    `/og/${entry.data.locale}/${entry.data.subject}/${entry.data.category}/${entry.data.slug}.png`,
+    `/og/v3/${entry.data.locale}/${entry.data.subject}/${entry.data.category}/${entry.data.slug}.png`,
   ),
   Astro.site,
-).href;
+);
+ogImageUrl.searchParams.set("v", ogImageVersion);
+const ogImage = ogImageUrl.href;
 
 const structuredData = {
   "@context": "https://schema.org",

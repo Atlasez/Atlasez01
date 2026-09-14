@@ -140,6 +140,21 @@ test.describe("学習サイト", () => {
     ).toHaveCSS("border-style", "solid");
   });
 
+  test("数学記事は世代化されたPNGのOG画像を指す", async ({ page }) => {
+    await page.goto(
+      "atlas/ja/mathematics/group-theory/homomorphism-image-kernel/",
+    );
+    const ogImage = await page
+      .locator('meta[property="og:image"]')
+      .getAttribute("content");
+    expect(ogImage).toMatch(
+      /\/og\/v3\/ja\/mathematics\/group-theory\/homomorphism-image-kernel\.png\?v=[a-f0-9]{12}$/,
+    );
+    const imageResponse = await page.request.get(ogImage ?? "");
+    expect(imageResponse.status()).toBe(200);
+    expect(imageResponse.headers()["content-type"]).toMatch(/^image\/png/);
+  });
+
   test("はじめての方へは専用ガイドに移動する", async ({ page }) => {
     await page.goto("atlas/ja/");
     const guide = page.getByRole("link", { name: "はじめての方へ" });
