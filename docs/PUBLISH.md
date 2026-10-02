@@ -1,85 +1,66 @@
-# 公開チェックリスト（Cloudflare Pages）
+# 公開チェックリスト（Cloudflare Workers）
 
-配信は Cloudflare Pages が GitHub リポジトリ `Atlasez/Atlasez01` を
-直接ビルドして行う。詳しい背景は `docs/DEPLOYMENT.md`。
+記事公開は内容の査読とコード変更のレビューを経て、公開サイト正本
+`Atlasez/Atlasez01` の `main` に反映します。本番はCloudflare Worker
+`atlasez01`（`https://atlasez.org`）です。GitHub Pagesは確認用ミラーであり、
+Cloudflare Pagesも本番の配信経路ではありません。Workerの固定値、ビルドゲート、
+デプロイ検証は [`DEPLOYMENT.md`](DEPLOYMENT.md) を正本として参照してください。
 
----
+## 1. 記事を査読に出す
 
-## 1. push する
+1. [`ADDING_ARTICLES.md`](ADDING_ARTICLES.md) と
+   [`EDITORIAL_WORKFLOW.md`](EDITORIAL_WORKFLOW.md) に従い記事を作成します。
+2. ローカルで下書きと公開後の表示を確認し、内容・引用・ライセンス・参照リンクを
+   担当者が査読します。
+3. 査読と公開承認が終わるまで `status: draft` または `status: in-review` を保ちます。
+   これらは本番ビルドから除外されます。
+4. 承認後にだけ `status: published` とし、対象記事、URL、概念・前提関係への影響を
+   PR本文に記録します。PRはCIと人間のレビューを通してから `main` へ反映します。
 
-```bash
-cd <このリポジトリをcloneした場所>
-git push
-```
+## 2. 本番反映を確認する
 
-push すると Cloudflare Pages のビルドが自動で始まる。
+`main` への反映後、Cloudflare Workers Builds が固定Worker `atlasez01` へ本番
+ビルド・デプロイします。PRブランチやローカルからの直接deploy、Dashboard Editorの
+手動Upload、GitHub Actionsによる別の本番deploy経路は使いません。
 
-## 2. Cloudflare Pages のビルド設定を確認する
+公開完了とする前に、次を確認してPRまたは運用記録へ残します。
 
-Workers & Pages → プロジェクト → Settings → Build
+- CIが成功し、CloudflareのBuild/Deploymentが対象のmain SHAを処理した。
+- CloudflareのDeployment/VersionでWorker名 `atlasez01`、Version、配信率100%を確認した。
+- `https://atlasez.org/build-info.json` のcommit SHAが対象main SHAと一致した。
+- 認証済みChromeで公開URL、記事、検索、学習地図、数式を確認した。
+- 公開記事URL、確認時刻、確認者、対象SHAを記録した。
 
-| 項目                   | 値              |
-| ---------------------- | --------------- |
-| Build command          | `npm run build` |
-| Build output directory | `dist`          |
-| Production branch      | `main`          |
+Build失敗、Worker名・SHA・Version・配信率の不一致、`build-info.json`欠落、画面の
+異常があれば公開完了として扱わず、状況を記録して担当者へ引き継ぎます。推測で
+rollback、Version promote、cache purge、route変更、直接deployを行いません。
 
-Root directory は空欄のまま。Node は `.nvmrc`（22）が読まれる。
+## 3. 訂正と非公開化
 
-## 3. 環境変数を入れる
+訂正は承認済み原稿から差分を作り、変更理由、影響する記事・リンク、旧版との関係を
+PRに記録します。査読とCIが完了するまで、本番の公開本文を直接書き換えません。
 
-Settings → Environment variables → **Production** にだけ追加:
+記事を非公開にする場合は、理由、対象URL、参照元記事・概念グラフ・検索への影響、
+復旧方法をレビューします。`status: draft` または `status: in-review` に変更して
+PRを作り、CIとレビュー、main反映後のWorker配信、公開URL・一覧・検索からの除外を
+確認します。履歴を残し、確認が終わるまで削除や別Workerへの切替を行いません。
 
-```
-SITE_URL = https://<プロジェクト名>.pages.dev
-```
+## 4. 閲覧者向け確認
 
-独自ドメインを取ったらここを書き換えて再デプロイする。
-**Preview には設定しない**（設定しないことでプレビューが自動的に
-noindex 扱いになり、本番と重複しない）。
+- トップ `/` と学習サイト `/atlas/ja/` が開く。
+- 公開記事URLが正しく表示され、承認した版と一致する。
+- 検索 `/atlas/ja/search/` と学習地図 `/atlas/ja/map/` に公開状態が反映される。
+- `/robots.txt` と sitemap が `atlasez.org` を指し、公開ページに意図しない `noindex` がない。
+- PC幅と390px幅で横はみ出しがなく、数式やリンクが使用できる。
 
-環境変数を足したあとは Deployments → 最新のデプロイ → Retry deployment。
-変数の変更は自動では反映されない。
+## 5. ローカル確認
 
-## 3.5 PR ごとのプレビューを使う
-
-ブランチを push すると、Cloudflare Pages が本番とは別にプレビューを作る。
-
-```bash
-git switch -c feature/なにか
-# 変更してコミット
-git push -u origin feature/なにか
-```
-
-数分で `https://feature-なにか.<project>.pages.dev` が見られるようになる。
-本番（main）は上書きされない。PR を作れば URL がコメントされる。
-
-うまく出ないときは Settings → Builds & deployments の
-**Preview deployments** が `All branches` かどうかを見る。
-
-## 4. 公開後に確認すること
-
-- [ ] トップ `/` と学習サイト `/atlas/ja/` が開く
-- [ ] 検索（`/atlas/ja/search/`）が動く ← Pagefind のインデックスが配信されているか
-- [ ] 学習地図（`/atlas/ja/map/`）が描画される
-- [ ] `/robots.txt` の `Sitemap:` が本番URLになっている
-- [ ] 記事ページのソースに `noindex` が **入っていない**
-- [ ] 数式（MathJax）が崩れていない ← 例: `/atlas/ja/mathematics/set-theory/relations/`
-
-## 5. GitHub 側の後始末
-
-GitHub Pages への自動デプロイは停止済み。
-Settings → Pages → Source を「None」に戻しておくと、古い内容が
-`mitukx.github.io/Atlasez01/` に残り続けるのを防げる。
-
-## 6. 独自ドメインを取ったら
-
-`docs/DEPLOYMENT.md` の「3. 独自ドメインを取得したあとの手順」を参照。
-やることは Custom domains への追加と `SITE_URL` の変更、再デプロイの 3 つ。
-
-## 7. ローカルで確認したいとき
+本番へ出す前に、記事のstatusを公開せずローカル表示を確認できます。
 
 ```bash
 npm ci
-npm run dev        # http://localhost:4321/
+npm run dev
 ```
+
+ビルド設定、CI、main SHA、Cloudflare Versionの照合については、必ず
+[`DEPLOYMENT.md`](DEPLOYMENT.md) の手順に従ってください。
