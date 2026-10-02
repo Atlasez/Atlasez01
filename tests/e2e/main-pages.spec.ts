@@ -71,9 +71,18 @@ test.describe("公式サイト", () => {
     await expect(page.locator(".org-settings")).toBeVisible();
 
     await page.goto("join/");
-    await expect(
-      page.getByRole("link", { name: "応募フォームを開く（運営サイト）" }),
-    ).toHaveAttribute("href", "https://admin.atlasez.org/apply/atlas/");
+    const atlasApplication = page.locator('[data-application-project="atlas"]');
+    await expect(atlasApplication.getByRole("link")).toHaveAttribute(
+      "href",
+      "https://admin.atlasez.org/apply/atlas/",
+    );
+    const seminarApplication = page.locator(
+      '[data-application-project="seminar-platform"]',
+    );
+    await expect(seminarApplication.getByRole("link")).toHaveAttribute(
+      "href",
+      "https://admin.atlasez.org/apply/seminar-platform/",
+    );
   });
 });
 
