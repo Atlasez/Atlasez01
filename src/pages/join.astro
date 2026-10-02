@@ -25,6 +25,19 @@ const roles = [
     desc: "イベント企画やSNSでの発信を担当します。",
   },
 ];
+
+const applicationPaths = [
+  {
+    slug: "atlas",
+    name: "学習サイト「アトラス」",
+    description: "記事の執筆・査読・翻訳、サイト開発、広報に参加できます。",
+  },
+  {
+    slug: "seminar-platform",
+    name: "ゼミプラットフォーム",
+    description: "ゼミの企画・参加・運営に関する応募はこちらです。",
+  },
+];
 ---
 
 <OrgLayout
@@ -54,16 +67,26 @@ const roles = [
     <h2>応募方法</h2>
     <div class="reading">
       <p>
-        以下の応募フォームからご連絡ください。追って運営からご案内します。
+        参加したいプロジェクトの応募フォームを選んでください。追って運営からご案内します。
       </p>
-      <p>
-        <a
-          class="button"
-          href="https://admin.atlasez.org/apply/atlas/"
-          rel="noopener noreferrer"
-          target="_blank">応募フォームを開く（運営サイト）</a
-        >
-      </p>
+      <ul class="card-grid" data-application-projects>
+        {
+          applicationPaths.map((project) => (
+            <li class="card" data-application-project={project.slug}>
+              <h3>{project.name}</h3>
+              <p>{project.description}</p>
+              <a
+                class="button"
+                href={`https://admin.atlasez.org/apply/${project.slug}/`}
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                {project.name}に応募する（運営サイト）
+              </a>
+            </li>
+          ))
+        }
+      </ul>
       <p>
         フォームが使えない場合は<a href={withBase("/contact/")}
           >お問い合わせ</a
