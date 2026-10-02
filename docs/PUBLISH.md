@@ -19,8 +19,9 @@ Cloudflare Pagesも本番の配信経路ではありません。Workerの固定�
 
 ## 2. 本番反映を確認する
 
-`main` への反映後、Cloudflare Workers Builds が固定Worker `atlasez01` へ本番
-ビルド・デプロイします。PRブランチやローカルからの直接deploy、Dashboard Editorの
+Workers Buildsが正しく接続・設定されている場合、`main` への反映をきっかけに固定Worker
+`atlasez01` へ本番ビルド・デプロイします。接続が未成立、Build失敗、SHA不一致の場合は
+配信完了とせず、原因を記録して復旧を待ちます。PRブランチやローカルからの直接deploy、Dashboard Editorの
 手動Upload、GitHub Actionsによる別の本番deploy経路は使いません。
 
 公開完了とする前に、次を確認してPRまたは運用記録へ残します。
