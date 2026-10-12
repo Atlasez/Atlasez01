@@ -107,6 +107,17 @@ test.describe("公式サイト", () => {
       ),
     ).toBe(true);
   });
+
+  test("お問い合わせページに内部文書への参照を表示しない", async ({ page }) => {
+    await page.goto("contact/");
+
+    await expect(
+      page.getByText("お問い合わせフォームは現在ありません。"),
+    ).toBeVisible();
+    await expect(page.getByText(/docs\/history\/ASSUMPTIONS\.md/)).toHaveCount(
+      0,
+    );
+  });
 });
 
 test.describe("学習サイト", () => {
