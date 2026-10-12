@@ -100,6 +100,7 @@ async function auditMath() {
           throwOnError: true,
           strict: katexStrict(file, lineAt(source, match.index)),
           macros,
+          trust: false,
         });
       } catch (error) {
         failures.push(
@@ -116,6 +117,7 @@ async function auditMath() {
           throwOnError: true,
           strict: katexStrict(file, lineAt(source, match.index)),
           macros,
+          trust: false,
         });
       } catch (error) {
         failures.push(

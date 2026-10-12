@@ -25,6 +25,7 @@ export default defineConfig({
         {
           throwOnError: false,
           strict: "warn",
+          trust: false,
           macros: {
             "\\dv": "\\frac{\\mathrm{d}#1}{\\mathrm{d}#2}",
             "\\dvtwo": "\\frac{\\mathrm{d}^{2}#1}{\\mathrm{d}#2^{2}}",
