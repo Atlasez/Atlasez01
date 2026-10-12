@@ -1,6 +1,7 @@
 import { defineConfig } from "@playwright/test";
 
-const baseURL = `${(process.env.E2E_BASE_URL ?? "http://localhost:4321").replace(/\/$/, "")}/`;
+const port = Number(process.env.E2E_PORT ?? 4321);
+const baseURL = `${(process.env.E2E_BASE_URL ?? `http://127.0.0.1:${port}`).replace(/\/$/, "")}/`;
 
 export default defineConfig({
   testDir: "tests/e2e",
@@ -10,7 +11,10 @@ export default defineConfig({
   },
   webServer: {
     command: "node scripts/serve-dist.mjs",
-    port: 4321,
-    reuseExistingServer: true,
+    port,
+    env: { PORT: String(port) },
+    // Reuse only by explicit request; otherwise a different local app on the
+    // default port can make tests pass or fail against the wrong checkout.
+    reuseExistingServer: process.env.E2E_REUSE_SERVER === "1",
   },
 });

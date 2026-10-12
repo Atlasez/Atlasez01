@@ -52,6 +52,27 @@ test.describe("公式サイト", () => {
     ).toBeVisible();
   });
 
+  test("お問い合わせページの記事報告案内が実フォームを示す", async ({
+    page,
+  }) => {
+    await page.goto("contact/");
+    await expect(page.locator("h1")).toHaveText("お問い合わせ");
+    await expect(
+      page.getByText(
+        "学習サイト「アトラス」の記事の誤りは、各記事ページにある「この記事の問題を報告」フォームからお知らせください。",
+      ),
+    ).toBeVisible();
+    await expect(page.getByText(/GitHub Issue/)).toHaveCount(0);
+    await expect(
+      page.getByText(
+        "お問い合わせフォームは現在ありません。メールまたはSNSからご連絡ください。",
+      ),
+    ).toBeVisible();
+    await expect(page.getByText(/docs\/history\/ASSUMPTIONS\.md/)).toHaveCount(
+      0,
+    );
+  });
+
   test("お知らせの個別ページが開ける", async ({ page }) => {
     await page.goto("news/");
     await page.getByRole("link", { name: /ベータ版を公開/ }).click();
@@ -71,9 +92,18 @@ test.describe("公式サイト", () => {
     await expect(page.locator(".org-settings")).toBeVisible();
 
     await page.goto("join/");
-    await expect(
-      page.getByRole("link", { name: "応募フォームを開く（運営サイト）" }),
-    ).toHaveAttribute("href", "https://admin.atlasez.org/apply/atlas/");
+    const atlasApplication = page.locator('[data-application-project="atlas"]');
+    await expect(atlasApplication.getByRole("link")).toHaveAttribute(
+      "href",
+      "https://admin.atlasez.org/apply/atlas/",
+    );
+    const seminarApplication = page.locator(
+      '[data-application-project="seminar-platform"]',
+    );
+    await expect(seminarApplication.getByRole("link")).toHaveAttribute(
+      "href",
+      "https://admin.atlasez.org/apply/seminar-platform/",
+    );
   });
 });
 
