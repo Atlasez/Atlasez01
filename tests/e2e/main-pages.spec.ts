@@ -63,6 +63,14 @@ test.describe("公式サイト", () => {
       ),
     ).toBeVisible();
     await expect(page.getByText(/GitHub Issue/)).toHaveCount(0);
+    await expect(
+      page.getByText(
+        "お問い合わせフォームは現在ありません。メールまたはSNSからご連絡ください。",
+      ),
+    ).toBeVisible();
+    await expect(page.getByText(/docs\/history\/ASSUMPTIONS\.md/)).toHaveCount(
+      0,
+    );
   });
 
   test("お知らせの個別ページが開ける", async ({ page }) => {
