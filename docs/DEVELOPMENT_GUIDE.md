@@ -121,7 +121,7 @@ rg -n "CREATE TABLE|ALTER TABLE" migrations
 - 応募、応募承認、Discord同期状態
 - 問題報告、匿名記事統計、Discordチャンネル対応表
 
-D1変更は必ず新しい連番migrationを追加し、既存migrationを書き換えません。ローカルで適用してから、承認済みの本番手順でremoteへ適用します。
+D1変更は必ず新しい連番migrationを追加し、既存migrationを書き換えません。ローカルの隔離D1で適用・検証します。本番D1へのmigrationはコードDeployと分け、バックアップ・共有DB利用者への影響・復旧方法をPRでレビューして別途承認された手順だけで適用します。Previewや通常Build/Deployから本番migrationを実行しません。
 
 権限は画面の表示/非表示だけに頼らず、`src/admin-worker.ts`のAPIでも判定します。全分野管理者専用の担当者管理、応募管理、Discordロール同期などを一般運営者に公開しないでください。メールアドレス、Google subject、Discord IDなどは必要な管理者以外に返さない設計を維持します。
 
@@ -156,15 +156,14 @@ UI変更は最低でも `npm run check`、単体テスト、`npm run build`を�
 
 ## 7. デプロイとリリース
 
-静的サイトとWorkerの設定は別物です。
+本番Workerの配信は`main`をProduction branchに固定したCloudflare Workers Buildsだけから行います。PRのCI、Build checkout SHA、公開`build-info.json`、固定WorkerのVersionを照合します。GitHub Actions、ローカルshell、Dashboard Editorから直接配信しません。緊急例外は対象main SHA・理由・影響・復旧方法を記録し、明示承認を得てから、別途レビュー済みのガード手順に従う必要があります。
 
 ```bash
 npm run build
-npx wrangler deploy --config wrangler.jsonc          # 学習サイトWorker
-npx wrangler deploy --config wrangler.admin.jsonc   # 運営サイトWorker
+npm run preview
 ```
 
-通常の公開記事はGitHubのPRをCIで検証し、`main`へのマージ後にCloudflare側の接続設定で公開します。Worker/D1を変更する場合は、デプロイ前にmigration、Secret、環境変数、ロールバック方法を確認します。詳細は [DEPLOYMENT.md](DEPLOYMENT.md) と [PUBLISH.md](PUBLISH.md) を参照してください。
+通常の公開記事はGitHub PRのCIと内容確認を通し、`main`への反映後にCloudflare側の接続設定で公開します。Worker/D1を変更する場合はmigration、Secret、環境変数、ロールバック方法をPR本文へ記録します。本番手順は [DEPLOYMENT.md](DEPLOYMENT.md) と [PUBLISH.md](PUBLISH.md) を参照してください。
 
 ### Secretの扱い
 

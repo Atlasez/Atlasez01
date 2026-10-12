@@ -33,7 +33,7 @@ test("募集ページは活動中プロジェクトごとの応募フォーム�
   expect(overflow).toBe(false);
 });
 
-test("プライバシーポリシーは記事報告の送信先と保持期限を説明する", async ({
+test("プライバシーポリシーは記事報告の送信先と未決定の保持方針を説明する", async ({
   page,
 }) => {
   await page.goto("privacy-policy/");
@@ -43,13 +43,22 @@ test("プライバシーポリシーは記事報告の送信先と保持期限�
   });
   await expect(reportSection).toBeVisible();
   const paragraph = reportSection.locator("+ p");
-  await expect(paragraph).toContainText("重複を防ぐため");
-  await expect(paragraph).toContainText("7日間保存");
-  await expect(paragraph).toContainText("30日間保存");
-  await expect(paragraph).toContainText("最終更新から180日後");
   await expect(paragraph).toContainText(
-    "未解決報告の返信先には自動削除期限がなく",
+    "同じ内容の報告は作成後7日以内は受け付けない",
   );
+  await expect(paragraph).toContainText(
+    "Secretが設定されていない場合は問題報告を受け付けません",
+  );
+  await expect(paragraph).toContainText(
+    "現在の運営Worker定期処理では、これらの記事報告ハッシュや返信先を自動削除していません",
+  );
+  await expect(paragraph).toContainText("保持期間と削除手順は未決定");
+  await expect(paragraph).toContainText(
+    "法令への適合性と公開前の最終文言は専門家に確認します",
+  );
+  await expect(paragraph).not.toContainText("7日間保存");
+  await expect(paragraph).not.toContainText("30日間保存");
+  await expect(paragraph).not.toContainText("180日後");
   await expect(paragraph).toContainText("運営Worker内部API");
   await expect(paragraph).toContainText("現在の状態と運営メモ");
   await expect(paragraph).toContainText(

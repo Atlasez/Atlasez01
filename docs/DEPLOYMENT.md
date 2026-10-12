@@ -65,27 +65,13 @@ Cloudflare DashboardのBuild cacheは無効化する。キャッシュを再有�
 `public/_headers`ではハッシュ付き`/_astro/*`を長期immutableとし、デプロイ照合用の
 `/build-info.json`は`no-store`にする。
 
-## 手動デプロイ
+## 緊急時の配信
 
-通常はCloudflare Workers Buildsだけを使う。緊急時に手動デプロイする場合も、必ず
-`main`の固定SHAから作業用ディレクトリを作り、対象の`wrangler.jsonc`を使う。
-
-```sh
-git archive <mainのSHA> | tar -x -C <作業用ディレクトリ>
-cd <作業用ディレクトリ>
-npm ci
-npm run verify:deploy-config
-SITE_URL=https://atlasez.org BASE_PATH=/ npm run build
-npx wrangler deploy --config wrangler.jsonc --keep-vars --strict \
-  --message "GitHub main <SHA>"
-```
-
-デプロイ後は`https://atlasez.org/build-info.json`が同じSHAを返すことを確認する。
+通常配信はCloudflare Workers Buildsだけから行う。ローカル、feature branch、Dashboard Editor、GitHub Actionsから直接本番Deployしない。Workers Buildsが停止・失敗した場合は配信を止め、Issueに対象main SHAと停止理由を記録する。例外の手動配信が必要な場合は、対象main SHA・理由・影響・復旧方法を記録し、レビュー済み手順と本番配信への明示承認がそろうまで実行しない。この文書は迂回用の直接`wrangler deploy`コマンドを定義しない。
 
 ## Rollback
 
-Rollbackは緊急時だけ行い、実施したVersion ID・理由・時刻を記録する。Rollback後は、
-原因を修正した`main`から再ビルドしてGitHub Actionsで再配信する。
+Rollbackは緊急時だけ行い、対象Version・SHA・影響・復旧方法をレビューしてから実施する。対象を推測してrollback/promote/cache purge/route変更をしない。修正は`main`へPRで反映し、Workers Buildsで再配信する。
 
 ## GitHub Pagesミラー
 

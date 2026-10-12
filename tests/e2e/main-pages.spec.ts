@@ -52,6 +52,19 @@ test.describe("公式サイト", () => {
     ).toBeVisible();
   });
 
+  test("お問い合わせページの記事報告案内が実フォームを示す", async ({
+    page,
+  }) => {
+    await page.goto("contact/");
+    await expect(page.locator("h1")).toHaveText("お問い合わせ");
+    await expect(
+      page.getByText(
+        "学習サイト「アトラス」の記事の誤りは、各記事ページにある「この記事の問題を報告」フォームからお知らせください。",
+      ),
+    ).toBeVisible();
+    await expect(page.getByText(/GitHub Issue/)).toHaveCount(0);
+  });
+
   test("お知らせの個別ページが開ける", async ({ page }) => {
     await page.goto("news/");
     await page.getByRole("link", { name: /ベータ版を公開/ }).click();
