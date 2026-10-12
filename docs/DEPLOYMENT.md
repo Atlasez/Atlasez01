@@ -10,11 +10,11 @@ GitHub Pagesは確認用ミラーであり、本番ではない。Cloudflare Pag
 
 本番デプロイの正本は、Cloudflare Dashboardで設定されたWorkers Buildsである。
 リポジトリ `Atlasez/Atlasez01` のProduction branchは `main` に固定し、
-`main` へのpushで次の処理をCloudflare側が自動実行する。
+Workers Buildsの接続が正常であることを確認できた場合は、`main` へのpushをきっかけに次の処理をCloudflare側が実行する。Build runと配信証拠を確認するまでは自動配信済みと判断しない。
 
 1. `npm ci`
 2. `SITE_URL=https://atlasez.org BASE_PATH=/ npm run build`
-3. `npx wrangler deploy`
+3. `npm run deploy:production`（本番Deployゲートを通過した場合だけWranglerを起動）
 4. `atlasez01` へのデプロイ
 5. 公開中の `/build-info.json` とGit commit SHAの照合
 

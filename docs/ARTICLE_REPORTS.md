@@ -6,7 +6,7 @@
 
 保存成功後、公開Workerは記事名・記事URL・分野・カテゴリ・報告種別だけをDiscordへ通知します。報告本文・返信先・hashはDiscordへ送りません。設定された場合は共有Secret付きでADMIN内部APIにも中継します。中継に失敗しても公開側D1への保存は失敗しません。
 
-公開Workerの `wrangler.jsonc` は `ARTICLE_REPORT_INGEST_URL` に `https://atlasez-admin.ukyoukay0.workers.dev/internal/article-reports` を宣言しています（2026-10-12時点）。Cloudflareへ登録された実効値・到達性は未確認です。`ARTICLE_REPORT_INGEST_TOKEN` が設定されると、公開Workerは報告内容を共有Secret付きで運営Workerの内部APIにも送ります。トークン値はGitHubやチャットへ保存・投稿しません。本番の公開Workerと運営Workerは同じD1を参照するため、DB保存後のこの中継は必須の保存経路ではありません。実際に使う理由、接続先、運営画面に対する効果を運営担当が確認するまで、接続先の変更・中継の有効化をしないでください。
+公開Workerの `wrangler.jsonc` は `ARTICLE_REPORT_INGEST_URL` に `https://atlasez-admin.ukyoukay0.workers.dev/internal/article-reports` を宣言しています（2026-10-12時点）。一方、同じ設定は `workers_dev: false` で、ADMINの `wrangler.admin.jsonc` も `workers_dev: false`、固定routeは `admin.atlasez.org` です。Git上の設定に不整合がありますが、Cloudflareへ登録された実効値・workers.dev routeの到達性は未確認です。したがって現時点で「到達不能」または「中継成功」とは断定できません。`ARTICLE_REPORT_INGEST_TOKEN` が設定されると、公開Workerは報告内容を共有Secret付きで運営Workerの内部APIにも送ります。トークン値はGitHubやチャットへ保存・投稿しません。本番の公開Workerと運営Workerは同じD1を参照するため、公開側でのDB保存後のこの中継は必須の保存経路ではありません。実際に使う理由、Cloudflare上の実効値、接続先、運営画面に対する効果を運営担当が確認するまで、接続先の変更・中継の有効化をしないでください。
 
 Discord通知は内部API中継とは独立しています。Webhook URLはSecretとして保管し、GitHubやチャットへ保存しません。チャンネル準備やDiscordロール設定の実運用手順はADMIN側の運用文書に従ってください。
 
