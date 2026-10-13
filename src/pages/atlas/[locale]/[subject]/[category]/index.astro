@@ -336,6 +336,15 @@ const items = articles.map((a) => ({
     grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
     gap: var(--space-3);
   }
+  /* グリッド表示では記事を独立したタイルとして認識できるよう、
+     共通 .card の罫線だけの見た目を上書きする。 */
+  .article-collection[data-view="grid"] .article-item {
+    border: 1px solid var(--border-default);
+    border-top: 3px solid var(--accent-primary);
+    border-radius: var(--radius);
+    padding: var(--space-3);
+    background: var(--background-secondary);
+  }
   .article-title {
     font-size: calc(1.1rem * var(--text-scale));
     margin: 0;
