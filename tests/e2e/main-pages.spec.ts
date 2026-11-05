@@ -172,6 +172,52 @@ test.describe("学習サイト", () => {
     expect(layout.hasHorizontalOverflow).toBe(false);
   });
 
+  test("長い漢字の読みも辞書欄からはみ出さず読める", async ({ page }) => {
+    const longReading =
+      "ともしび、ひ、あかり・あかし・とぼし、とも-す・とぼ-す";
+    await page.goto("atlas/ja/kanji/daily-life/fire-light/");
+    const lightGrid = page
+      .locator(".kanji-entry-grid")
+      .filter({ hasText: longReading })
+      .first();
+    const readingCell = lightGrid
+      .locator(".kanji-character-table tr")
+      .filter({ hasText: "灯" })
+      .locator("td")
+      .nth(1);
+    await expect(readingCell).toContainText(longReading);
+
+    const desktopBounds = await readingCell.evaluate((cell) => {
+      const grid = cell.closest(".kanji-entry-grid");
+      if (!grid) throw new Error("Kanji entry grid was not found");
+      return {
+        readingRight: cell.getBoundingClientRect().right,
+        gridRight: grid.getBoundingClientRect().right,
+        hasHorizontalOverflow: grid.scrollWidth > grid.clientWidth,
+      };
+    });
+    expect(desktopBounds.readingRight).toBeLessThanOrEqual(
+      desktopBounds.gridRight + 1,
+    );
+    expect(desktopBounds.hasHorizontalOverflow).toBe(false);
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.reload();
+    const mobileBounds = await readingCell.evaluate((cell) => {
+      const grid = cell.closest(".kanji-entry-grid");
+      if (!grid) throw new Error("Kanji entry grid was not found");
+      return {
+        readingRight: cell.getBoundingClientRect().right,
+        gridRight: grid.getBoundingClientRect().right,
+        hasHorizontalOverflow: grid.scrollWidth > grid.clientWidth,
+      };
+    });
+    expect(mobileBounds.readingRight).toBeLessThanOrEqual(
+      mobileBounds.gridRight + 1,
+    );
+    expect(mobileBounds.hasHorizontalOverflow).toBe(false);
+  });
+
   test("はじめての方へは専用ガイドに移動する", async ({ page }) => {
     await page.goto("atlas/ja/");
     const guide = page.getByRole("link", { name: "はじめての方へ" });
