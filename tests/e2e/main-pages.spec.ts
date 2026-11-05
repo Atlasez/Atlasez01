@@ -133,11 +133,43 @@ test.describe("学習サイト", () => {
   });
 
   test("漢字記事に専用の見出し・表スタイルが適用される", async ({ page }) => {
-    await page.goto("atlas/ja/kanji/culture/musical-instruments/");
+    await page.goto("atlas/ja/kanji/human-body/body-torso/");
     await expect(page.locator(".article-body.kanji-article")).toBeVisible();
+    await expect(page.locator(".kanji-entry-grid").first()).toHaveCSS(
+      "display",
+      "grid",
+    );
+    const desktopColumns = await page
+      .locator(".kanji-entry-grid")
+      .first()
+      .evaluate(
+        (grid) => getComputedStyle(grid).gridTemplateColumns.split(" ").length,
+      );
+    expect(desktopColumns).toBe(2);
     await expect(
-      page.locator(".article-body.kanji-article table").first(),
+      page.locator(".kanji-entry-grid").first().locator(".kanji-entry-column"),
+    ).toHaveCount(2);
+    await expect(
+      page
+        .locator(".article-body.kanji-article .kanji-character-table")
+        .first(),
     ).toHaveCSS("border-style", "solid");
+    await expect(
+      page.locator('.kanji-character-table td[rowspan="2"]').first(),
+    ).toBeVisible();
+  });
+
+  test("漢字記事の一字・熟語欄はスマートフォンで縦に並ぶ", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("atlas/ja/kanji/human-body/body-torso/");
+    const grid = page.locator(".kanji-entry-grid").first();
+    await expect(grid).toBeVisible();
+    const layout = await grid.evaluate((element) => ({
+      columns: getComputedStyle(element).gridTemplateColumns.split(" ").length,
+      hasHorizontalOverflow: element.scrollWidth > element.clientWidth,
+    }));
+    expect(layout.columns).toBe(1);
+    expect(layout.hasHorizontalOverflow).toBe(false);
   });
 
   test("はじめての方へは専用ガイドに移動する", async ({ page }) => {
