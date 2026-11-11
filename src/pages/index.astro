@@ -60,7 +60,15 @@ const structuredData = {
               <li>
                 <div class="project-title">
                   <h3>
-                    <a href={withBase(`/projects/${p.data.slug}/`)}>{p.data.name}</a>
+                    <a
+                      href={withBase(
+                        p.data.slug === "semi-platform"
+                          ? "/seminars/"
+                          : `/projects/${p.data.slug}/`,
+                      )}
+                    >
+                      {p.data.name}
+                    </a>
                   </h3>
                   <span>{p.data.status === "active" ? "活動中" : "準備中"}</span>
                 </div>

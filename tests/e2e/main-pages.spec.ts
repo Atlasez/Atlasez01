@@ -45,6 +45,20 @@ test.describe("公式サイト", () => {
     await expect(page.locator("[data-member-count]")).toHaveText("4名を表示");
   });
 
+  test("ゼミプラットフォームの掲載からゼミ一覧へ進める", async ({ page }) => {
+    await page.goto("projects/");
+    await expect(
+      page.getByRole("link", { name: "ゼミプラットフォーム" }),
+    ).toHaveAttribute("href", "/seminars/");
+
+    await page.goto("./");
+    await expect(
+      page.locator(".project-title").getByRole("link", {
+        name: "ゼミプラットフォーム",
+      }),
+    ).toHaveAttribute("href", "/seminars/");
+  });
+
   test("プロジェクト一覧に学習サイトが載っている", async ({ page }) => {
     await page.goto("projects/");
     await expect(
