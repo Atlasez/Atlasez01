@@ -50,6 +50,11 @@ test.describe("公式サイト", () => {
     await expect(
       page.getByRole("link", { name: "ゼミプラットフォーム" }),
     ).toHaveAttribute("href", "/seminars/");
+    await expect(
+      page
+        .getByRole("navigation", { name: "メインナビゲーション" })
+        .getByRole("link", { name: "ゼミ", exact: true }),
+    ).toHaveCount(0);
 
     await page.goto("./");
     await expect(
