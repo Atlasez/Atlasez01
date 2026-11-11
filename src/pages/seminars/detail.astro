@@ -1,5 +1,6 @@
 ---
 import OrgLayout from "../../layouts/OrgLayout.astro";
+import { withBase } from "../../lib/site";
 import "../../styles/seminars-public.css";
 ---
 
@@ -9,7 +10,7 @@ import "../../styles/seminars-public.css";
   noindex
 >
   <div class="container public-seminar" data-public-seminar-page="detail">
-    <p class="public-seminar-back"><a href="/seminars/">ゼミ一覧に戻る</a></p>
+    <p class="public-seminar-back"><a href={withBase("/seminars/")}>ゼミ一覧に戻る</a></p>
     <section class="public-seminar-session" data-seminar-session aria-live="polite">
       <p>ログイン状態を確認しています。</p>
     </section>

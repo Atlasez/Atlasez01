@@ -1,5 +1,6 @@
 ---
 import OrgLayout from "../../layouts/OrgLayout.astro";
+import { withBase } from "../../lib/site";
 import "../../styles/seminars-public.css";
 ---
 
@@ -16,7 +17,7 @@ import "../../styles/seminars-public.css";
       </p>
       <div class="public-seminar-actions">
         <a class="button" href="#seminar-list">ゼミ一覧を見る</a>
-        <a href="/seminars/propose/">ゼミを企画する</a>
+        <a href={withBase("/seminars/propose/")}>ゼミを企画する</a>
         <a href="https://admin.atlasez.org/seminars/member/">参加中のゼミを見る</a>
       </div>
       <section class="public-seminar-session" data-seminar-session aria-live="polite">

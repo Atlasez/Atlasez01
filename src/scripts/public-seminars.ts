@@ -1,3 +1,5 @@
+import { withBase } from "../lib/site";
+
 type Seminar = {
   number: number;
   title: string;
@@ -13,6 +15,12 @@ type SeminarSession = { signedIn: boolean; email?: string };
 const publicOrigin = "https://atlasez.org";
 const adminOrigin = "https://admin.atlasez.org";
 const adminSeminarApi = `${adminOrigin}/api/seminars`;
+const publicSeminarApiOrigin = import.meta.env.PUBLIC_SEMINAR_API_ORIGIN;
+
+const seminarApiUrl = (path: string) =>
+  publicSeminarApiOrigin
+    ? new URL(path, publicSeminarApiOrigin).href
+    : withBase(path);
 
 const recruitmentLabels: Record<Seminar["recruitment"], string> = {
   open: "募集中",
@@ -62,14 +70,19 @@ const makeElement = <K extends keyof HTMLElementTagNameMap>(
 };
 
 const seminarNumber = (number: number) => String(number).padStart(7, "0");
-const detailPath = (number: number) => `/seminars/detail/?number=${number}`;
-const joinPath = (number: number) => `/seminars/join/?number=${number}`;
+const detailPath = (number: number) =>
+  `${withBase("/seminars/detail/")}?number=${number}`;
+const joinPath = (number: number) =>
+  `${withBase("/seminars/join/")}?number=${number}`;
 
 function loginPath() {
-  const returnTo = new URL(
-    `${location.pathname}${location.search}`,
-    publicOrigin,
-  ).href;
+  const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+  const canonicalPath =
+    basePath && location.pathname.startsWith(`${basePath}/`)
+      ? location.pathname.slice(basePath.length)
+      : location.pathname;
+  const returnTo = new URL(`${canonicalPath}${location.search}`, publicOrigin)
+    .href;
   return `${adminOrigin}/auth/google/login?returnTo=${encodeURIComponent(returnTo)}`;
 }
 
@@ -122,7 +135,9 @@ async function renderSession() {
 }
 
 async function getSeminars(): Promise<Seminar[]> {
-  const response = await fetch("/api/seminars", { cache: "no-store" });
+  const response = await fetch(seminarApiUrl("/api/seminars"), {
+    cache: "no-store",
+  });
   if (!response.ok) throw new Error("一覧を取得できませんでした。");
   const data = (await response.json()) as CatalogResponse;
   return Array.isArray(data.seminars) ? data.seminars : [];
@@ -290,9 +305,10 @@ async function renderDetail() {
     return;
   }
   try {
-    const response = await fetch(`/api/seminars/${Number(rawNumber)}`, {
-      cache: "no-store",
-    });
+    const response = await fetch(
+      seminarApiUrl(`/api/seminars/${Number(rawNumber)}`),
+      { cache: "no-store" },
+    );
     if (!response.ok) throw new Error("掲載中のゼミが見つかりません。");
     renderDetails((await response.json()) as Seminar);
   } catch (error) {
@@ -372,7 +388,7 @@ async function renderApplicationForm(kind: "propose" | "join") {
           ),
         );
         const back = makeElement("a", undefined, "ゼミ一覧へ戻る");
-        back.href = "/seminars/";
+        back.href = withBase("/seminars/");
         auth.append(back);
         auth.hidden = false;
         return;

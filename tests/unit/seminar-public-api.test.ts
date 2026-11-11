@@ -47,9 +47,13 @@ async function fetch(
   url: string,
   database: ReturnType<typeof fixture>["db"],
   method = "GET",
+  origin?: string,
 ) {
   return worker.fetch(
-    new Request(url, { method }),
+    new Request(url, {
+      method,
+      headers: origin ? { origin } : undefined,
+    }),
     {
       REPORTS: database,
       ASSETS: { fetch: async () => new Response(null, { status: 404 }) },
@@ -81,6 +85,33 @@ describe("公開ゼミAPI", () => {
     });
   });
 
+  it("GitHub Pagesミラーには公開ゼミの読み取りだけを許可する", async () => {
+    const { db } = fixture([row]);
+    const response = await fetch(
+      "https://atlasez.org/api/seminars",
+      db,
+      "GET",
+      "https://atlasez.github.io",
+    );
+
+    expect(response.headers.get("access-control-allow-origin")).toBe(
+      "https://atlasez.github.io",
+    );
+    expect(response.headers.get("access-control-allow-credentials")).toBeNull();
+  });
+
+  it("GitHub Pages以外のOriginにはゼミ一覧APIを公開しない", async () => {
+    const { db } = fixture([row]);
+    const response = await fetch(
+      "https://atlasez.org/api/seminars",
+      db,
+      "GET",
+      "https://untrusted.example",
+    );
+
+    expect(response.headers.get("access-control-allow-origin")).toBeNull();
+  });
+
   it("承認済みの番号を返し、申請受付を終了したゼミは参加不可にする", async () => {
     const closed = { ...row, recruitment: "closed" as const };
     const { db, queries } = fixture([closed]);
@@ -103,7 +134,14 @@ describe("公開ゼミAPI", () => {
       (await fetch("https://atlasez.org/api/seminars/999", db)).status,
     ).toBe(404);
     expect(
-      (await fetch("https://atlasez.org/api/seminars", db, "POST")).status,
+      (
+        await fetch(
+          "https://atlasez.org/api/seminars",
+          db,
+          "POST",
+          "https://atlasez.github.io",
+        )
+      ).status,
     ).toBe(405);
     expect(queries).toHaveLength(1);
   });

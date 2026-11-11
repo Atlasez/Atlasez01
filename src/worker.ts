@@ -133,6 +133,21 @@ const json = (body: unknown, status = 200) =>
     headers: { "cache-control": "no-store" },
   });
 
+// GitHub Pagesは確認用ミラーなので、公開ゼミ一覧のGETだけ許可する。
+const GITHUB_PAGES_CATALOG_ORIGIN = "https://atlasez.github.io";
+
+const withSeminarCatalogCors = (response: Response, request: Request) => {
+  if (
+    request.method !== "GET" ||
+    request.headers.get("origin") !== GITHUB_PAGES_CATALOG_ORIGIN
+  )
+    return response;
+  const headers = new Headers(response.headers);
+  headers.set("access-control-allow-origin", GITHUB_PAGES_CATALOG_ORIGIN);
+  headers.set("vary", "origin");
+  return new Response(response.body, { status: response.status, headers });
+};
+
 type PublicSeminarRow = {
   number: number;
   title: string;
@@ -636,7 +651,10 @@ export default {
       url.pathname === "/api/seminars/" ||
       url.pathname.startsWith("/api/seminars/")
     )
-      return getPublicSeminars(request, env.REPORTS);
+      return withSeminarCatalogCors(
+        await getPublicSeminars(request, env.REPORTS),
+        request,
+      );
     if (url.pathname === "/api/article-reports") {
       if (request.method === "OPTIONS") {
         return withCors(new Response(null, { status: 204 }), request);
