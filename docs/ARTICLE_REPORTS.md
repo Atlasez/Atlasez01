@@ -1,32 +1,22 @@
 # 記事の問題報告フォーム
 
-各記事の「この記事の問題を報告」は、Googleフォームを開かずにサイト内で送信できるフォームです。送信内容は Cloudflare Worker の `POST /api/article-reports` が受け取り、D1 の `article_reports` テーブルへ保存します。
+各記事の「この記事の問題を報告」は、Googleフォームを開かずにサイト内で送信できるフォームです。公開Worker `atlasez01` の `POST /api/article-reports` が内容を受け取り、本番では公開サイト・運営サイトが共有するD1の `article_reports` テーブルへ保存します。
 
 ## Discord通知（任意）
 
-学習サイトの公開Workerは、保存成功後に問題報告の内容を共有Secret付きで運営Workerへ中継します。運営WorkerのD1に保存された報告を運営サイトの「問題報告・統計」で確認できます。中継に失敗しても公開側の報告保存は失敗しません。
+保存成功後、公開Workerは記事名・記事URL・分野・カテゴリ・報告種別だけをDiscordへ通知します。報告本文・返信先・hashはDiscordへ送りません。設定された場合は共有Secret付きでADMIN内部APIにも中継します。中継に失敗しても公開側D1への保存は失敗しません。
 
-`ARTICLE_REPORT_INGEST_URL` は運営Workerの `https://atlasez-admin.ukyoukay0.workers.dev/internal/article-reports` を指し、`ARTICLE_REPORT_INGEST_TOKEN` は公開Worker・運営Workerの双方に同じSecretとして登録します。トークンはGitHubやチャットへ保存・投稿しません。
+公開Workerの `wrangler.jsonc` は `ARTICLE_REPORT_INGEST_URL` に `https://atlasez-admin.ukyoukay0.workers.dev/internal/article-reports` を宣言しています（2026-10-12時点）。一方、同じ設定は `workers_dev: false` で、ADMINの `wrangler.admin.jsonc` も `workers_dev: false`、固定routeは `admin.atlasez.org` です。Git上の設定に不整合がありますが、Cloudflareへ登録された実効値・workers.dev routeの到達性は未確認です。したがって現時点で「到達不能」または「中継成功」とは断定できません。`ARTICLE_REPORT_INGEST_TOKEN` が設定されると、公開Workerは報告内容を共有Secret付きで運営Workerの内部APIにも送ります。トークン値はGitHubやチャットへ保存・投稿しません。本番の公開Workerと運営Workerは同じD1を参照するため、公開側でのDB保存後のこの中継は必須の保存経路ではありません。実際に使う理由、Cloudflare上の実効値、接続先、運営画面に対する効果を運営担当が確認するまで、接続先の変更・中継の有効化をしないでください。
 
-中継先が未設定の環境では、従来どおり `DISCORD_REPORT_WEBHOOK_URL` または分野別Webhookを使ったDiscord通知だけが動作します。
+Discord通知は内部API中継とは独立しています。Webhook URLはSecretとして保管し、GitHubやチャットへ保存しません。チャンネル準備やDiscordロール設定の実運用手順はADMIN側の運用文書に従ってください。
 
-Cloudflare Dashboardで Worker & Pages → `atlasez-web-1` → Settings → Variables and Secrets を開き、各分野のWebhookを**Secret**として追加してください。分野slugを大文字にした名前を使います。数学は `DISCORD_REPORT_WEBHOOK_MATHEMATICS` です。分野別Secretがない記事だけに使う既定の通知先は `DISCORD_REPORT_WEBHOOK_URL` です。Webhook URLは外部に共有した場合は無効化し、再発行してください。
+### 公開前の依存条件
 
-今回の数学テストチャンネルは、Secret `DISCORD_REPORT_WEBHOOK_MATHEMATICS` に数学カテゴリ内の「問題報告通知」チャンネルのWebhook URLを設定すると接続されます。Webhook URLはGitHubやチャットへ保存・投稿しません。
-
-### 分野別チャンネルへの通知
-
-本番ではBotトークンを学習サイトへ置かず、`atlasez-admin` Workerの内部中継を利用します。学習サイトの各分野名をDiscordのカテゴリ（折りたたみ見出し）として作成し、その中に運営用チャンネルと `問題報告` チャンネルを配置します。分野とチャンネルの対応はD1に保存し、同じ準備処理を再実行しても二重作成しません。問題報告には記事名・分野・カテゴリ・報告種別だけを投稿し、本文・連絡先はDiscordへ送信しません。
-
-初回のチャンネル準備には、Botが対象Guildに所属し、**チャンネルの管理（Manage Channels）**、**チャンネルを見る**、**メッセージを送信**の権限を持っている必要があります。準備APIは共有シークレットで保護され、通常の管理画面認証や読者向けAPIからは呼び出せません。権限不足の場合はDiscord APIの `Missing Permissions (50013)` を返します。権限を付与した後に同じ準備処理を再実行すれば、既存チャンネルを再利用して二重作成を避けます。
+公開プライバシーポリシーに記載する記事報告データの削除期限は運営決定待ちです。ADMIN `main`の既存定期処理は認証session、rate limit、180日経過した採否確定済み応募を整理しますが、記事報告のhash/contactを消去しません。PR #526 branchでは、記事報告のhash/contactを消去する追加処理に`ADMIN_PERSONAL_DATA_RETENTION_ENABLED=true`のopt-in gateがあります。運営/privacy責任者がデータ種別・目的・起算日・期限・例外を承認し、公開説明と一致するまで本番でこの変数を設定せず、7日・30日・180日を実稼働中の保証として表記しないでください。公開PR #140は期限・専門家確認とCloudflare復旧の受入が完了するまでmerge-readyではありません。記事報告用 `REPORT_IP_HASH_SALT` は秘密値を表示せず、Secret名と正常応答だけを確認します。
 
 ## 運営用の確認画面
 
-`/admin/reports/` で、届いた報告の一覧、対応状況（未確認・確認中・対応済み）、運営メモを管理できます。読者向けWorkerとは別の `atlasez-admin` Workerで公開し、Worker全体を **Cloudflare Access** で運営者だけに制限します。
-
-- `atlasez-admin.<account>.workers.dev/*`
-
-問題報告の管理権限は、管理サイトのD1権限表とCloudflare認証で管理します。記事を投稿する読者向けの `/api/article-reports` は通常サイト側にだけ残し、管理用の個人アカウント情報は公開リポジトリに置きません。
+`https://admin.atlasez.org/admin/reports/` で、届いた報告の一覧、対応状況（未確認・確認中・対応済み）、現在の運営メモを管理できます。Google OAuthで認証し、担当分野の権限を持つ運営担当者と全体管理者だけが本文・返信先を閲覧できます。変更前の状態を並べる履歴画面はありません。運営サイトの利用者向け本番URLは `https://admin.atlasez.org` です。
 
 ## ローカルで確認する
 
@@ -51,14 +41,14 @@ npx --yes wrangler d1 execute atlasez-reports-local --local --config wrangler.lo
 
 ## 送信データと対策
 
-- 自動添付: 記事名、記事URL、記事ID、表示言語
+- 自動添付: 記事名、記事URL、記事ID、分野、カテゴリ、表示言語
 - 利用者入力: 報告種別、内容、返信先（任意）
 - 迷惑送信対策: 非表示のハニーポット、入力長の制限、送信前の最小滞在時間、同一記事・同一内容の7日間の重複拒否
-- 連投対策: IPアドレスを保存しないSHA-256ハッシュにより、1時間あたり3件・24時間あたり8件までに制限
-  - ハッシュには Worker の Secret `REPORT_IP_HASH_SALT` を混ぜる。ソルトなしだと IPv4 は
-    総当たりで復元できてしまうため、**本番では必ず設定する**（[DEPLOYMENT.md](DEPLOYMENT.md) 参照）
-- 保持期限: 報告者ハッシュは30日、対応済み（`resolved`）の報告に残る連絡先は180日で消去する
-  （管理Workerの日次cron `purgeExpiredPersonalData`）。本文と対応履歴は改善の記録として残す
+- 連投対策: 送信回数制限のため、アクセス元IPとWorker Secret `REPORT_IP_HASH_SALT` を使ったハッシュを保存し、1時間あたり3件・24時間あたり8件までに制限。生のIPアドレスはD1へ保存しない。ソルトが未設定の場合は弱いハッシュを保存せず、送信を受け付けない
+- 重複対策: 記事ID・報告種別・本文から作成するハッシュを使い、7日以内の同じ報告を拒否する。現行ADMIN `main`はこのhashを定期消去しない
+- 保持期限: 報告者hashと返信先の自動削除期限は未決定で、現行ADMIN `main`の定期処理はこれらを消去しない。候補期間を公開・設定する前に運営/privacy責任者が起算日・例外・バックアップコピーを含めて決定する
+- 報告本文・現在の運営メモには固定の自動削除期限を設定していない。変更前の状態を記録する対応履歴は保存していない。保持期間・不要になった記録の削除手順は運営決定事項であり、応募募集の一般公開前に確定する
+- 上記の削除処理は稼働中D1の値を対象とする。Time Travel snapshotや取得済みexport内のコピーを自動削除するものではない。バックアップコピーのアクセス制限、保持期間、削除方法は別途決定する。
 
 ## 閲覧統計（運営サイト）
 
@@ -82,6 +72,4 @@ npx --yes wrangler d1 execute atlasez-reports-local --local --config wrangler.lo
 
 ## 本番接続時にすること
 
-本番公開前に、Cloudflare上でD1データベースを一つ作成し、`wrangler.local.jsonc` を元に本番用の `wrangler.jsonc` を作ります。その際は `database_id` を作成結果のUUIDに置き換え、`npx wrangler d1 migrations apply <database-name> --remote` で `migrations/0001_article_reports.sql` を適用します。
-
-本番ではTurnstileも追加してbot対策を強化します。サイトキー・シークレットはリポジトリに書かず、Cloudflareの環境変数・シークレットで管理してください。
+本番の公開Workerは `atlasez01`、ADMIN Workerは `atlasez-admin`、Accountは `812021e62fa20465950b61be55dfe064`、共有D1は `atlasez-reports` / `d5112a62-7ed6-49c8-b6a2-18ee2dbab678` です。別のD1を作成したり、この文書を根拠にmigrationを適用したりしないでください。設定・配信変更は各リポジトリのデプロイ方針、PR、CIの手順に従います。
