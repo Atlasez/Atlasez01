@@ -1,0 +1,54 @@
+---
+import OrgLayout from "../../layouts/OrgLayout.astro";
+import "../../styles/seminars-public.css";
+---
+
+<OrgLayout
+  title="ゼミ"
+  description="Atlasezで活動するゼミの一覧です。テーマや教材から検索し、各ゼミの目的や進め方、参加条件を確認できます。"
+>
+  <div class="container public-seminar" data-public-seminar-page="catalog">
+    <section class="public-seminar-lead" aria-labelledby="seminars-heading">
+      <h1 id="seminars-heading">ゼミ</h1>
+      <p>
+        同じテーマに関心のある人が集まり、読書や発表を通して学ぶゼミを紹介します。
+        募集状況や参加条件を確認して、参加を申請できます。
+      </p>
+      <div class="public-seminar-actions">
+        <a class="button" href="#seminar-list">ゼミ一覧を見る</a>
+        <a href="https://admin.atlasez.org/seminars/propose/">ゼミを企画する</a>
+        <a href="https://admin.atlasez.org/seminars/member/">参加中のゼミを見る</a>
+      </div>
+    </section>
+
+    <section id="seminar-list" class="public-seminar-directory" aria-labelledby="list-heading">
+      <div class="public-seminar-list-heading">
+        <h2 id="list-heading">ゼミ一覧</h2>
+        <p data-seminar-count aria-live="polite"></p>
+      </div>
+      <div class="public-seminar-filters" role="search" aria-label="ゼミを検索">
+        <label for="seminar-query">キーワード</label>
+        <input
+          id="seminar-query"
+          type="search"
+          data-seminar-query
+          placeholder="ゼミ名、テーマ、教材"
+        />
+        <label for="seminar-recruitment">募集状況</label>
+        <select id="seminar-recruitment" data-seminar-recruitment>
+          <option value="">すべて</option>
+          <option value="open">募集中</option>
+          <option value="paused">募集停止</option>
+          <option value="closed">募集終了</option>
+        </select>
+      </div>
+      <div data-seminar-results aria-busy="true">
+        <p role="status">ゼミ一覧を読み込んでいます。</p>
+      </div>
+    </section>
+    <noscript><p>ゼミ一覧を表示するには、ブラウザーでJavaScriptを有効にしてください。</p></noscript>
+  </div>
+  <script>
+    import "../../scripts/public-seminars";
+  </script>
+</OrgLayout>

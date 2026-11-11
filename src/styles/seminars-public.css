@@ -1,0 +1,232 @@
+.public-seminar {
+  max-width: 70rem;
+  min-height: 60vh;
+  padding-block: var(--space-5) var(--space-6);
+}
+
+.public-seminar :where(h1, h2, h3, p) {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.public-seminar-lead {
+  padding-block: var(--space-5) var(--space-6);
+  border-bottom: 1px solid var(--border-default);
+}
+
+.public-seminar-lead h1,
+.public-seminar-detail-heading h1 {
+  font-size: calc(2rem * var(--text-scale));
+}
+
+.public-seminar-lead > p {
+  max-width: 42rem;
+  margin-top: var(--space-3);
+}
+
+.public-seminar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.public-seminar-directory {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(15rem, 0.7fr);
+  grid-template-areas: "heading filters" "results filters";
+  gap: var(--space-3) clamp(2rem, 6vw, 5rem);
+  align-items: start;
+  padding-block: var(--space-6);
+  scroll-margin-top: var(--space-3);
+}
+
+.public-seminar-list-heading {
+  grid-area: heading;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding-bottom: var(--space-2);
+  border-bottom: 2px solid var(--accent-primary);
+}
+
+.public-seminar-list-heading h2 {
+  font-size: calc(1.4rem * var(--text-scale));
+}
+
+.public-seminar-list-heading p,
+.public-seminar-number,
+.public-seminar-meta,
+.public-seminar-details dt {
+  color: var(--text-secondary);
+  font-size: calc(0.88rem * var(--text-scale));
+}
+
+.public-seminar-filters {
+  grid-area: filters;
+  display: grid;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.public-seminar-filters label {
+  font-size: calc(0.9rem * var(--text-scale));
+  font-weight: 650;
+}
+
+.public-seminar-filters :is(input, select) {
+  min-width: 0;
+  min-height: var(--touch-target);
+  width: 100%;
+  padding: var(--space-2);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  background: var(--background-primary);
+  font: inherit;
+}
+
+.public-seminar-filters select {
+  margin-bottom: var(--space-3);
+}
+
+[data-seminar-results] {
+  grid-area: results;
+  min-width: 0;
+}
+
+.public-seminar-results {
+  display: grid;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.public-seminar-card {
+  display: grid;
+  gap: var(--space-2);
+  padding-block: var(--space-3);
+  border-bottom: 1px solid var(--border-default);
+}
+
+.public-seminar-card h3 {
+  font-size: calc(1.15rem * var(--text-scale));
+}
+
+.public-seminar-number {
+  font-variant-numeric: tabular-nums;
+}
+
+.public-seminar-summary {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  white-space: pre-line;
+}
+
+.public-seminar-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.public-seminar-status {
+  color: var(--text-primary);
+  font-weight: 650;
+}
+
+.public-seminar-card-actions {
+  padding-top: var(--space-1);
+}
+
+.public-seminar-card-actions .button {
+  width: fit-content;
+}
+
+.public-seminar-empty,
+.public-seminar-error {
+  padding-block: var(--space-3);
+}
+
+.public-seminar-error {
+  color: var(--danger);
+}
+
+.public-seminar-back {
+  margin-bottom: var(--space-3) !important;
+  font-size: calc(0.9rem * var(--text-scale));
+}
+
+.public-seminar-detail-heading {
+  display: grid;
+  gap: var(--space-2);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border-default);
+}
+
+.public-seminar-details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 var(--space-4);
+  margin: var(--space-3) 0 0;
+}
+
+.public-seminar-details > div {
+  min-width: 0;
+  padding-block: var(--space-2);
+  border-bottom: 1px solid var(--border-default);
+}
+
+.public-seminar-details dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+@media (max-width: 767px) {
+  .public-seminar-directory {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "heading" "filters" "results";
+    padding-block: var(--space-5);
+  }
+
+  .public-seminar-filters {
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+    gap: var(--space-2);
+    align-items: end;
+    padding-bottom: var(--space-3);
+    border-bottom: 1px solid var(--border-default);
+  }
+
+  .public-seminar-filters label {
+    grid-row: 1;
+  }
+
+  .public-seminar-filters input,
+  .public-seminar-filters select {
+    grid-row: 2;
+    margin-bottom: 0;
+  }
+
+  .public-seminar-details {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .public-seminar-lead {
+    padding-block: var(--space-4) var(--space-5);
+  }
+
+  .public-seminar-lead h1,
+  .public-seminar-detail-heading h1 {
+    font-size: calc(1.6rem * var(--text-scale));
+  }
+}
+
+@media (max-width: 360px) {
+  .public-seminar-filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

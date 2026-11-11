@@ -11,6 +11,8 @@ const pages = [
   "about/members/",
   "about/history/",
   "projects/",
+  "seminars/",
+  "seminars/detail/?number=32",
   "news/",
   "join/",
   "atlas/ja/",

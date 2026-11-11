@@ -10,12 +10,14 @@ interface Props {
   description: string;
   ogType?: "website" | "article";
   structuredData?: object;
+  noindex?: boolean;
 }
-const { title, description, ogType, structuredData } = Astro.props;
+const { title, description, ogType, structuredData, noindex = false } = Astro.props;
 
 const nav = [
   { label: "Atlasezとは", href: withBase("/about/") },
   { label: "プロジェクト", href: withBase("/projects/") },
+  { label: "ゼミ", href: withBase("/seminars/") },
   { label: "お知らせ", href: withBase("/news/") },
   { label: "運営募集", href: withBase("/join/") },
   { label: "お問い合わせ", href: withBase("/contact/") },
@@ -31,6 +33,7 @@ const currentPath = Astro.url.pathname;
       description={description}
       ogType={ogType}
       structuredData={structuredData}
+      noindex={noindex}
     />
   </head>
   <body>

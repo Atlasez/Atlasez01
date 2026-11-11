@@ -17,6 +17,7 @@ interface ExecutionContext {
 interface D1PreparedStatement {
   bind(...values: unknown[]): D1PreparedStatement;
   first<T>(): Promise<T | null>;
+  all<T>(): Promise<{ results: T[] }>;
   run(): Promise<unknown>;
 }
 
@@ -131,6 +132,71 @@ const json = (body: unknown, status = 200) =>
     status,
     headers: { "cache-control": "no-store" },
   });
+
+type PublicSeminarRow = {
+  number: number;
+  title: string;
+  details: string;
+  recruitment: "open" | "paused" | "closed";
+  phase: "planned" | "active" | "paused" | "ended" | "unknown";
+  host_id: string | null;
+};
+
+const publicSeminar = (seminar: PublicSeminarRow) => {
+  let details: Record<string, string> = {};
+  try {
+    const parsed: unknown = JSON.parse(seminar.details);
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed))
+      details = parsed as Record<string, string>;
+  } catch {
+    return null;
+  }
+  return {
+    number: seminar.number,
+    title: seminar.title,
+    details,
+    recruitment: seminar.recruitment,
+    phase: seminar.phase,
+    acceptingApplications:
+      seminar.recruitment === "open" &&
+      seminar.phase !== "ended" &&
+      Boolean(seminar.host_id),
+  };
+};
+
+async function getPublicSeminars(
+  request: Request,
+  db: D1Database,
+): Promise<Response> {
+  if (request.method !== "GET")
+    return json({ error: "GETのみ利用できます。" }, 405);
+  const path = new URL(request.url).pathname;
+  const numberMatch = /^\/api\/seminars\/(\d+)\/?$/.exec(path);
+  if (numberMatch) {
+    const row = await db
+      .prepare(
+        "SELECT number,title,details,recruitment,phase,host_id FROM seminars WHERE proposal_status='approved' AND number=?",
+      )
+      .bind(Number(numberMatch[1]))
+      .first<PublicSeminarRow>();
+    const seminar = row ? publicSeminar(row) : null;
+    return seminar
+      ? json(seminar)
+      : json({ error: "見つかりませんでした。" }, 404);
+  }
+  if (path !== "/api/seminars" && path !== "/api/seminars/")
+    return json({ error: "見つかりませんでした。" }, 404);
+  const result = await db
+    .prepare(
+      "SELECT number,title,details,recruitment,phase,host_id FROM seminars WHERE proposal_status='approved' ORDER BY number DESC",
+    )
+    .all<PublicSeminarRow>();
+  const seminars = result.results.flatMap((row) => {
+    const seminar = publicSeminar(row);
+    return seminar ? [seminar] : [];
+  });
+  return json({ seminars });
+}
 
 const text = (value: unknown, maximum: number) =>
   typeof value === "string" ? value.trim().slice(0, maximum) : "";
@@ -565,6 +631,12 @@ async function saveArticleAnalytics(
 export default {
   async fetch(request, env, ctx): Promise<Response> {
     const url = new URL(request.url);
+    if (
+      url.pathname === "/api/seminars" ||
+      url.pathname === "/api/seminars/" ||
+      url.pathname.startsWith("/api/seminars/")
+    )
+      return getPublicSeminars(request, env.REPORTS);
     if (url.pathname === "/api/article-reports") {
       if (request.method === "OPTIONS") {
         return withCors(new Response(null, { status: 204 }), request);
