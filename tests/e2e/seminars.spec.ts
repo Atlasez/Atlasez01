@@ -39,6 +39,55 @@ const seminars = [
   },
 ];
 
+const localOrigin = new URL(
+  process.env.E2E_BASE_URL ??
+    `http://localhost:${process.env.E2E_PORT ?? 4321}`,
+).origin;
+const adminApi = "https://admin.atlasez.org/api/seminars";
+const corsHeaders = {
+  "access-control-allow-origin": localOrigin,
+  "access-control-allow-credentials": "true",
+};
+
+async function mockAdminApi(
+  page: import("@playwright/test").Page,
+  session: { signedIn: boolean; email?: string },
+  onRequest?: (path: string, payload: Record<string, string>) => void,
+) {
+  await page.route(`${adminApi}/**`, async (route) => {
+    const request = route.request();
+    const url = new URL(request.url());
+    if (request.method() === "OPTIONS")
+      return route.fulfill({
+        status: 204,
+        headers: {
+          ...corsHeaders,
+          "access-control-allow-methods": "GET, POST, OPTIONS",
+          "access-control-allow-headers": "content-type",
+        },
+      });
+    if (url.pathname === "/api/seminars/session")
+      return route.fulfill({
+        json: session,
+        headers: corsHeaders,
+      });
+    if (request.method() === "POST") {
+      const payload = request.postDataJSON() as Record<string, string>;
+      onRequest?.(url.pathname, payload);
+      return route.fulfill({
+        status: 201,
+        json: { number: 33, id: "application-1" },
+        headers: corsHeaders,
+      });
+    }
+    return route.fulfill({
+      status: 404,
+      json: { error: "見つかりませんでした。" },
+      headers: corsHeaders,
+    });
+  });
+}
+
 test.describe("ゼミの公開ページ", () => {
   test.beforeEach(async ({ page }) => {
     await page.route("**/api/seminars**", async (route) => {
@@ -59,24 +108,28 @@ test.describe("ゼミの公開ページ", () => {
     });
   });
 
-  test("検索と募集状況で絞り込み、運営サイトのフォームへ案内する", async ({
+  test("検索と募集状況で絞り込み、公開サイト内の申請先へ案内する", async ({
     page,
   }) => {
+    await mockAdminApi(page, { signedIn: true, email: "reader@atlasez.test" });
     await page.goto("seminars/");
     const cards = page.locator(".public-seminar-card");
     await expect(cards).toHaveCount(2);
     await expect(page.getByLabel("キーワード")).toBeVisible();
     await expect(page.getByLabel("募集状況")).toBeVisible();
+    await expect(
+      page.getByText("ログイン中：reader@atlasez.test"),
+    ).toBeVisible();
 
     await page.getByLabel("キーワード").fill("線形代数");
     await expect(cards).toHaveCount(1);
     await expect(cards.first()).toContainText("線形代数を読む会");
     await expect(
       cards.first().getByRole("link", { name: "参加を申請" }),
-    ).toHaveAttribute(
-      "href",
-      "https://admin.atlasez.org/seminars/join/?number=32",
-    );
+    ).toHaveAttribute("href", "/seminars/join/?number=32");
+    await expect(
+      page.getByRole("link", { name: "ゼミを企画する" }),
+    ).toHaveAttribute("href", "/seminars/propose/");
 
     await page.getByLabel("キーワード").fill("");
     await page.getByLabel("募集状況").selectOption("closed");
@@ -87,9 +140,10 @@ test.describe("ゼミの公開ページ", () => {
     ).toHaveCount(0);
   });
 
-  test("詳細に目的、進め方、教材、条件、開催情報、主催者を表示する", async ({
+  test("詳細にゼミ情報と公開サイト内の参加申請先を表示する", async ({
     page,
   }) => {
+    await mockAdminApi(page, { signedIn: false });
     await page.goto("seminars/detail/?number=32");
     await expect(
       page.getByRole("heading", { name: "線形代数を読む会" }),
@@ -113,9 +167,104 @@ test.describe("ゼミの公開ページ", () => {
       await expect(page.locator("dt", { hasText: value })).toBeVisible();
     }
     await expect(page.getByText("ゼミ番号 0000032")).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "このゼミに参加申請" }),
+    ).toHaveAttribute("href", "/seminars/join/?number=32");
+  });
+
+  test("企画内容を公開サイトのフォームから送信できる", async ({ page }) => {
+    let submittedPath = "";
+    let submittedPayload: Record<string, string> = {};
+    await mockAdminApi(
+      page,
+      { signedIn: true, email: "organizer@atlasez.test" },
+      (path, payload) => {
+        submittedPath = path;
+        submittedPayload = payload;
+      },
+    );
+    await page.goto("seminars/propose/");
+    await page.getByLabel("氏名（必須）", { exact: true }).fill("企画者");
+    await page.getByLabel("ゼミ名（必須）", { exact: true }).fill("解析ゼミ");
+    for (const field of [
+      "theme",
+      "level",
+      "purpose",
+      "description",
+      "goals",
+      "method",
+      "materials",
+      "prerequisites",
+      "conditions",
+      "observation",
+      "lateJoin",
+      "schedule",
+      "period",
+      "frequency",
+      "format",
+      "venue",
+      "currentSize",
+      "capacity",
+      "organizer",
+    ]) {
+      await page
+        .locator(`[data-application-form] [name="${field}"]`)
+        .fill("申請内容");
+    }
+    await page.getByRole("button", { name: "企画を送信する" }).click();
+    await expect(
+      page.getByRole("heading", { name: "企画を受け付けました" }),
+    ).toBeVisible();
+    expect(submittedPath).toBe("/api/seminars/proposals");
+    expect(submittedPayload).toMatchObject({
+      title: "解析ゼミ",
+      name: "企画者",
+      purpose: "申請内容",
+    });
+    expect(submittedPayload.submissionKey).toMatch(/^[0-9a-f-]{36}$/i);
+  });
+
+  test("未ログイン時の申請リンクは申請ページへ戻る", async ({ page }) => {
+    await mockAdminApi(page, { signedIn: false });
+    await page.goto("seminars/join/?number=32");
+    await expect(
+      page.getByRole("link", { name: "ログイン", exact: true }).last(),
+    ).toHaveAttribute(
+      "href",
+      "https://admin.atlasez.org/auth/google/login?returnTo=https%3A%2F%2Fatlasez.org%2Fseminars%2Fjoin%2F%3Fnumber%3D32",
+    );
+  });
+
+  test("参加申請は希望するゼミと連絡内容を主催者へ送信する", async ({
+    page,
+  }) => {
+    let submittedPath = "";
+    let submittedPayload: Record<string, string> = {};
+    await mockAdminApi(
+      page,
+      { signedIn: true, email: "applicant@atlasez.test" },
+      (path, payload) => {
+        submittedPath = path;
+        submittedPayload = payload;
+      },
+    );
+    await page.goto("seminars/join/?number=32");
+    await page.getByLabel("氏名（必須）", { exact: true }).fill("参加希望者");
+    await page.locator('[name="hostNote"]').fill("見学を希望します。");
+    await page.getByRole("button", { name: "参加を申請する" }).click();
+    await expect(
+      page.getByRole("heading", { name: "参加申請を受け付けました" }),
+    ).toBeVisible();
+    expect(submittedPath).toBe("/api/seminars/32/join");
+    expect(submittedPayload).toMatchObject({
+      number: "32",
+      name: "参加希望者",
+      hostNote: "見学を希望します。",
+    });
   });
 
   test("掲載内容をHTMLとして解釈しない", async ({ page }) => {
+    await mockAdminApi(page, { signedIn: false });
     await page.route("**/api/seminars", (route) =>
       route.fulfill({
         json: {

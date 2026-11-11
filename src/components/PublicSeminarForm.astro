@@ -1,0 +1,169 @@
+---
+interface Props {
+  kind: "propose" | "join";
+}
+
+const { kind } = Astro.props;
+const isProposal = kind === "propose";
+const profileFields = [
+  { key: "name", label: "氏名", limit: 120, required: true },
+  { key: "reading", label: "氏名の読み（ひらがな）", limit: 120 },
+  { key: "registration", label: "旧サイトで発行された参加番号", limit: 50 },
+  { key: "affiliationType", label: "所属区分（大学・高校・社会人など）", limit: 120 },
+  { key: "affiliation", label: "所属先・学部など", limit: 200 },
+  { key: "clubs", label: "参加しているサークル・団体", limit: 200 },
+  { key: "discovery", label: "このサイトを知ったきっかけ", limit: 200 },
+] as const;
+const seminarFields = [
+  { key: "theme", label: "テーマ", limit: 120 },
+  { key: "level", label: "対象レベル", limit: 200 },
+  { key: "purpose", label: "目的", limit: 2000 },
+  { key: "description", label: "内容", limit: 4000 },
+  { key: "goals", label: "到達目標", limit: 2000 },
+  { key: "method", label: "進め方", limit: 2000 },
+  { key: "materials", label: "教材", limit: 2000 },
+  { key: "prerequisites", label: "前提知識", limit: 1000 },
+  { key: "conditions", label: "参加条件・募集範囲", limit: 1000 },
+  { key: "observation", label: "見学の可否", limit: 200 },
+  { key: "lateJoin", label: "途中参加の可否", limit: 200 },
+  { key: "schedule", label: "開催日時", limit: 300 },
+  { key: "period", label: "開催期間", limit: 200 },
+  { key: "frequency", label: "開催頻度", limit: 200 },
+  { key: "format", label: "開催形式", limit: 200 },
+  { key: "venue", label: "開催場所", limit: 300 },
+  { key: "currentSize", label: "現在の人数", limit: 100 },
+  { key: "capacity", label: "定員", limit: 100 },
+  { key: "organizer", label: "主催者（公開名）", limit: 160 },
+  { key: "remarks", label: "備考", limit: 1000, optional: true },
+] as const;
+const recruitmentOptions = [
+  ["open", "募集中"],
+  ["paused", "募集停止"],
+  ["closed", "募集終了"],
+] as const;
+const phaseOptions = [
+  ["planned", "未実施"],
+  ["active", "実施中"],
+  ["paused", "一時休止"],
+  ["ended", "終了"],
+] as const;
+const groups = [
+  { label: "学ぶ内容", fields: seminarFields.slice(0, 11) },
+  { label: "開催・募集情報", fields: seminarFields.slice(11) },
+];
+---
+
+<section class="public-seminar-session" data-seminar-session aria-live="polite">
+  <p>ログイン状態を確認しています。</p>
+</section>
+
+<section class="public-seminar-entry" data-form-auth hidden aria-live="polite">
+  <p>申請にはGoogleアカウントでのログインが必要です。</p>
+  <a class="button" data-seminar-login href="https://admin.atlasez.org/auth/google/login">ログイン</a>
+</section>
+
+<form class="public-seminar-form" data-application-form hidden>
+  {!isProposal && (
+    <fieldset>
+      <legend>参加を希望するゼミ</legend>
+      <label for="seminar-number">ゼミ名・番号（必須）</label>
+      <select id="seminar-number" name="number" required data-seminar-options>
+        <option value="">選択してください</option>
+      </select>
+    </fieldset>
+  )}
+
+  <fieldset>
+    <legend>{isProposal ? "企画者情報" : "申請者情報"}</legend>
+    <p>連絡先 <span data-form-email></span></p>
+    <div class="public-seminar-form-grid">
+      {profileFields.map((field) => (
+        <label class:list={[field.limit > 500 && "public-seminar-form-full"]}>
+          {field.label}{"required" in field ? "（必須）" : ""}
+          <input
+            name={field.key}
+            required={"required" in field}
+            maxlength={field.limit}
+            autocomplete={field.key === "name" ? "name" : undefined}
+          />
+        </label>
+      ))}
+    </div>
+  </fieldset>
+
+  {isProposal ? (
+    <>
+      <fieldset>
+        <legend>企画の基本情報</legend>
+        <p>運営の確認後に公開します。個人の連絡先や、公開できない会場情報は入力しないでください。</p>
+        <label for="seminar-title">ゼミ名（必須）</label>
+        <input id="seminar-title" name="title" required maxlength="160" />
+        <div class="public-seminar-form-grid">
+          <label>
+            募集状況（必須）
+            <select name="recruitment" required>
+              {recruitmentOptions.map(([value, label]) => <option value={value}>{label}</option>)}
+            </select>
+          </label>
+          <label>
+            実施状況（必須）
+            <select name="phase" required>
+              {phaseOptions.map(([value, label]) => <option value={value}>{label}</option>)}
+            </select>
+          </label>
+        </div>
+      </fieldset>
+      {groups.map(({ label, fields }) => (
+        <fieldset>
+          <legend>{label}</legend>
+          <div class="public-seminar-form-grid">
+            {fields.map((field) => (
+              <label class:list={[field.limit > 500 && "public-seminar-form-full"]}>
+                {field.label}{!("optional" in field) ? "（必須）" : ""}
+                {field.limit > 500 ? (
+                  <textarea
+                    name={field.key}
+                    required={!("optional" in field)}
+                    maxlength={field.limit}
+                    rows="3"
+                  ></textarea>
+                ) : (
+                  <input
+                    name={field.key}
+                    required={!("optional" in field)}
+                    maxlength={field.limit}
+                  />
+                )}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      ))}
+    </>
+  ) : (
+    <fieldset>
+      <legend>主催者への連絡</legend>
+      <label for="seminar-host-note">伝えたいこと・質問</label>
+      <textarea id="seminar-host-note" name="hostNote" maxlength="2000" rows="4"></textarea>
+      <p>申請者情報と連絡先は主催者に伝わります。</p>
+    </fieldset>
+  )}
+
+  <fieldset>
+    <legend>運営への連絡</legend>
+    <label for="seminar-operations-note">連絡事項（運営のみ）</label>
+    <textarea id="seminar-operations-note" name="operationsNote" maxlength="2000" rows="4"></textarea>
+  </fieldset>
+
+  <p><a href="/privacy-policy/">個人情報保護方針</a>をご確認のうえ送信してください。</p>
+  <div class="public-seminar-form-actions">
+    <button class="button" type="submit">{isProposal ? "企画を送信する" : "参加を申請する"}</button>
+    <p data-form-message role="status" aria-live="polite"></p>
+  </div>
+</form>
+
+<section class="public-seminar-entry" data-form-success hidden aria-live="polite">
+  <h2>{isProposal ? "企画を受け付けました" : "参加申請を受け付けました"}</h2>
+  <p>{isProposal ? "運営の確認後に一般ページへ公開します。" : "主催者の承認後に参加できます。"}</p>
+  <a href="https://admin.atlasez.org/seminars/member/">参加状況を確認する</a>
+</section>

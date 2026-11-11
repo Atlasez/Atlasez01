@@ -8,6 +8,11 @@ type Seminar = {
 };
 
 type CatalogResponse = { seminars: Seminar[] };
+type SeminarSession = { signedIn: boolean; email?: string };
+
+const publicOrigin = "https://atlasez.org";
+const adminOrigin = "https://admin.atlasez.org";
+const adminSeminarApi = `${adminOrigin}/api/seminars`;
 
 const recruitmentLabels: Record<Seminar["recruitment"], string> = {
   open: "募集中",
@@ -58,8 +63,63 @@ const makeElement = <K extends keyof HTMLElementTagNameMap>(
 
 const seminarNumber = (number: number) => String(number).padStart(7, "0");
 const detailPath = (number: number) => `/seminars/detail/?number=${number}`;
-const joinPath = (number: number) =>
-  `https://admin.atlasez.org/seminars/join/?number=${number}`;
+const joinPath = (number: number) => `/seminars/join/?number=${number}`;
+
+function loginPath() {
+  const returnTo = new URL(
+    `${location.pathname}${location.search}`,
+    publicOrigin,
+  ).href;
+  return `${adminOrigin}/auth/google/login?returnTo=${encodeURIComponent(returnTo)}`;
+}
+
+async function getSession(): Promise<SeminarSession> {
+  const response = await fetch(`${adminSeminarApi}/session`, {
+    credentials: "include",
+    cache: "no-store",
+  });
+  if (!response.ok) throw new Error("ログイン状態を確認できませんでした。");
+  return (await response.json()) as SeminarSession;
+}
+
+function showSession(session: SeminarSession | null) {
+  const section = document.querySelector<HTMLElement>("[data-seminar-session]");
+  if (!section) return;
+  section.replaceChildren();
+  if (!session) {
+    section.append(
+      makeElement("p", undefined, "ログイン状態を確認できませんでした。"),
+    );
+    return;
+  }
+  if (session.signedIn) {
+    section.append(
+      makeElement(
+        "p",
+        undefined,
+        `ログイン中${session.email ? `：${session.email}` : ""}`,
+      ),
+    );
+    const dashboard = makeElement("a", undefined, "参加者ページを見る");
+    dashboard.href = `${adminOrigin}/seminars/member/`;
+    section.append(dashboard);
+    return;
+  }
+  section.append(
+    makeElement("p", undefined, "ログインせずにゼミを閲覧できます。"),
+  );
+  const login = makeElement("a", "button", "ログイン");
+  login.href = loginPath();
+  section.append(login);
+}
+
+async function renderSession() {
+  try {
+    showSession(await getSession());
+  } catch {
+    showSession(null);
+  }
+}
 
 async function getSeminars(): Promise<Seminar[]> {
   const response = await fetch("/api/seminars", { cache: "no-store" });
@@ -245,7 +305,146 @@ async function renderDetail() {
   }
 }
 
+async function renderApplicationForm(kind: "propose" | "join") {
+  const auth = document.querySelector<HTMLElement>("[data-form-auth]");
+  const form = document.querySelector<HTMLFormElement>(
+    "[data-application-form]",
+  );
+  const success = document.querySelector<HTMLElement>("[data-form-success]");
+  const email = document.querySelector<HTMLElement>("[data-form-email]");
+  if (!auth || !form || !success || !email) return;
+
+  const login = auth.querySelector<HTMLAnchorElement>("[data-seminar-login]");
+  if (login) login.href = loginPath();
+
+  let session: SeminarSession;
+  try {
+    session = await getSession();
+    showSession(session);
+  } catch {
+    showSession(null);
+    auth.hidden = false;
+    auth.replaceChildren(
+      makeElement(
+        "p",
+        undefined,
+        "ログイン状態を確認できませんでした。時間をおいて再度お試しください。",
+      ),
+    );
+    return;
+  }
+
+  if (!session.signedIn) {
+    auth.hidden = false;
+    return;
+  }
+  email.textContent = session.email ?? "";
+
+  if (kind === "join") {
+    const seminars = await getSeminars();
+    const accepting = seminars.filter(
+      (seminar) => seminar.acceptingApplications,
+    );
+    const select = form.querySelector<HTMLSelectElement>(
+      "[data-seminar-options]",
+    );
+    if (!select) return;
+    for (const seminar of accepting) {
+      select.add(
+        new Option(
+          `ゼミ番号 ${seminarNumber(seminar.number)}　${seminar.title}`,
+          String(seminar.number),
+        ),
+      );
+    }
+    const requestedNumber = new URLSearchParams(location.search).get("number");
+    if (requestedNumber) {
+      const number = /^\d{1,10}$/.test(requestedNumber)
+        ? Number(requestedNumber)
+        : 0;
+      select.value = String(number);
+      if (!select.value) {
+        auth.replaceChildren(
+          makeElement(
+            "p",
+            undefined,
+            "このゼミは現在、参加申請を受け付けていません。",
+          ),
+        );
+        const back = makeElement("a", undefined, "ゼミ一覧へ戻る");
+        back.href = "/seminars/";
+        auth.append(back);
+        auth.hidden = false;
+        return;
+      }
+    }
+    if (accepting.length === 0) {
+      auth.replaceChildren(
+        makeElement(
+          "p",
+          undefined,
+          "現在、参加申請を受け付けているゼミはありません。",
+        ),
+      );
+      auth.hidden = false;
+      return;
+    }
+  }
+
+  auth.hidden = true;
+  form.hidden = false;
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const submit = form.querySelector<HTMLButtonElement>(
+      'button[type="submit"]',
+    );
+    const message = form.querySelector<HTMLElement>("[data-form-message]");
+    if (!submit || !message) return;
+    submit.disabled = true;
+    message.textContent = "送信しています。";
+    const fields = Object.fromEntries(new FormData(form).entries());
+    const path =
+      kind === "propose" ? "/proposals" : `/${Number(fields.number)}/join`;
+    try {
+      const response = await fetch(`${adminSeminarApi}${path}`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ ...fields, submissionKey: crypto.randomUUID() }),
+      });
+      const result = (await response.json()) as { error?: string };
+      if (!response.ok) {
+        if (response.status === 401) {
+          auth.hidden = false;
+          message.textContent =
+            "ログインの有効期限が切れました。再度ログインしてください。";
+        } else
+          message.textContent =
+            result.error || "送信できませんでした。入力内容をご確認ください。";
+        return;
+      }
+      form.hidden = true;
+      success.hidden = false;
+      const heading = success.querySelector<HTMLElement>("h2");
+      if (heading) {
+        heading.tabIndex = -1;
+        heading.focus();
+      }
+    } catch {
+      message.textContent =
+        "送信できませんでした。通信状態を確認して、もう一度お試しください。";
+    } finally {
+      submit.disabled = false;
+    }
+  });
+}
+
 if (document.querySelector('[data-public-seminar-page="catalog"]'))
   void renderCatalog();
 if (document.querySelector('[data-public-seminar-page="detail"]'))
   void renderDetail();
+if (document.querySelector("[data-seminar-session]")) void renderSession();
+if (document.querySelector('[data-public-seminar-form="propose"]'))
+  void renderApplicationForm("propose");
+if (document.querySelector('[data-public-seminar-form="join"]'))
+  void renderApplicationForm("join");
