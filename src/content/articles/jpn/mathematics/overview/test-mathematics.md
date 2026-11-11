@@ -9,9 +9,9 @@ concepts:
   - id: "math.overview.what-is-mathematics"
 authors: [editorial-workspace]
 reviewers: ["ukyoukay0@gmail.com"]
-status: published
+status: draft
 createdAt: 2026-08-30
-updatedAt: 2026-09-13
+updatedAt: 2026-11-11
 summary: "数学分野の枠を含むテスト記事"
 difficulty: basic
 estimatedMinutes: 10
