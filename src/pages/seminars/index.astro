@@ -4,12 +4,9 @@ import { publicSeminarPage } from "../../lib/seminar-platform";
 ---
 <SeminarLayout title="ゼミ一覧" page="catalog" noindex={false}>
   <section class="seminar-lead" aria-labelledby="seminar-title">
-    <p class="seminar-kicker">ATLASEZ / SEMINAR PLATFORM</p>
-    <h1 id="seminar-title">ゼミプラットフォーム</h1>
-    <p>興味から、学び合うゼミを見つける。</p>
+    <h1 id="seminar-title">ゼミ一覧</h1>
     <p class="seminar-muted">
-      自分の関心をきっかけにゼミを企画し、仲間と学びを続けるための場所です。
-      参加申請、次回予定や資料の確認まで、ゼミの活動をひとつにつなぎます。
+      ゼミを検索し、企画・参加を申請できます。参加後の予定や資料も確認できます。
     </p>
     <div class="seminar-actions">
       <a class="button" href="#directory">ゼミを探す</a>
@@ -46,8 +43,8 @@ import { publicSeminarPage } from "../../lib/seminar-platform";
   </section>
 
   <section class="seminar-block seminar-callout" aria-labelledby="seminar-start-heading">
-    <h2 id="seminar-start-heading">学びたいテーマを、一緒に形にしませんか</h2>
-    <p>詳細から参加を申請できます。新しい勉強会の企画は運営が確認し、承認後にこの一覧へ公開します。</p>
+    <h2 id="seminar-start-heading">新しいゼミを企画する</h2>
+    <p>企画を送信すると運営が確認し、承認後に一覧へ掲載します。</p>
     <div class="seminar-actions">
       <a class="button" href={publicSeminarPage("propose")}>ゼミ企画フォームへ</a>
       <a class="button button-secondary" href="https://admin.atlasez.org/seminars/member/">参加者ページを見る</a>

@@ -26,7 +26,7 @@ const nav = [
   <head>
     <BaseHead
       title={`${title} | Atlasez`}
-      description="学生同士で学び合うゼミを見つけ、企画・参加申請を行うためのプラットフォームです。"
+      description="ゼミの検索、企画・参加申請、活動予定や共有資料の確認ができます。"
       noindex={noindex}
     />
   </head>
@@ -38,7 +38,7 @@ const nav = [
           <img src={`${import.meta.env.BASE_URL.replace(/\/$/, "")}/images/atlasez-logo.png`} alt="" width="44" height="44" />
           <span>Atlasez</span>
         </a>
-        <nav aria-label="ゼミプラットフォーム">
+        <nav aria-label="ゼミ関連ページ">
           <ul>
             {nav.map((item) => (
               <li data-seminar-operator={item.page === "operations" ? "" : undefined} hidden={item.page === "operations"}>
