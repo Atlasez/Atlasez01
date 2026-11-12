@@ -23,7 +23,7 @@ const seminars = [
       currentSize: "4人",
       capacity: "8人",
       organizer: "ゼミ主催者",
-      remarks: "",
+      remarks: "備考の内容も表示します",
     },
     recruitment: "open",
     phase: "active",
@@ -197,6 +197,7 @@ test.describe("ゼミの公開ページ", () => {
       await expect(page.locator("dt", { hasText: value })).toBeVisible();
     }
     await expect(page.getByText("ゼミ番号 0000032")).toBeVisible();
+    await expect(page.getByText("備考の内容も表示します")).toBeVisible();
     await expect(
       page.getByRole("link", { name: "このゼミに参加申請" }),
     ).toHaveAttribute("href", "/seminars/join/?number=32");
