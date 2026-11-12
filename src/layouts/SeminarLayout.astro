@@ -1,0 +1,73 @@
+---
+import BaseHead from "../components/BaseHead.astro";
+import SettingsMenu from "../components/SettingsMenu.astro";
+import { SEMINAR_ADMIN_ORIGIN, SEMINAR_PUBLIC_PATH } from "../lib/seminar-platform";
+import "../styles/seminars.css";
+
+interface Props {
+  title: string;
+  page: string;
+  noindex?: boolean;
+}
+
+const { title, page, noindex = page !== "catalog" } = Astro.props;
+const nav = [
+  { label: "ゼミ一覧", href: SEMINAR_PUBLIC_PATH, page: "catalog" },
+  { label: "参加者ページ", href: `${SEMINAR_ADMIN_ORIGIN}/seminars/member/`, page: "member" },
+  { label: "運営ページ", href: `${SEMINAR_ADMIN_ORIGIN}/admin/semi-platform/review/`, page: "operations" },
+];
+---
+<!doctype html>
+<html lang="ja" data-site="org">
+  <head>
+    <BaseHead
+      title={`${title} | Atlasez`}
+      description="学生同士で学び合うゼミを見つけ、企画・参加申請を行うためのプラットフォームです。"
+      noindex={noindex}
+    />
+  </head>
+  <body data-seminar-page={page}>
+    <a class="skip-link" href="#main">本文へ移動</a>
+    <header class="seminar-header">
+      <div class="container seminar-header-inner">
+        <a class="seminar-brand" href="/">
+          <img src={`${import.meta.env.BASE_URL.replace(/\/$/, "")}/images/atlasez-logo.png`} alt="" width="44" height="44" />
+          <span>Atlasez</span>
+        </a>
+        <nav aria-label="ゼミプラットフォーム">
+          <ul>
+            {nav.map((item) => (
+              <li data-seminar-operator={item.page === "operations" ? "" : undefined} hidden={item.page === "operations"}>
+                <a href={item.href} aria-current={page === item.page ? "page" : undefined}>{item.label}</a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+        <div class="seminar-header-tools">
+          <a href={`${SEMINAR_ADMIN_ORIGIN}/auth/google/login`} data-seminar-login>Googleでログイン</a>
+          <span class="seminar-muted" data-seminar-account hidden>ログイン中</span>
+          <SettingsMenu locale="ja" />
+        </div>
+      </div>
+    </header>
+    <main id="main" class="container seminar-shell">
+      <slot />
+      <noscript><p>ゼミ一覧や申請を利用するには、ブラウザーでJavaScriptを有効にしてください。</p></noscript>
+    </main>
+    <footer class="seminar-footer">
+      <div class="container seminar-footer-inner">
+        <div>
+          <p class="seminar-footer-brand"><a href="/">Atlasez</a></p>
+          <a href="mailto:atlasez.contact@gmail.com">atlasez.contact@gmail.com</a>
+        </div>
+        <nav aria-label="関連情報">
+          <a href="/about/">Atlasezとは</a>
+          <a href="/privacy-policy/">個人情報保護方針</a>
+        </nav>
+      </div>
+    </footer>
+    <script>
+      import "../scripts/seminars/index";
+    </script>
+  </body>
+</html>
