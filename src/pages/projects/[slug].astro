@@ -71,8 +71,13 @@ const news = (
           <h2 id="join-heading">参加方法</h2>
           <p class="reading">{p.data.howToJoin}</p>
           <p>
-            <a class="button" href={withBase("/join/")}>
-              運営募集を見る
+            <a
+              class="button"
+              href={withBase(
+                p.data.slug === "semi-platform" ? "/seminars/" : "/join/",
+              )}
+            >
+              {p.data.slug === "semi-platform" ? "ゼミを探す" : "運営募集を見る"}
             </a>
           </p>
         </section>

@@ -1,6 +1,7 @@
 import { defineConfig } from "@playwright/test";
 
-const baseURL = `${(process.env.E2E_BASE_URL ?? "http://localhost:4321").replace(/\/$/, "")}/`;
+const e2ePort = Number(process.env.E2E_PORT ?? 4321);
+const baseURL = `${(process.env.E2E_BASE_URL ?? `http://localhost:${e2ePort}`).replace(/\/$/, "")}/`;
 
 export default defineConfig({
   testDir: "tests/e2e",
@@ -10,7 +11,8 @@ export default defineConfig({
   },
   webServer: {
     command: "node scripts/serve-dist.mjs",
-    port: 4321,
+    port: e2ePort,
+    env: { PORT: String(e2ePort) },
     reuseExistingServer: true,
   },
 });

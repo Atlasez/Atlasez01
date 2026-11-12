@@ -1,0 +1,53 @@
+---
+import SeminarLayout from "../../layouts/SeminarLayout.astro";
+import { publicSeminarPage } from "../../lib/seminar-platform";
+---
+<SeminarLayout title="ゼミ一覧" page="catalog" noindex={false}>
+  <section class="seminar-lead" aria-labelledby="seminar-title">
+    <h1 id="seminar-title">ゼミプラットフォーム</h1>
+    <p class="seminar-muted">
+      ゼミを検索し、企画・参加を申請できます。参加後の予定や資料も確認できます。
+    </p>
+    <div class="seminar-actions">
+      <a class="button" href="#directory">ゼミを探す</a>
+      <a class="button button-secondary" href={publicSeminarPage("propose")}>ゼミを企画する</a>
+      <a class="button button-secondary" href="https://admin.atlasez.org/seminars/member/">参加者ページ</a>
+    </div>
+  </section>
+
+  <section class="seminar-directory" id="directory" aria-labelledby="directory-heading">
+    <header class="seminar-section-head">
+      <div>
+        <h2 id="directory-heading">募集状況・キーワードから探す</h2>
+        <p>ゼミ名、テーマ、内容、教材から検索できます。</p>
+      </div>
+    </header>
+    <div class="seminar-filter seminar-catalog-search">
+      <label for="seminar-catalog-query">
+        ゼミ名・テーマ・教材で検索
+        <input id="seminar-catalog-query" type="search" data-catalog-search data-seminar-catalog-query placeholder="例：解析力学、0000032" autocomplete="off" />
+      </label>
+      <label for="seminar-catalog-status">
+        募集状況
+        <select id="seminar-catalog-status" data-catalog-status>
+          <option value="">すべて</option>
+          <option value="open">募集中</option>
+          <option value="paused">募集停止</option>
+          <option value="closed">募集終了</option>
+        </select>
+      </label>
+    </div>
+    <div class="seminar-catalog-groups" data-page-content data-seminar-catalog-results aria-busy="true">
+      <p role="status">ゼミ一覧を読み込んでいます。</p>
+    </div>
+  </section>
+
+  <section class="seminar-block seminar-callout" aria-labelledby="seminar-start-heading">
+    <h2 id="seminar-start-heading">新しいゼミを企画する</h2>
+    <p>企画を送信すると運営が確認し、承認後に一覧へ掲載します。</p>
+    <div class="seminar-actions">
+      <a class="button" href={publicSeminarPage("propose")}>ゼミ企画フォームへ</a>
+      <a class="button button-secondary" href="https://admin.atlasez.org/seminars/member/">参加者ページを見る</a>
+    </div>
+  </section>
+</SeminarLayout>
