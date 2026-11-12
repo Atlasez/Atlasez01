@@ -450,41 +450,47 @@
 
 .seminar-catalog-list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
-  gap: var(--space-2);
+  gap: 0;
   margin: var(--space-3) 0 0;
   padding: 0;
   list-style: none;
+  border-top: 1px solid var(--border-default);
 }
 
-.seminar-catalog-card {
-  min-width: 0;
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius);
-  background: var(--background-primary);
+.seminar-catalog-row {
+  padding-block: var(--space-3);
+  border-bottom: 1px solid var(--border-default);
 }
 
-.seminar-catalog-card-body {
+.seminar-catalog-row-content {
   display: grid;
-  gap: var(--space-2);
-  min-height: 100%;
-  padding: var(--space-3);
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-1) var(--space-4);
   color: var(--text-primary);
 }
 
 .seminar-catalog-number,
-.seminar-catalog-theme,
 .seminar-catalog-phase {
   color: var(--text-secondary);
   font-size: calc(0.88rem * var(--text-scale));
 }
 
-.seminar-catalog-card h3 {
+.seminar-catalog-row h3 {
+  grid-column: 1;
   font-size: calc(1.08rem * var(--text-scale));
 }
 
-.seminar-catalog-theme {
-  overflow-wrap: anywhere;
+.seminar-catalog-row h3 a {
+  color: var(--text-primary);
+  text-decoration: underline;
+  text-decoration-color: var(--border-default);
+  text-underline-offset: 0.18em;
+}
+
+.seminar-catalog-number,
+.seminar-catalog-badges {
+  grid-column: 1;
 }
 
 .seminar-catalog-badges {
@@ -492,6 +498,15 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-1) var(--space-2);
+}
+
+.seminar-catalog-row-actions {
+  grid-column: 2;
+  grid-row: 1 / 4;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
 }
 
 .seminar-catalog-badge {
@@ -511,15 +526,16 @@
   color: var(--text-secondary);
 }
 
-.seminar-catalog-expanded {
-  border-top: 1px solid var(--border-default);
-}
-
-.seminar-catalog-expanded summary {
-  color: var(--accent-primary);
-}
-
 @media (max-width: 767px) {
+  .seminar-catalog-row-content {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .seminar-catalog-row-actions {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
   .seminar-header-inner {
     gap: var(--space-1) var(--space-2);
   }

@@ -1,7 +1,6 @@
 import {
   phaseLabels,
   recruitmentLabels,
-  seminarFields,
   seminarNumber,
 } from "../../lib/seminar-fields";
 import { api, html, urlFor, type CatalogItem } from "./shared";
@@ -21,34 +20,21 @@ const searchText = (item: CatalogItem) =>
     .join(" ")
     .toLocaleLowerCase("ja-JP");
 
-function seminarCard(item: CatalogItem) {
-  const theme = item.details.theme?.trim();
+function seminarListItem(item: CatalogItem) {
   const phase = item.phase === "unknown" ? "" : phaseLabels[item.phase];
-  const excerpt = item.details.description?.trim();
-  const details = seminarFields
-    .map(({ key, label }) => {
-      const value = item.details[key]?.trim();
-      return value
-        ? `<div><dt>${html(label)}</dt><dd>${html(value)}</dd></div>`
-        : "";
-    })
-    .join("");
 
-  return `<li class="seminar-catalog-card" data-seminar-card data-status="${html(item.recruitment)}" data-search="${html(searchText(item))}">
-    <article class="seminar-catalog-card-body">
+  return `<li class="seminar-catalog-row" data-seminar-card data-status="${html(item.recruitment)}" data-search="${html(searchText(item))}">
+    <article class="seminar-catalog-row-content">
       <span class="seminar-catalog-number">ゼミ番号 ${seminarNumber(item.number)}</span>
       <h3><a href="${urlFor("detail", item.number)}">${html(item.title)}</a></h3>
-      ${theme ? `<p class="seminar-catalog-theme">テーマ：${html(theme)}</p>` : ""}
       <span class="seminar-catalog-badges">
         <span class="seminar-catalog-badge">${recruitmentLabels[item.recruitment]}</span>
         ${phase ? `<span class="seminar-catalog-phase">開催状況：${phase}</span>` : ""}
       </span>
-      ${excerpt ? `<p>${html(excerpt.slice(0, 190))}${excerpt.length > 190 ? "…" : ""}</p>` : ""}
-      <div class="seminar-actions">
+      <div class="seminar-catalog-row-actions">
         <a class="button button-secondary" href="${urlFor("detail", item.number)}">詳細を見る</a>
         ${item.acceptingApplications ? `<a class="button" href="${urlFor("join", item.number)}">参加申請</a>` : ""}
       </div>
-      ${details ? `<details class="seminar-catalog-expanded"><summary>内容を確認</summary><dl class="seminar-details">${details}</dl></details>` : ""}
     </article>
   </li>`;
 }
@@ -98,7 +84,7 @@ export async function renderCatalog(content: HTMLElement) {
             <h2 id="${id}-heading">${label}</h2>
             <span class="seminar-muted">${entries.length}件</span>
           </header>
-          ${entries.length ? `<ul class="seminar-catalog-list">${entries.map(seminarCard).join("")}</ul>` : `<p class="seminar-catalog-empty">該当するゼミはありません。</p>`}
+          ${entries.length ? `<ul class="seminar-catalog-list">${entries.map(seminarListItem).join("")}</ul>` : `<p class="seminar-catalog-empty">該当するゼミはありません。</p>`}
         </section>`;
       })
       .join("");
