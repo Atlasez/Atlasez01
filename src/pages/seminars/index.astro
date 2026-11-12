@@ -12,17 +12,47 @@ import "../../styles/seminars-public.css";
     <section class="public-seminar-lead" aria-labelledby="seminars-heading">
       <h1 id="seminars-heading">ゼミ</h1>
       <p>
-        同じテーマに関心のある人が集まり、読書や発表を通して学ぶゼミを紹介します。
-        募集状況や参加条件を確認して、参加を申請できます。
+        勉強会を自分たちで企画し、参加し、学んだことを残すための場です。
+        募集中のゼミだけでなく、募集停止・募集終了のゼミも公開しています。
       </p>
       <div class="public-seminar-actions">
         <a class="button" href="#seminar-list">ゼミ一覧を見る</a>
         <a href={withBase("/seminars/propose/")}>ゼミを企画する</a>
+        <a href={withBase("/seminars/join/")}>ゼミに参加を申請する</a>
         <a href="https://admin.atlasez.org/seminars/member/">参加中のゼミを見る</a>
+        <a href="https://admin.atlasez.org/apply/seminar-platform/">運営に応募する</a>
       </div>
       <section class="public-seminar-session" data-seminar-session aria-live="polite">
         <p>ログイン状態を確認しています。</p>
       </section>
+    </section>
+
+    <section class="public-seminar-about" aria-labelledby="seminar-about-heading">
+      <h2 id="seminar-about-heading">このページについて</h2>
+      <p>
+        人と一緒に学ぶと、続けやすくなり、自分の関心の外にあるテーマにも触れられます。
+        一人では難しい内容を仲間と考えたり、学んだことを共有したりする機会にもなります。
+      </p>
+      <p>
+        勉強会の始め方が分からない、参加できる活動を見つけにくい、学んだことを後から共有しにくい。
+        そうした困りごとを減らし、自主的な勉強会を始めやすくすることが、この場の目的です。
+      </p>
+
+      <h3>利用方法</h3>
+      <ol>
+        <li>
+          <strong>ゼミに参加する：</strong>一覧からゼミを選び、開催状況や参加条件を確認して参加申請を送ります。主催者が承認すると参加できます。
+        </li>
+        <li>
+          <strong>ゼミを企画する：</strong>企画フォームを送ると運営が内容を確認します。承認後、ゼミ一覧に掲載されます。
+        </li>
+        <li>
+          <strong>過去の活動を見る：</strong>募集状況や開催状況で絞り込めます。募集が終わったゼミも、詳細ページを閲覧できます。
+        </li>
+      </ol>
+      <p class="public-seminar-note">
+        ゼミ一覧と詳細はログインせずに見られます。申請の送信にはログインが必要です。Discordでの交流は任意で、ゼミの企画・参加申請に登録は必要ありません。
+      </p>
     </section>
 
     <section id="seminar-list" class="public-seminar-directory" aria-labelledby="list-heading">
@@ -31,20 +61,35 @@ import "../../styles/seminars-public.css";
         <p data-seminar-count aria-live="polite"></p>
       </div>
       <div class="public-seminar-filters" role="search" aria-label="ゼミを検索">
-        <label for="seminar-query">キーワード</label>
-        <input
-          id="seminar-query"
-          type="search"
-          data-seminar-query
-          placeholder="ゼミ名、テーマ、教材"
-        />
-        <label for="seminar-recruitment">募集状況</label>
-        <select id="seminar-recruitment" data-seminar-recruitment>
-          <option value="">すべて</option>
-          <option value="open">募集中</option>
-          <option value="paused">募集停止</option>
-          <option value="closed">募集終了</option>
-        </select>
+        <div class="public-seminar-filter">
+          <label for="seminar-query">キーワード</label>
+          <input
+            id="seminar-query"
+            type="search"
+            data-seminar-query
+            placeholder="ゼミ名、テーマ、教材"
+          />
+        </div>
+        <div class="public-seminar-filter">
+          <label for="seminar-recruitment">募集状況</label>
+          <select id="seminar-recruitment" data-seminar-recruitment>
+            <option value="">すべて</option>
+            <option value="open">募集中</option>
+            <option value="paused">募集停止</option>
+            <option value="closed">募集終了</option>
+          </select>
+        </div>
+        <div class="public-seminar-filter">
+          <label for="seminar-phase">開催状況</label>
+          <select id="seminar-phase" data-seminar-phase>
+            <option value="">すべて</option>
+            <option value="planned">未実施</option>
+            <option value="active">実施中</option>
+            <option value="paused">一時休止</option>
+            <option value="ended">終了</option>
+            <option value="unknown">実施状況未掲載</option>
+          </select>
+        </div>
       </div>
       <div data-seminar-results aria-busy="true">
         <p role="status">ゼミ一覧を読み込んでいます。</p>

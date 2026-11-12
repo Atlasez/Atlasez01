@@ -115,8 +115,16 @@ test.describe("ゼミの公開ページ", () => {
     await page.goto("seminars/");
     const cards = page.locator(".public-seminar-card");
     await expect(cards).toHaveCount(2);
+    await expect(page.locator(".public-seminar-group")).toHaveCount(2);
+    await expect(
+      page.getByRole("heading", { name: "募集中 1件" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "募集終了 1件" }),
+    ).toBeVisible();
     await expect(page.getByLabel("キーワード")).toBeVisible();
     await expect(page.getByLabel("募集状況")).toBeVisible();
+    await expect(page.getByLabel("開催状況")).toBeVisible();
     await expect(
       page.getByText("ログイン中：reader@atlasez.test"),
     ).toBeVisible();
@@ -130,6 +138,9 @@ test.describe("ゼミの公開ページ", () => {
     await expect(
       page.getByRole("link", { name: "ゼミを企画する" }),
     ).toHaveAttribute("href", "/seminars/propose/");
+    await expect(
+      page.getByRole("link", { name: "ゼミに参加を申請する" }),
+    ).toHaveAttribute("href", "/seminars/join/");
 
     await page.getByLabel("キーワード").fill("");
     await page.getByLabel("募集状況").selectOption("closed");
@@ -138,6 +149,24 @@ test.describe("ゼミの公開ページ", () => {
     await expect(
       cards.first().getByRole("link", { name: "参加を申請" }),
     ).toHaveCount(0);
+  });
+
+  test("ログインせずに終了したゼミを確認し、開催状況で絞り込める", async ({
+    page,
+  }) => {
+    await mockAdminApi(page, { signedIn: false });
+    await page.goto("seminars/");
+
+    const cards = page.locator(".public-seminar-card");
+    await expect(cards).toHaveCount(2);
+    await expect(
+      page.getByText("ログインせずにゼミを閲覧できます。"),
+    ).toBeVisible();
+    await expect(cards.nth(1)).toContainText("終了");
+
+    await page.getByLabel("開催状況").selectOption("ended");
+    await expect(cards).toHaveCount(1);
+    await expect(cards.first()).toContainText("認知科学の輪読会");
   });
 
   test("詳細にゼミ情報と公開サイト内の参加申請先を表示する", async ({
@@ -150,6 +179,7 @@ test.describe("ゼミの公開ページ", () => {
     ).toBeVisible();
     for (const value of [
       "目的",
+      "レベル",
       "内容",
       "到達目標",
       "進め方",
@@ -278,7 +308,7 @@ test.describe("ゼミの公開ページ", () => {
       }),
     );
     await page.goto("seminars/");
-    await expect(page.locator(".public-seminar-card h3")).toHaveText(
+    await expect(page.locator(".public-seminar-card h4")).toHaveText(
       '<img src=x onerror="alert(1)">',
     );
     await expect(page.locator(".public-seminar-card img")).toHaveCount(0);

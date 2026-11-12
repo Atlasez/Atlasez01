@@ -4,7 +4,7 @@
   padding-block: var(--space-5) var(--space-6);
 }
 
-.public-seminar :where(h1, h2, h3, p) {
+.public-seminar :where(h1, h2, h3, h4, p) {
   margin: 0;
   overflow-wrap: anywhere;
 }
@@ -28,6 +28,35 @@
 .public-seminar-lead > p {
   max-width: 42rem;
   margin-top: var(--space-3);
+}
+
+.public-seminar-about {
+  display: grid;
+  gap: var(--space-3);
+  max-width: 58rem;
+  padding-block: var(--space-5);
+  border-bottom: 1px solid var(--border-default);
+}
+
+.public-seminar-about h2 {
+  font-size: calc(1.4rem * var(--text-scale));
+}
+
+.public-seminar-about h3 {
+  margin-top: var(--space-2);
+  font-size: calc(1.08rem * var(--text-scale));
+}
+
+.public-seminar-about ol {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding-left: 1.4em;
+}
+
+.public-seminar-note {
+  color: var(--text-secondary);
+  font-size: calc(0.9rem * var(--text-scale));
 }
 
 .public-seminar-session,
@@ -91,16 +120,21 @@
 .public-seminar-filters {
   grid-area: filters;
   display: grid;
-  gap: var(--space-2);
-  align-items: center;
+  gap: var(--space-3);
+  align-content: start;
 }
 
-.public-seminar-filters label {
+.public-seminar-filter {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.public-seminar-filter label {
   font-size: calc(0.9rem * var(--text-scale));
   font-weight: 650;
 }
 
-.public-seminar-filters :is(input, select) {
+.public-seminar-filter :is(input, select) {
   min-width: 0;
   min-height: var(--touch-target);
   width: 100%;
@@ -110,10 +144,6 @@
   color: var(--text-primary);
   background: var(--background-primary);
   font: inherit;
-}
-
-.public-seminar-filters select {
-  margin-bottom: var(--space-3);
 }
 
 [data-seminar-results] {
@@ -128,6 +158,28 @@
   padding: 0;
 }
 
+.public-seminar-group {
+  padding-block: var(--space-3);
+}
+
+.public-seminar-group + .public-seminar-group {
+  border-top: 1px solid var(--border-default);
+}
+
+.public-seminar-group-heading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-1) !important;
+  font-size: calc(1.08rem * var(--text-scale));
+}
+
+.public-seminar-group-count {
+  color: var(--text-secondary);
+  font-size: calc(0.9rem * var(--text-scale));
+  font-weight: 500;
+}
+
 .public-seminar-card {
   display: grid;
   gap: var(--space-2);
@@ -135,7 +187,7 @@
   border-bottom: 1px solid var(--border-default);
 }
 
-.public-seminar-card h3 {
+.public-seminar-card h4 {
   font-size: calc(1.15rem * var(--text-scale));
 }
 
@@ -154,12 +206,41 @@
 .public-seminar-meta {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: var(--space-2);
 }
 
 .public-seminar-status {
-  color: var(--text-primary);
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.6rem;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--border-default);
+  border-radius: 999px;
+  color: var(--text-secondary);
+  background: var(--background-secondary);
+  font-size: calc(0.82rem * var(--text-scale));
   font-weight: 650;
+  white-space: nowrap;
+}
+
+.public-seminar-status--open {
+  border-color: var(--success);
+  color: var(--success);
+}
+
+.public-seminar-status--paused {
+  border-color: var(--border-strong);
+}
+
+.public-seminar-status--closed {
+  border-color: var(--border-default);
+}
+
+.public-seminar-phase {
+  color: var(--text-secondary);
+  font-size: calc(0.88rem * var(--text-scale));
+  font-weight: 600;
 }
 
 .public-seminar-card-actions {
@@ -302,21 +383,14 @@
   }
 
   .public-seminar-filters {
-    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--space-2);
-    align-items: end;
     padding-bottom: var(--space-3);
     border-bottom: 1px solid var(--border-default);
   }
 
-  .public-seminar-filters label {
-    grid-row: 1;
-  }
-
-  .public-seminar-filters input,
-  .public-seminar-filters select {
-    grid-row: 2;
-    margin-bottom: 0;
+  .public-seminar-filter:first-child {
+    grid-column: 1 / -1;
   }
 
   .public-seminar-details {
@@ -340,5 +414,9 @@
 @media (max-width: 360px) {
   .public-seminar-filters {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .public-seminar-filter:first-child {
+    grid-column: auto;
   }
 }

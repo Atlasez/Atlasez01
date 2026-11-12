@@ -29,22 +29,23 @@ const recruitmentLabels: Record<Seminar["recruitment"], string> = {
 };
 
 const phaseLabels: Record<Seminar["phase"], string> = {
-  planned: "開始前",
+  planned: "未実施",
   active: "実施中",
-  paused: "休止中",
+  paused: "一時休止",
   ended: "終了",
   unknown: "実施状況未掲載",
 };
 
 const detailFields = [
   ["theme", "テーマ"],
+  ["level", "レベル"],
   ["purpose", "目的"],
   ["description", "内容"],
   ["goals", "到達目標"],
   ["method", "進め方"],
   ["materials", "教材"],
   ["prerequisites", "前提知識"],
-  ["conditions", "参加条件"],
+  ["conditions", "参加条件・募集範囲"],
   ["observation", "見学"],
   ["lateJoin", "途中参加"],
   ["schedule", "日時"],
@@ -101,7 +102,11 @@ function showSession(session: SeminarSession | null) {
   section.replaceChildren();
   if (!session) {
     section.append(
-      makeElement("p", undefined, "ログイン状態を確認できませんでした。"),
+      makeElement(
+        "p",
+        undefined,
+        "ゼミ一覧と詳細は、ログインせずに閲覧できます。",
+      ),
     );
     return;
   }
@@ -145,7 +150,7 @@ async function getSeminars(): Promise<Seminar[]> {
 
 function renderCard(seminar: Seminar) {
   const item = makeElement("li", "public-seminar-card");
-  const title = makeElement("h3");
+  const title = makeElement("h4");
   const link = makeElement("a", undefined, seminar.title);
   link.href = detailPath(seminar.number);
   title.append(link);
@@ -166,10 +171,14 @@ function renderCard(seminar: Seminar) {
   metadata.append(
     makeElement(
       "span",
-      "public-seminar-status",
+      `public-seminar-status public-seminar-status--${seminar.recruitment}`,
       recruitmentLabels[seminar.recruitment],
     ),
-    makeElement("span", undefined, phaseLabels[seminar.phase]),
+    makeElement(
+      "span",
+      "public-seminar-phase",
+      `開催状況：${phaseLabels[seminar.phase]}`,
+    ),
   );
   item.append(number, title, summary, metadata);
   if (seminar.acceptingApplications) {
@@ -191,7 +200,10 @@ async function renderCatalog() {
   const recruitment = document.querySelector<HTMLSelectElement>(
     "[data-seminar-recruitment]",
   );
-  if (!results || !count || !query || !recruitment) return;
+  const phase = document.querySelector<HTMLSelectElement>(
+    "[data-seminar-phase]",
+  );
+  if (!results || !count || !query || !recruitment || !phase) return;
   try {
     const seminars = await getSeminars();
     const update = () => {
@@ -199,14 +211,21 @@ async function renderCatalog() {
       const filtered = seminars.filter((seminar) => {
         const matchesStatus =
           !recruitment.value || seminar.recruitment === recruitment.value;
+        const matchesPhase = !phase.value || seminar.phase === phase.value;
         const searchable = [
           seminar.title,
           seminarNumber(seminar.number),
+          recruitmentLabels[seminar.recruitment],
+          phaseLabels[seminar.phase],
           ...Object.values(seminar.details),
         ]
           .join(" ")
           .toLocaleLowerCase("ja");
-        return matchesStatus && (!keyword || searchable.includes(keyword));
+        return (
+          matchesStatus &&
+          matchesPhase &&
+          (!keyword || searchable.includes(keyword))
+        );
       });
       count.textContent = `${filtered.length}件`;
       results.replaceChildren();
@@ -220,12 +239,43 @@ async function renderCatalog() {
         );
         return;
       }
-      const list = makeElement("ul", "public-seminar-results");
-      for (const seminar of filtered) list.append(renderCard(seminar));
-      results.append(list);
+      const recruitmentOrder: Seminar["recruitment"][] = [
+        "open",
+        "paused",
+        "closed",
+      ];
+      for (const status of recruitmentOrder) {
+        const groupSeminars = filtered.filter(
+          (seminar) => seminar.recruitment === status,
+        );
+        if (groupSeminars.length === 0) continue;
+
+        const group = makeElement("section", "public-seminar-group");
+        const headingId = `seminar-group-${status}`;
+        group.setAttribute("aria-labelledby", headingId);
+        const heading = makeElement("h3", "public-seminar-group-heading");
+        heading.id = headingId;
+        heading.append(
+          makeElement(
+            "span",
+            `public-seminar-status public-seminar-status--${status}`,
+            recruitmentLabels[status],
+          ),
+          makeElement(
+            "span",
+            "public-seminar-group-count",
+            `${groupSeminars.length}件`,
+          ),
+        );
+        const list = makeElement("ul", "public-seminar-results");
+        for (const seminar of groupSeminars) list.append(renderCard(seminar));
+        group.append(heading, list);
+        results.append(group);
+      }
     };
     query.addEventListener("input", update);
     recruitment.addEventListener("change", update);
+    phase.addEventListener("change", update);
     update();
   } catch {
     count.textContent = "";
@@ -255,10 +305,14 @@ function renderDetails(seminar: Seminar) {
   status.append(
     makeElement(
       "span",
-      "public-seminar-status",
+      `public-seminar-status public-seminar-status--${seminar.recruitment}`,
       recruitmentLabels[seminar.recruitment],
     ),
-    makeElement("span", undefined, phaseLabels[seminar.phase]),
+    makeElement(
+      "span",
+      "public-seminar-phase",
+      `開催状況：${phaseLabels[seminar.phase]}`,
+    ),
   );
   heading.append(status);
 

@@ -85,6 +85,52 @@ describe("公開ゼミAPI", () => {
     });
   });
 
+  it("ログインなしで募集状況と開催状況が異なる公開ゼミを返す", async () => {
+    const rows: Row[] = [
+      row,
+      {
+        ...row,
+        number: 31,
+        title: "終了したゼミ",
+        recruitment: "closed",
+        phase: "ended",
+      },
+      {
+        ...row,
+        number: 30,
+        title: "休止中のゼミ",
+        recruitment: "paused",
+        phase: "paused",
+      },
+      {
+        ...row,
+        number: 29,
+        title: "状況未掲載のゼミ",
+        recruitment: "closed",
+        phase: "unknown",
+      },
+    ];
+    const { db } = fixture(rows);
+    const response = await fetch("https://atlasez.org/api/seminars", db);
+
+    expect(response.status).toBe(200);
+    const payload = (await response.json()) as {
+      seminars: { number: number; recruitment: string; phase: string }[];
+    };
+    expect(
+      payload.seminars.map(({ number, recruitment, phase }) => [
+        number,
+        recruitment,
+        phase,
+      ]),
+    ).toEqual([
+      [32, "open", "active"],
+      [31, "closed", "ended"],
+      [30, "paused", "paused"],
+      [29, "closed", "unknown"],
+    ]);
+  });
+
   it("GitHub Pagesミラーには公開ゼミの読み取りだけを許可する", async () => {
     const { db } = fixture([row]);
     const response = await fetch(
