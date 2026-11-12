@@ -35,7 +35,15 @@ const statusLabel = {
           <li>
             <div>
               <h2 class="project-name">
-                <a href={withBase(`/projects/${p.data.slug}/`)}>{p.data.name}</a>
+                <a
+                  href={withBase(
+                    p.data.slug === "semi-platform"
+                      ? "/seminars/"
+                      : `/projects/${p.data.slug}/`,
+                  )}
+                >
+                  {p.data.name}
+                </a>
               </h2>
               <p>{p.data.shortDescription}</p>
             </div>

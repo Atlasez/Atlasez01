@@ -1,0 +1,25 @@
+---
+import OrgLayout from "../../layouts/OrgLayout.astro";
+import { withBase } from "../../lib/site";
+import "../../styles/seminars-public.css";
+---
+
+<OrgLayout
+  title="ゼミ詳細"
+  description="ゼミの目的、内容、進め方、教材、参加条件、開催情報を確認できます。"
+  noindex
+>
+  <div class="container public-seminar" data-public-seminar-page="detail">
+    <p class="public-seminar-back"><a href={withBase("/seminars/")}>ゼミ一覧に戻る</a></p>
+    <section class="public-seminar-session" data-seminar-session aria-live="polite">
+      <p>ログイン状態を確認しています。</p>
+    </section>
+    <div data-seminar-detail aria-busy="true">
+      <p role="status">ゼミ詳細を読み込んでいます。</p>
+    </div>
+    <noscript><p>ゼミ詳細を表示するには、ブラウザーでJavaScriptを有効にしてください。</p></noscript>
+  </div>
+  <script>
+    import "../../scripts/public-seminars";
+  </script>
+</OrgLayout>

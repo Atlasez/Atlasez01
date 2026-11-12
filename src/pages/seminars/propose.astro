@@ -1,0 +1,24 @@
+---
+import OrgLayout from "../../layouts/OrgLayout.astro";
+import { withBase } from "../../lib/site";
+import PublicSeminarForm from "../../components/PublicSeminarForm.astro";
+import "../../styles/seminars-public.css";
+---
+
+<OrgLayout
+  title="ゼミ企画フォーム"
+  description="ゼミ企画を申請できます。運営の確認後、一般向けのゼミ一覧に掲載します。"
+  noindex
+>
+  <div class="container public-seminar" data-public-seminar-form="propose">
+    <p class="public-seminar-back"><a href={withBase("/seminars/")}>ゼミ一覧に戻る</a></p>
+    <header class="public-seminar-detail-heading">
+      <h1>ゼミ企画フォーム</h1>
+      <p>新しく始めるゼミや、すでに開催したゼミを申請できます。運営の確認後に公開します。</p>
+    </header>
+    <PublicSeminarForm kind="propose" />
+  </div>
+  <script>
+    import "../../scripts/public-seminars";
+  </script>
+</OrgLayout>

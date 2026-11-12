@@ -36,6 +36,7 @@ jobs:
           SITE_URL: https://atlasez.github.io/Atlasez01/
           BASE_PATH: /Atlasez01
           NOINDEX: 1
+          PUBLIC_SEMINAR_API_ORIGIN: https://atlasez.org
       - name: 公開用ファイルをアップロード
         uses: actions/upload-pages-artifact@v3
         with:

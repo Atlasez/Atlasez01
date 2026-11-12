@@ -10,8 +10,9 @@ interface Props {
   description: string;
   ogType?: "website" | "article";
   structuredData?: object;
+  noindex?: boolean;
 }
-const { title, description, ogType, structuredData } = Astro.props;
+const { title, description, ogType, structuredData, noindex = false } = Astro.props;
 
 const nav = [
   { label: "Atlasezとは", href: withBase("/about/") },
@@ -31,6 +32,7 @@ const currentPath = Astro.url.pathname;
       description={description}
       ogType={ogType}
       structuredData={structuredData}
+      noindex={noindex}
     />
   </head>
   <body>
