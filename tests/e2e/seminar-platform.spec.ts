@@ -69,7 +69,7 @@ test("公開ゼミ一覧を検索し、詳細とログイン導線を確認で�
       name: "参加者ページ",
       exact: true,
     }),
-  ).toHaveAttribute("href", "https://admin.atlasez.org/seminars/member/");
+  ).toHaveAttribute("href", "/seminars/member/");
 
   const loginHref = await page
     .locator("header")
@@ -132,4 +132,217 @@ test("従来のプロジェクト案内から公開ゼミ一覧へ進める", as
   await expect(
     page.getByRole("link", { name: "ゼミ一覧・企画・参加申請" }),
   ).toHaveAttribute("href", "/seminars/");
+});
+
+test("参加者ページで活動を確認し、ゼミ資料をアップロードできる", async ({
+  page,
+}) => {
+  const activities = [
+    {
+      id: "next-event",
+      number: 32,
+      seminar_title: sampleSeminar.title,
+      phase: "active",
+      kind: "event",
+      title: "次回の輪読",
+      description: "第2章を読みます。",
+      due_at: "2099-01-01T10:00:00.000Z",
+      completed_at: null,
+      options: [],
+      choice: null,
+      assignee: null,
+      canComplete: 0,
+      counts: {},
+    },
+    {
+      id: "prepare-task",
+      number: 32,
+      seminar_title: sampleSeminar.title,
+      phase: "active",
+      kind: "task",
+      title: "資料を予習する",
+      description: "該当箇所を読んでください。",
+      due_at: "2099-01-01T09:00:00.000Z",
+      completed_at: null,
+      options: [],
+      choice: null,
+      assignee: "参加者",
+      canComplete: 0,
+      counts: {},
+    },
+    {
+      id: "schedule-poll",
+      number: 32,
+      seminar_title: sampleSeminar.title,
+      phase: "active",
+      kind: "poll",
+      title: "次回候補日",
+      description: "都合のよい日を選んでください。",
+      due_at: "2099-01-01T08:00:00.000Z",
+      completed_at: null,
+      options: ["金曜日", "土曜日"],
+      choice: null,
+      assignee: null,
+      canComplete: 0,
+      counts: { 0: 1, 1: 0 },
+    },
+    {
+      id: "important-notice",
+      number: 32,
+      seminar_title: sampleSeminar.title,
+      phase: "active",
+      kind: "notice",
+      title: "連絡：教室変更",
+      description: "会場が変わりました。",
+      due_at: null,
+      completed_at: null,
+      options: [],
+      choice: null,
+      assignee: null,
+      canComplete: 0,
+      counts: {},
+    },
+  ];
+  let uploaded = false;
+  await page.route(
+    "https://admin.atlasez.org/api/seminars**",
+    async (route) => {
+      const request = route.request();
+      const path = new URL(request.url()).pathname;
+      const cors = {
+        "access-control-allow-origin":
+          request.headers().origin ?? "http://localhost:4345",
+        "access-control-allow-credentials": "true",
+      };
+      if (path.endsWith("/session")) {
+        return route.fulfill({
+          json: {
+            signedIn: true,
+            email: "member@example.test",
+            canReview: false,
+          },
+          headers: cors,
+        });
+      }
+      if (path.endsWith("/dashboard")) {
+        return route.fulfill({
+          json: {
+            memberships: [
+              {
+                number: 32,
+                title: sampleSeminar.title,
+                phase: "active",
+                isHost: true,
+              },
+            ],
+            proposals: [],
+            applications: [
+              {
+                number: 9,
+                title: "多様体の基礎ゼミ",
+                status: "pending",
+                created_at: "2026-11-11T00:00:00.000Z",
+                decided_at: null,
+                decision_note: "",
+              },
+            ],
+            activities,
+          },
+          headers: cors,
+        });
+      }
+      if (path.endsWith("/32/workspace")) {
+        return route.fulfill({
+          json: {
+            seminar: sampleSeminar,
+            isHost: true,
+            activities: [],
+            applications: [],
+            materials: uploaded
+              ? [
+                  {
+                    id: "file-id",
+                    filename: "handout.txt",
+                    bytes: 12,
+                    created_at: "2026-11-12T00:00:00.000Z",
+                    canManage: 1,
+                  },
+                ]
+              : [],
+          },
+          headers: cors,
+        });
+      }
+      if (path.endsWith("/32/materials")) {
+        if (request.method() === "OPTIONS") {
+          return route.fulfill({
+            status: 204,
+            headers: {
+              ...cors,
+              "access-control-allow-methods":
+                "GET, POST, PATCH, DELETE, OPTIONS",
+              "access-control-allow-headers":
+                "content-type, x-seminar-filename",
+            },
+          });
+        }
+        expect(request.headers()["content-type"]).toBe(
+          "application/octet-stream",
+        );
+        expect(request.headers()["x-seminar-filename"]).toBe("handout.txt");
+        uploaded = true;
+        return route.fulfill({
+          status: 201,
+          json: { ok: true },
+          headers: cors,
+        });
+      }
+      return route.fulfill({
+        status: 404,
+        json: { error: "Not found" },
+        headers: cors,
+      });
+    },
+  );
+
+  await page.goto("seminars/member/");
+  await expect(
+    page.getByRole("heading", { name: "参加者ページ" }),
+  ).toBeVisible();
+  await expect(
+    page.locator("header").getByRole("link", {
+      name: "参加者ページ",
+      exact: true,
+    }),
+  ).toHaveAttribute("href", "/seminars/member/");
+  const loginHref = await page
+    .locator("[data-seminar-login]")
+    .getAttribute("href");
+  expect(new URL(loginHref!).searchParams.get("returnTo")).toBe(
+    "https://atlasez.org/seminars/member/",
+  );
+  for (const heading of [
+    "参加中のゼミ",
+    "次回予定",
+    "準備・担当",
+    "回答待ちの日程調整",
+    "重要な連絡",
+    "参加申請・企画の状況",
+    "過去の活動",
+  ])
+    await expect(page.getByRole("heading", { name: heading })).toBeVisible();
+  await expect(page.getByText("次回の輪読")).toBeVisible();
+  await expect(page.getByText("参加申請 ・ 審査待ち")).toBeVisible();
+
+  await page.getByRole("link", { name: sampleSeminar.title }).first().click();
+  await expect(
+    page.getByRole("heading", { name: sampleSeminar.title }),
+  ).toBeVisible();
+  await page.locator('input[name="file"]').setInputFiles({
+    name: "handout.txt",
+    mimeType: "text/plain",
+    buffer: Buffer.from("seminar handout"),
+  });
+  await page.getByRole("button", { name: "アップロード" }).click();
+  await expect(page.getByRole("link", { name: "handout.txt" })).toBeVisible();
 });

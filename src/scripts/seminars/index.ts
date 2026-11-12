@@ -1,6 +1,7 @@
 import { renderCatalog } from "./catalog";
 import { renderDetail } from "./detail";
 import { renderJoinForm, renderProposalForm } from "./forms";
+import { renderDashboard, renderWorkspace } from "./member";
 import {
   api,
   errorMessage,
@@ -56,6 +57,12 @@ async function renderPage() {
   if (page === "detail") return renderDetail(content, currentSession.signedIn);
   if (page === "propose") return renderProposalForm(content, currentSession);
   if (page === "join") return renderJoinForm(content, currentSession);
+  if (page === "member") return renderDashboard(content);
+  if (page === "workspace") {
+    await renderWorkspace(content);
+    if (location.hash)
+      document.getElementById(location.hash.slice(1))?.scrollIntoView();
+  }
 }
 
 void renderPage()

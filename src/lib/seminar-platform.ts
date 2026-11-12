@@ -7,7 +7,7 @@ export function publicSeminarPage(page = "") {
 }
 
 export function memberPage(page = "member", number?: number) {
-  const url = new URL(`/seminars/${page}/`, SEMINAR_ADMIN_ORIGIN);
+  const url = new URL(`${SEMINAR_PUBLIC_PATH}${page}/`, location.origin);
   if (number !== undefined) url.searchParams.set("number", String(number));
   return url.toString();
 }

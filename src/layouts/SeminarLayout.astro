@@ -1,7 +1,11 @@
 ---
 import BaseHead from "../components/BaseHead.astro";
 import SettingsMenu from "../components/SettingsMenu.astro";
-import { SEMINAR_ADMIN_ORIGIN, SEMINAR_PUBLIC_PATH } from "../lib/seminar-platform";
+import {
+  publicSeminarPage,
+  SEMINAR_ADMIN_ORIGIN,
+  SEMINAR_PUBLIC_PATH,
+} from "../lib/seminar-platform";
 import "../styles/seminars.css";
 
 interface Props {
@@ -13,7 +17,7 @@ interface Props {
 const { title, page, noindex = page !== "catalog" } = Astro.props;
 const nav = [
   { label: "ゼミ一覧", href: SEMINAR_PUBLIC_PATH, page: "catalog" },
-  { label: "参加者ページ", href: `${SEMINAR_ADMIN_ORIGIN}/seminars/member/`, page: "member" },
+  { label: "参加者ページ", href: publicSeminarPage("member"), page: "member" },
   { label: "運営ページ", href: `${SEMINAR_ADMIN_ORIGIN}/admin/semi-platform/review/`, page: "operations" },
 ];
 ---
