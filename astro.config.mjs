@@ -10,6 +10,10 @@ import {
   remarkArticleDirectives,
   remarkArticleOrderedListContinuation,
 } from "./src/lib/article-directives.mjs";
+import {
+  rehypeKanjiDictionaryLayout,
+  remarkKanjiDictionaryLayout,
+} from "./src/lib/kanji-dictionary-layout.mjs";
 import { renderArticleTikz } from "./src/lib/markdown-tikz.mjs";
 
 /**
@@ -274,6 +278,7 @@ export default defineConfig({
         remarkArticleOrderedListContinuation,
         remarkDirective,
         remarkArticleDirectives,
+        remarkKanjiDictionaryLayout,
         renderArticleTikz,
       ],
       rehypePlugins: [
@@ -284,6 +289,7 @@ export default defineConfig({
         removeMathFigureCaptions,
         normalizeLegacyMath,
         normalizeHeadingAttributes,
+        rehypeKanjiDictionaryLayout,
         [
           rehypeMathjax,
           {

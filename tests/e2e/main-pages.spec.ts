@@ -133,11 +133,89 @@ test.describe("学習サイト", () => {
   });
 
   test("漢字記事に専用の見出し・表スタイルが適用される", async ({ page }) => {
-    await page.goto("atlas/ja/kanji/culture/musical-instruments/");
+    await page.goto("atlas/ja/kanji/human-body/body-torso/");
     await expect(page.locator(".article-body.kanji-article")).toBeVisible();
+    await expect(page.locator(".kanji-entry-grid").first()).toHaveCSS(
+      "display",
+      "grid",
+    );
+    const desktopColumns = await page
+      .locator(".kanji-entry-grid")
+      .first()
+      .evaluate(
+        (grid) => getComputedStyle(grid).gridTemplateColumns.split(" ").length,
+      );
+    expect(desktopColumns).toBe(2);
     await expect(
-      page.locator(".article-body.kanji-article table").first(),
+      page.locator(".kanji-entry-grid").first().locator(".kanji-entry-column"),
+    ).toHaveCount(2);
+    await expect(
+      page
+        .locator(".article-body.kanji-article .kanji-character-table")
+        .first(),
     ).toHaveCSS("border-style", "solid");
+    await expect(
+      page.locator('.kanji-character-table td[rowspan="2"]').first(),
+    ).toBeVisible();
+  });
+
+  test("漢字記事の一字・熟語欄はスマートフォンで縦に並ぶ", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("atlas/ja/kanji/human-body/body-torso/");
+    const grid = page.locator(".kanji-entry-grid").first();
+    await expect(grid).toBeVisible();
+    const layout = await grid.evaluate((element) => ({
+      columns: getComputedStyle(element).gridTemplateColumns.split(" ").length,
+      hasHorizontalOverflow: element.scrollWidth > element.clientWidth,
+    }));
+    expect(layout.columns).toBe(1);
+    expect(layout.hasHorizontalOverflow).toBe(false);
+  });
+
+  test("長い漢字の読みも辞書欄からはみ出さず読める", async ({ page }) => {
+    const longReading =
+      "ともしび、ひ、あかり・あかし・とぼし、とも-す・とぼ-す";
+    await page.goto("atlas/ja/kanji/daily-life/fire-light/");
+    const lightGrid = page
+      .locator(".kanji-entry-grid")
+      .filter({ hasText: longReading })
+      .first();
+    const readingCell = lightGrid
+      .locator(".kanji-character-table tr")
+      .filter({ hasText: "灯" })
+      .locator("td")
+      .nth(1);
+    await expect(readingCell).toContainText(longReading);
+
+    const desktopBounds = await readingCell.evaluate((cell) => {
+      const grid = cell.closest(".kanji-entry-grid");
+      if (!grid) throw new Error("Kanji entry grid was not found");
+      return {
+        readingRight: cell.getBoundingClientRect().right,
+        gridRight: grid.getBoundingClientRect().right,
+        hasHorizontalOverflow: grid.scrollWidth > grid.clientWidth,
+      };
+    });
+    expect(desktopBounds.readingRight).toBeLessThanOrEqual(
+      desktopBounds.gridRight + 1,
+    );
+    expect(desktopBounds.hasHorizontalOverflow).toBe(false);
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.reload();
+    const mobileBounds = await readingCell.evaluate((cell) => {
+      const grid = cell.closest(".kanji-entry-grid");
+      if (!grid) throw new Error("Kanji entry grid was not found");
+      return {
+        readingRight: cell.getBoundingClientRect().right,
+        gridRight: grid.getBoundingClientRect().right,
+        hasHorizontalOverflow: grid.scrollWidth > grid.clientWidth,
+      };
+    });
+    expect(mobileBounds.readingRight).toBeLessThanOrEqual(
+      mobileBounds.gridRight + 1,
+    );
+    expect(mobileBounds.hasHorizontalOverflow).toBe(false);
   });
 
   test("はじめての方へは専用ガイドに移動する", async ({ page }) => {
