@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   changedArticlePaths,
   createEditorialReleaseManifest,
+  parseGitChangedArticlePaths,
 } from "../../scripts/editorial-release-manifest.mjs";
 import {
   deployEditorialRelease,
@@ -61,6 +62,16 @@ describe("公開候補の記事版マニフェスト", () => {
     ).toThrow("変更された記事に editorialVersionId がありません");
   });
 
+  it("削除された記事は候補マニフェストから消えていれば許可する", () => {
+    const deletedPath =
+      "src/content/articles/jpn/mathematics/set-theory/deleted.md";
+    expect(
+      createEditorialReleaseManifest([article], commitSha, [
+        { path: deletedPath, status: "deleted" },
+      ]).entries,
+    ).toHaveLength(1);
+  });
+
   it("重複記事IDと不正な版IDを候補に含めない", () => {
     expect(() =>
       createEditorialReleaseManifest(
@@ -85,7 +96,10 @@ describe("公開候補の記事版マニフェスト", () => {
   it("PRの浅いチェックアウトでもGitHub比較結果から変更記事を検査する", async () => {
     const fetchImpl = vi.fn(async (_input: RequestInfo | URL) =>
       Response.json({
-        files: [{ filename: article.path }, { filename: "docs/PUBLISH.md" }],
+        files: [
+          { filename: article.path, status: "modified" },
+          { filename: "docs/PUBLISH.md", status: "modified" },
+        ],
       }),
     );
     const paths = await changedArticlePaths(commitSha, {
@@ -99,8 +113,65 @@ describe("公開候補の記事版マニフェスト", () => {
       fetchImpl,
     });
 
-    expect(paths).toEqual([article.path]);
+    expect(paths).toEqual([{ path: article.path, status: "modified" }]);
     expect(String(fetchImpl.mock.calls[0][0])).toContain("/compare/main...");
+  });
+
+  it("削除と改名をGitのname-status出力から区別する", () => {
+    const deletedPath =
+      "src/content/articles/jpn/mathematics/set-theory/deleted.md";
+    const renamedPath =
+      "src/content/articles/jpn/mathematics/set-theory/renamed.md";
+    const paths = parseGitChangedArticlePaths(
+      `D\0${deletedPath}\0R100\0${article.path}\0${renamedPath}\0`,
+    );
+
+    expect(paths).toEqual([
+      { path: deletedPath, status: "deleted" },
+      { path: renamedPath, status: "renamed" },
+    ]);
+  });
+
+  it("GitHub比較APIの初回応答に含まれる100件超のファイルを一度で読む", async () => {
+    const files = Array.from({ length: 150 }, (_, index) => ({
+      filename: `src/content/articles/jpn/mathematics/set-theory/article-${index}.md`,
+      status: "modified",
+    }));
+    const fetchImpl = vi.fn(async () => Response.json({ files }));
+    const paths = await changedArticlePaths(commitSha, {
+      env: {
+        GITHUB_BASE_REF: "main",
+        GITHUB_REPOSITORY: "Atlasez/Atlasez01",
+      },
+      execFileSyncImpl: () => {
+        throw new Error("shallow checkout");
+      },
+      fetchImpl,
+    });
+
+    expect(paths).toHaveLength(150);
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+
+  it("GitHub比較APIの300件上限に達したら変更検査を停止する", async () => {
+    await expect(
+      changedArticlePaths(commitSha, {
+        env: {
+          GITHUB_BASE_REF: "main",
+          GITHUB_REPOSITORY: "Atlasez/Atlasez01",
+        },
+        execFileSyncImpl: () => {
+          throw new Error("shallow checkout");
+        },
+        fetchImpl: async () =>
+          Response.json({
+            files: Array.from({ length: 300 }, (_, index) => ({
+              filename: `src/content/articles/jpn/mathematics/set-theory/article-${index}.md`,
+              status: "modified",
+            })),
+          }),
+      }),
+    ).rejects.toThrow("変更ファイル上限に達しました");
   });
 
   it("PR変更一覧を取得できない場合はマニフェスト生成を停止する", async () => {

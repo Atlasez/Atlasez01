@@ -88,8 +88,19 @@ export function createEditorialReleaseManifest(
   const entryByPath = new Map(
     normalizedEntries.map((entry) => [entry.path, entry]),
   );
-  for (const changedPath of changedPaths) {
-    const changed = entryByPath.get(changedPath.replaceAll("\\", "/"));
+  for (const change of changedPaths) {
+    const changedPath =
+      typeof change === "string" ? change : String(change.path ?? "");
+    const status = typeof change === "string" ? "modified" : change.status;
+    const normalizedPath = changedPath.replaceAll("\\", "/");
+    const changed = entryByPath.get(normalizedPath);
+    if (status === "deleted") {
+      if (changed)
+        throw new Error(
+          `${changedPath}: 削除された記事がマニフェストに残っています。`,
+        );
+      continue;
+    }
     if (!changed)
       throw new Error(
         `${changedPath}: 変更された記事がマニフェストにありません。`,
@@ -124,6 +135,38 @@ function gitOutput(execFileSyncImpl, args) {
   }
 }
 
+export function parseGitChangedArticlePaths(output) {
+  const fields = String(output).split("\0").filter(Boolean);
+  const changes = [];
+  for (let index = 0; index < fields.length;) {
+    const status = fields[index++];
+    if (/^[RC]\d*$/.test(status)) {
+      const previousPath = fields[index++];
+      const nextPath = fields[index++];
+      if (nextPath?.startsWith(`${ARTICLE_ROOT}/`) && nextPath.endsWith(".md"))
+        changes.push({ path: nextPath, status: "renamed" });
+      else if (
+        previousPath?.startsWith(`${ARTICLE_ROOT}/`) &&
+        previousPath.endsWith(".md")
+      )
+        changes.push({ path: previousPath, status: "deleted" });
+      continue;
+    }
+    const changedPath = fields[index++];
+    if (
+      !changedPath?.startsWith(`${ARTICLE_ROOT}/`) ||
+      !changedPath.endsWith(".md")
+    )
+      continue;
+    changes.push({
+      path: changedPath,
+      status:
+        status === "D" ? "deleted" : status === "A" ? "added" : "modified",
+    });
+  }
+  return changes;
+}
+
 async function githubCompareFiles({
   repository,
   base,
@@ -141,33 +184,37 @@ async function githubCompareFiles({
   };
   if (token) headers.Authorization = `Bearer ${token}`;
 
-  const changed = [];
-  for (let page = 1; page <= 3; page += 1) {
-    const url = new URL(
-      `https://api.github.com/repos/${owner}/${name}/compare/${encodeURIComponent(base)}...${encodeURIComponent(commitSha)}`,
-    );
-    url.searchParams.set("per_page", "100");
-    url.searchParams.set("page", String(page));
-    const response = await fetchImpl(url, { headers });
-    if (!response.ok)
-      throw new Error(
-        `記事変更をGitHubで検証できません（compare API: HTTP ${response.status}）。`,
-      );
-    const result = await response.json();
-    if (!Array.isArray(result.files))
-      throw new Error("GitHub compare APIの変更ファイル一覧が不正です。");
-    for (const file of result.files) {
-      if (typeof file.filename !== "string")
-        throw new Error("GitHub compare APIの変更ファイル名が不正です。");
-      if (file.filename.startsWith(`${ARTICLE_ROOT}/`))
-        changed.push(file.filename);
-    }
-    if (result.files.length < 100) return changed;
-  }
-
-  throw new Error(
-    "GitHub compare APIの変更ファイル上限に達しました。変更範囲を分割して再検証してください。",
+  const url = new URL(
+    `https://api.github.com/repos/${owner}/${name}/compare/${encodeURIComponent(base)}...${encodeURIComponent(commitSha)}`,
   );
+  url.searchParams.set("per_page", "100");
+  const response = await fetchImpl(url, { headers });
+  if (!response.ok)
+    throw new Error(
+      `記事変更をGitHubで検証できません（compare API: HTTP ${response.status}）。`,
+    );
+  const result = await response.json();
+  if (!Array.isArray(result.files))
+    throw new Error("GitHub compare APIの変更ファイル一覧が不正です。");
+  if (result.files.length >= 300)
+    throw new Error(
+      "GitHub compare APIの変更ファイル上限に達しました。変更範囲を分割して再検証してください。",
+    );
+  const changed = [];
+  for (const file of result.files) {
+    if (typeof file.filename !== "string")
+      throw new Error("GitHub compare APIの変更ファイル名が不正です。");
+    if (
+      !file.filename.startsWith(`${ARTICLE_ROOT}/`) ||
+      !file.filename.endsWith(".md")
+    )
+      continue;
+    changed.push({
+      path: file.filename,
+      status: file.status === "removed" ? "deleted" : file.status,
+    });
+  }
+  return changed;
 }
 
 export async function changedArticlePaths(
@@ -194,16 +241,13 @@ export async function changedArticlePaths(
       : `refs/remotes/origin/${base}`;
     const diff = gitOutput(execFileSyncImpl, [
       "diff",
-      "--name-only",
+      "--name-status",
+      "-z",
       `${gitBase}...${commitSha}`,
       "--",
       ARTICLE_ROOT,
     ]);
-    if (diff !== null)
-      return diff
-        .split(/\r?\n/)
-        .filter(Boolean)
-        .map((file) => file.replaceAll("\\", "/"));
+    if (diff !== null) return parseGitChangedArticlePaths(diff);
   }
 
   const repository = env.GITHUB_REPOSITORY ?? env.ATLASEZ_REPOSITORY ?? "";
