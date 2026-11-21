@@ -10,20 +10,23 @@ GitHub Pagesは確認用ミラーであり、本番ではない。Cloudflare Pag
 
 本番デプロイの正本は、Cloudflare Dashboardで設定されたWorkers Buildsである。
 リポジトリ `Atlasez/Atlasez01` のProduction branchは `main` に固定し、
-`main` へのpushで次の処理をCloudflare側が自動実行する。
+`main` へのpushでCloudflare側がBuildを開始する。Deploy commandは
+`npm run deploy:production` とし、次の順で進める。
 
 1. `npm ci`
 2. `SITE_URL=https://atlasez.org BASE_PATH=/ npm run build`
-3. `npx wrangler deploy`
-4. `atlasez01` へのデプロイ
-5. 公開中の `/build-info.json` とGit commit SHAの照合
+3. 記事版マニフェストの生成と `dist/build-info.json` のSHA検証
+4. `wrangler versions upload` で未配信の候補Versionを登録
+5. 署名済み候補情報をADMIN Workerへ送り、D1保存に成功したことを確認
+6. `wrangler versions deploy <version-id>@100%` で `atlasez01` の配信を切り替え
+7. ADMIN WorkerがCloudflare DeploymentとD1公開履歴を照合
 
 GitHub Actionsから別経路で本番デプロイしない。これにより、GitHub Actionsと
 Cloudflare Workers Buildsの競合や、異なるSHAの後着デプロイを防ぐ。
 
 Workers BuildsのDeploy commandは裸の`npx wrangler deploy`ではなく、必ず
 `npm run deploy:production`を指定する。このコマンドは次の値がすべて一致しない
-限り失敗し、Wranglerを起動しない。
+限り停止し、候補登録・配信切替を行わない。
 
 - `ATLASEZ_DEPLOY_GATE=main-only-v1`
 - `WORKERS_CI=1`
@@ -31,6 +34,14 @@ Workers BuildsのDeploy commandは裸の`npx wrangler deploy`ではなく、必�
 - `ATLASEZ_REPOSITORY=Atlasez/Atlasez01`
 - `WORKERS_CI_COMMIT_SHA`が40桁のコミットSHA
 - `dist/build-info.json`のrepository/ref/commitが上記と一致
+- `EDITORIAL_RELEASE_ENDPOINT`と`EDITORIAL_RELEASE_WEBHOOK_SECRET`が設定済み
+- 記事版マニフェストがビルドSHAと一致し、変更記事に保存済み版IDがある
+
+Workers Buildsには上記のDeploy gateとADMIN APIの接続情報が必要です。設定を変える場合は先にPRで値・権限・復旧方法を確認し、候補APIが利用できない状態では本番へ切り替えません。
+
+候補VersionのD1保存が失敗した場合、`versions deploy`を呼び出さない。切替後の公開履歴記録が
+失敗した場合は、ADMIN Workerが読み取り専用Cloudflare APIで有効Versionを照合し、D1を補修する。
+新しいD1テーブルとAPIはADMIN repository側のmigration/Worker更新で先に用意する。
 
 このゲートにより、PRブランチやローカルからの手動Deployはfail-closedで停止する。
 ゲートを迂回する直接のWrangler実行は禁止する。
@@ -65,22 +76,9 @@ Cloudflare DashboardのBuild cacheは無効化する。キャッシュを再有�
 `public/_headers`ではハッシュ付き`/_astro/*`を長期immutableとし、デプロイ照合用の
 `/build-info.json`は`no-store`にする。
 
-## 手動デプロイ
+## Workers Builds停止時
 
-通常はCloudflare Workers Buildsだけを使う。緊急時に手動デプロイする場合も、必ず
-`main`の固定SHAから作業用ディレクトリを作り、対象の`wrangler.jsonc`を使う。
-
-```sh
-git archive <mainのSHA> | tar -x -C <作業用ディレクトリ>
-cd <作業用ディレクトリ>
-npm ci
-npm run verify:deploy-config
-SITE_URL=https://atlasez.org BASE_PATH=/ npm run build
-npx wrangler deploy --config wrangler.jsonc --keep-vars --strict \
-  --message "GitHub main <SHA>"
-```
-
-デプロイ後は`https://atlasez.org/build-info.json`が同じSHAを返すことを確認する。
+Workers Buildsが未接続・停止・エラーの場合は本番配信を止め、理由をIssueまたはPRに記録します。この手順では手動の`wrangler deploy`や`wrangler versions deploy`を代替経路として許可しません。候補登録と実配信の照合を含むWorkers Builds経路を復旧してから、mainの対象SHAを配信します。
 
 ## Rollback
 

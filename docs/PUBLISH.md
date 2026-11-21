@@ -1,85 +1,42 @@
-# 公開チェックリスト（Cloudflare Pages）
+# 公開サイトの記事公開
 
-配信は Cloudflare Pages が GitHub リポジトリ `Atlasez/Atlasez01` を
-直接ビルドして行う。詳しい背景は `docs/DEPLOYMENT.md`。
+公開サイトの正本は `Atlasez/Atlasez01` の `main`、本番Workerは `atlasez01` です。
+編集画面で保存された記事版を対象にGitHub PRを作成し、CI・レビュー・mainへの取り込みを経て公開します。
+編集者向けの公開操作は従来どおりで、候補登録やCloudflare Version切替はWorkers Builds内で進めます。
 
----
+## 公開の順序
 
-## 1. push する
+Cloudflare Workers Buildsだけを本番配信経路に保ち、Deploy commandの
+`npm run deploy:production` が次の順で処理します。
 
-```bash
-cd <このリポジトリをcloneした場所>
-git push
-```
+1. `main`の固定SHAからサイトをビルドし、記事ごとの `articleId`・D1版ID・公開状態を含む候補マニフェストを作る。
+2. `wrangler versions upload` でWorker Versionをアップロードする。ここでは読者向け配信を切り替えない。
+3. ADMIN Workerへ署名付きマニフェストを送り、候補Versionと実際に含む記事・版IDをD1へ保存する。
+4. D1の候補保存が成功した場合だけ、`wrangler versions deploy <version-id>@100%` で本番へ切り替える。
+5. ADMIN WorkerがCloudflareの最新Deploymentを読み、対象Versionの100%配信を確認してD1公開履歴を追記する。
 
-push すると Cloudflare Pages のビルドが自動で始まる。
+候補のD1保存に失敗した場合は4へ進まず、現在の公開Versionを維持します。切替後に公開履歴の追記だけが失敗した場合は、分ごとのADMIN Worker照合処理がCloudflareの有効Deploymentと候補記録を照合し、D1履歴と記事ごとの公開版ポインターを補修します。PRの作り直しや本文コピーは行いません。
 
-## 2. Cloudflare Pages のビルド設定を確認する
+## 必須設定
 
-Workers & Pages → プロジェクト → Settings → Build
+新しい処理を使う前に、ADMIN側の候補・履歴migrationをレビュー後の明示手順で適用し、ADMIN Workerを更新してください。Workers BuildsとADMIN Workerに同じSecretを登録します。
 
-| 項目                   | 値              |
-| ---------------------- | --------------- |
-| Build command          | `npm run build` |
-| Build output directory | `dist`          |
-| Production branch      | `main`          |
+| 設定                               | 保存先                                      | 用途                                       |
+| ---------------------------------- | ------------------------------------------- | ------------------------------------------ |
+| `EDITORIAL_RELEASE_ENDPOINT`       | Workers Builds variable                     | ADMIN Workerの候補登録API URL              |
+| `EDITORIAL_RELEASE_WEBHOOK_SECRET` | Workers Builds secret / ADMIN Worker secret | Buildからの候補・切替通知を署名            |
+| `CLOUDFLARE_WORKERS_READ_TOKEN`    | ADMIN Worker secret                         | `atlasez01` のDeployment/Versionだけを照合 |
 
-Root directory は空欄のまま。Node は `.nvmrc`（22）が読まれる。
+Cloudflare API tokenは`Workers Scripts Read`の読み取り専用にし、対象Workerへ範囲を限定します。
+Secretや公開用URLはbuild-info、記事、GitHub Actionsへ書きません。設定変更は値・権限・復旧方法をPRでレビューしてから行います。
 
-## 3. 環境変数を入れる
+## 確認
 
-Settings → Environment variables → **Production** にだけ追加:
+- GitHub PRのCI・レビュー・main mergeが成功している。
+- Workers Buildsが対象main SHAをビルドし、候補Versionをアップロードした。
+- D1に候補Version、記事一覧、各記事の版IDが保存された。
+- Cloudflare Worker `atlasez01` の最新Deploymentが対象Versionを100%配信している。
+- D1公開履歴のCloudflare Version ID・Deployment IDがCloudflareの状態と一致している。
+- `https://atlasez.org/build-info.json` のcommit SHA、公開記事、検索、学習地図、数式を確認した。
 
-```
-SITE_URL = https://<プロジェクト名>.pages.dev
-```
-
-独自ドメインを取ったらここを書き換えて再デプロイする。
-**Preview には設定しない**（設定しないことでプレビューが自動的に
-noindex 扱いになり、本番と重複しない）。
-
-環境変数を足したあとは Deployments → 最新のデプロイ → Retry deployment。
-変数の変更は自動では反映されない。
-
-## 3.5 PR ごとのプレビューを使う
-
-ブランチを push すると、Cloudflare Pages が本番とは別にプレビューを作る。
-
-```bash
-git switch -c feature/なにか
-# 変更してコミット
-git push -u origin feature/なにか
-```
-
-数分で `https://feature-なにか.<project>.pages.dev` が見られるようになる。
-本番（main）は上書きされない。PR を作れば URL がコメントされる。
-
-うまく出ないときは Settings → Builds & deployments の
-**Preview deployments** が `All branches` かどうかを見る。
-
-## 4. 公開後に確認すること
-
-- [ ] トップ `/` と学習サイト `/atlas/ja/` が開く
-- [ ] 検索（`/atlas/ja/search/`）が動く ← Pagefind のインデックスが配信されているか
-- [ ] 学習地図（`/atlas/ja/map/`）が描画される
-- [ ] `/robots.txt` の `Sitemap:` が本番URLになっている
-- [ ] 記事ページのソースに `noindex` が **入っていない**
-- [ ] 数式（MathJax）が崩れていない ← 例: `/atlas/ja/mathematics/set-theory/relations/`
-
-## 5. GitHub 側の後始末
-
-GitHub Pages への自動デプロイは停止済み。
-Settings → Pages → Source を「None」に戻しておくと、古い内容が
-`mitukx.github.io/Atlasez01/` に残り続けるのを防げる。
-
-## 6. 独自ドメインを取ったら
-
-`docs/DEPLOYMENT.md` の「3. 独自ドメインを取得したあとの手順」を参照。
-やることは Custom domains への追加と `SITE_URL` の変更、再デプロイの 3 つ。
-
-## 7. ローカルで確認したいとき
-
-```bash
-npm ci
-npm run dev        # http://localhost:4321/
-```
+候補登録・Version・Deployment・build-infoのSHAが合わない場合は後続処理を止め、原因を記録します。推測で別Versionの昇格、rollback、cache purge、Route変更を行いません。

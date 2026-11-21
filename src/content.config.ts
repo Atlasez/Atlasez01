@@ -96,6 +96,13 @@ const articles = defineCollection({
   schema: z.object({
     /** 記事の永続ID（例: ja-math-sets-introduction） */
     articleId: z.string().regex(/^[a-z0-9-]+$/),
+    /** D1で保存した版ID。既存記事は最初の移行期間だけ省略できる。 */
+    editorialVersionId: z
+      .string()
+      .regex(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+      )
+      .optional(),
     locale: localeSchema,
     title: z.string().min(1),
     slug: slugSchema,
