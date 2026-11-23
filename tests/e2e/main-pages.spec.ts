@@ -75,6 +75,49 @@ test.describe("公式サイト", () => {
       page.getByRole("link", { name: "応募フォームを開く（運営サイト）" }),
     ).toHaveAttribute("href", "https://admin.atlasez.org/apply/atlas/");
   });
+
+  test("スマートフォン幅でも公式ナビゲーションの全項目を表示する", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto("join/");
+
+    const nav = page.getByRole("navigation", { name: "メインナビゲーション" });
+    await expect(nav.getByRole("link", { name: "お問い合わせ" })).toBeVisible();
+
+    const layout = await nav.evaluate((element) => {
+      const bounds = element.getBoundingClientRect();
+      const links = [...element.querySelectorAll("a")].map((link) => {
+        const rect = link.getBoundingClientRect();
+        return rect.left >= bounds.left && rect.right <= bounds.right;
+      });
+      return {
+        fitsWithoutInternalScroll: element.scrollWidth <= element.clientWidth,
+        allLinksFit: links.every(Boolean),
+      };
+    });
+
+    expect(layout).toEqual({
+      fitsWithoutInternalScroll: true,
+      allLinksFit: true,
+    });
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= window.innerWidth,
+      ),
+    ).toBe(true);
+  });
+
+  test("お問い合わせページに内部文書への参照を表示しない", async ({ page }) => {
+    await page.goto("contact/");
+
+    await expect(
+      page.getByText("お問い合わせフォームは現在ありません。"),
+    ).toBeVisible();
+    await expect(page.getByText(/docs\/history\/ASSUMPTIONS\.md/)).toHaveCount(
+      0,
+    );
+  });
 });
 
 test.describe("学習サイト", () => {
