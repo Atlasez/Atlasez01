@@ -15,8 +15,10 @@ concurrency:
   cancel-in-progress: true
 
 env:
+  # Preview remains local and is never published; use the production origin so
+  # Lighthouse checks production canonical/indexability metadata, not CI noindex.
+  SITE_URL: https://atlasez.org
   # 本番と同じパス構成（ルート配信）で検証する。
-  # SITE_URL は設定しない＝ビルドは noindex 付きになるが、検証には影響しない。
   BASE_PATH: /
 
 jobs:

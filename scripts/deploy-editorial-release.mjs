@@ -103,10 +103,26 @@ async function sendReleaseEvent(endpoint, secret, path, payload, options = {}) {
       (options.retryInactive &&
         response.status === 409 &&
         responseBody.code === "release_candidate_not_active");
-    if (!retryable || attempt === attempts)
+    if (!retryable || attempt === attempts) {
+      // Keep the article path available in Cloudflare Build logs when the
+      // ADMIN rejects an ambiguous catalog mapping. Other response details
+      // may contain infrastructure diagnostics, so do not echo them.
+      const releaseDiagnosticCodes = new Set([
+        "release_article_ambiguous",
+        "release_article_identity_mismatch",
+      ]);
+      const detail =
+        releaseDiagnosticCodes.has(responseBody.code) &&
+        typeof responseBody.error === "string"
+          ? `: ${responseBody.error
+              .replace(/[\u0000-\u001f\u007f]/g, " ")
+              .replace(/\s+/g, " ")
+              .slice(0, 300)}`
+          : "";
       throw new Error(
-        `公開リリースAPI ${path} が失敗しました（HTTP ${response.status} / ${responseBody.code ?? "unknown"}）。`,
+        `公開リリースAPI ${path} が失敗しました（HTTP ${response.status} / ${responseBody.code ?? "unknown"}）${detail}。`,
       );
+    }
     const delay = options.retryInactive
       ? 5_000
       : Math.min(10_000, 1_000 * 2 ** (attempt - 1));

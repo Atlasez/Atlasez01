@@ -140,6 +140,27 @@ test.describe("学習サイト", () => {
     ).toHaveCSS("border-style", "solid");
   });
 
+  test("学習地図エンジンは地図タブを開くまで取得しない", async ({ page }) => {
+    let cytoscapeRequested = false;
+    page.on("request", (request) => {
+      if (request.url().toLowerCase().includes("cytoscape")) {
+        cytoscapeRequested = true;
+      }
+    });
+
+    await page.goto("atlas/ja/");
+    await page.waitForLoadState("networkidle");
+    await expect(page.locator("[data-home-layout]")).toHaveAttribute(
+      "data-active-view",
+      "tiles",
+    );
+    expect(cytoscapeRequested).toBe(false);
+
+    await page.getByRole("tab", { name: "学習地図" }).click();
+    await page.locator("#learning-map").scrollIntoViewIfNeeded();
+    await expect.poll(() => cytoscapeRequested).toBe(true);
+  });
+
   test("はじめての方へは専用ガイドに移動する", async ({ page }) => {
     await page.goto("atlas/ja/");
     const guide = page.getByRole("link", { name: "はじめての方へ" });
@@ -1432,6 +1453,9 @@ test.describe("学習サイト", () => {
     await page.goto("atlas/ja/");
     const footer = page.locator("[data-lang-switch]");
     await expect(footer.locator("[data-lang-item]")).toHaveCount(4);
+    await expect(footer.locator("summary")).toHaveAccessibleName(
+      /日本語.*言語を選択/,
+    );
     await footer.locator("summary").click();
 
     const dimensions = await footer.evaluate((element) => {
