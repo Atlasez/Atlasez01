@@ -36,7 +36,9 @@ const filterable = items.length > 3;
 {
   items.length > 1 && (
     <details class="lang-switch" data-lang-switch>
-      <summary aria-label={t(locale, "selectLanguage")}>
+      <summary
+        aria-label={`${UI_LANGUAGE_NAMES[locale]} ${t(locale, "selectLanguage")}`}
+      >
         <span class="lang-globe" aria-hidden="true">
           ⌘
         </span>

@@ -1453,6 +1453,9 @@ test.describe("学習サイト", () => {
     await page.goto("atlas/ja/");
     const footer = page.locator("[data-lang-switch]");
     await expect(footer.locator("[data-lang-item]")).toHaveCount(4);
+    await expect(footer.locator("summary")).toHaveAccessibleName(
+      /日本語.*言語を選択/,
+    );
     await footer.locator("summary").click();
 
     const dimensions = await footer.evaluate((element) => {
