@@ -263,6 +263,45 @@ describe("公開候補の二段階配信", () => {
     expect(deployFetch).toHaveBeenCalledTimes(6);
   });
 
+  it("曖昧な原稿対応では制限した記事パスを診断に残し、本番切替しない", async () => {
+    const commands: string[][] = [];
+    const ambiguousPath =
+      "src/content/articles/jpn/mathematics/group-theory/new-article.md";
+    const deployFetch = vi.fn(async () =>
+      Response.json(
+        {
+          error: `公開記事に一致する運営原稿が複数あります（${ambiguousPath}）。\n${"x".repeat(400)}`,
+          code: "release_article_ambiguous",
+        },
+        { status: 409 },
+      ),
+    );
+
+    let message = "";
+    try {
+      await deployEditorialRelease({
+        env,
+        readFileImpl,
+        sleepImpl: async () => undefined,
+        fetchImpl: deployFetch,
+        runCommand: async (_command: string, args: string[]) => {
+          commands.push(args);
+          return `Version ID: ${versionId}`;
+        },
+      });
+    } catch (error) {
+      message = error instanceof Error ? error.message : String(error);
+    }
+
+    expect(message).toContain(ambiguousPath);
+    expect(message).not.toContain("\n");
+    expect(message.length).toBeLessThan(500);
+    expect(deployFetch).toHaveBeenCalledTimes(1);
+    expect(commands).toHaveLength(1);
+    expect(commands[0]).toContain("upload");
+    expect(commands.some((args) => args.includes("deploy"))).toBe(false);
+  });
+
   it("D1候補保存を待ってから配信し、その後に履歴を記録する", async () => {
     const steps: string[] = [];
     const deployFetch = vi.fn(async (input: RequestInfo | URL) => {
